@@ -1,0 +1,60 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: 'Inter', system-ui, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color-scheme: light dark;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+@media (min-width: 768px) {
+  .snap-container {
+    scroll-padding-top: 80px;
+    scroll-snap-type: y mandatory !important;
+  }
+}
+
+@media (max-width: 767px) {
+  .snap-container {
+    scroll-snap-type: none !important;
+  }
+}
+
+@layer base {
+  body {
+    margin: 0;
+    min-width: 320px;
+    @apply bg-white text-ink-900 transition-colors duration-300;
+  }
+
+  @media (min-width: 768px) {
+    body {
+      height: 100vh;
+      overflow: hidden;
+    }
+  }
+
+  body.dark {
+    @apply bg-ink-900 text-white;
+  }
+}
+
+#root {
+  width: 100%;
+}
+
+@layer components {
+  .glass-nav {
+    @apply backdrop-blur-md bg-white/80 border-b border-white/20;
+  }
+}
