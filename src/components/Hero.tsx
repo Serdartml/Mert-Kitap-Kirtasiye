@@ -80,51 +80,91 @@ const Hero: React.FC<HeroProps> = ({ isDark, T }) => {
           </motion.div>
         </div>
 
-        {/* Right Side: Small Floating Info Card */}
+        {/* Right Side: Redesigned Premium Info Cards */}
         <motion.div 
-           initial={{ opacity: 0, x: 50 }}
-           animate={{ opacity: 1, x: 0 }}
-           transition={{ delay: 0.4, type: 'spring' }}
-           className="hidden lg:flex flex-col items-end"
+           initial={{ opacity: 0, scale: 0.8, x: 100 }}
+           animate={{ opacity: 1, scale: 1, x: 0 }}
+           transition={{ delay: 0.5, duration: 1, type: 'spring', damping: 15 }}
+           className="hidden lg:flex flex-col items-end relative gap-8"
         >
-           <div className={`p-8 rounded-[2.5rem] border-2 backdrop-blur-md max-w-sm transition-all duration-500 hover:scale-105 ${
-              isDark ? 'bg-ink-900/80 border-white/5 shadow-2xl shadow-black' : 'bg-white/80 border-brand-500/10 shadow-2xl shadow-brand-500/10'
-           }`}>
-              <div className="flex items-center gap-4 mb-6">
-                 <div className="bg-[#f5b31d] p-3 rounded-xl text-ink-900 shadow-lg">
-                    <ShieldCheck size={28} />
+           {/* Primary Glass Card */}
+           <motion.div 
+              whileHover={{ scale: 1.03, rotate: -1 }}
+              className={`p-10 rounded-[3.5rem] border-2 backdrop-blur-2xl max-w-sm relative overflow-hidden transition-all duration-500 ${
+                 isDark 
+                   ? 'bg-ink-900/70 border-white/10 shadow-[0_40px_100px_-15px_rgba(0,0,0,0.8)]' 
+                   : 'bg-white/90 border-brand-500/20 shadow-[0_40px_100px_-15px_rgba(245,179,29,0.15)]'
+              }`}
+           >
+              {/* Decorative Accent */}
+              <div className="absolute -top-10 -right-10 w-40 h-40 bg-brand-500/10 rounded-full blur-3xl"></div>
+              
+              <div className="flex items-start justify-between mb-8 relative z-10">
+                 <div className="relative">
+                    <div className="bg-[#f5b31d] p-5 rounded-[1.8rem] text-ink-900 shadow-[0_20px_40px_-10px_rgba(245,179,29,0.5)] transform -rotate-3 hover:rotate-0 transition-transform duration-300">
+                       <ShieldCheck size={36} />
+                    </div>
+                    <motion.div 
+                      animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0.8, 0.5] }}
+                      transition={{ duration: 2, repeat: Infinity }}
+                      className="absolute -top-1 -right-1 w-6 h-6 bg-white rounded-full flex items-center justify-center shadow-md border-2 border-brand-500"
+                    >
+                       <Zap size={10} className="text-brand-500 fill-brand-500" />
+                    </motion.div>
                  </div>
-                 <div>
-                    <h3 className={`text-xl font-black leading-tight ${isDark ? 'text-white' : 'text-ink-900'}`}>{T.qualityTile.title}</h3>
-                    <p className="text-[#f5b31d] font-black text-[10px] uppercase tracking-widest">{T.stats.years}</p>
+                 <div className="text-right">
+                    <div className={`px-4 py-1.5 rounded-full bg-brand-500/10 border border-brand-500/20 mb-2 inline-block`}>
+                       <p className="text-[#f5b31d] font-black text-[10px] uppercase tracking-[0.25em]">{T.stats.years}</p>
+                    </div>
                  </div>
               </div>
-              <p className={`text-base font-bold leading-relaxed mb-6 ${isDark ? 'text-ink-400' : 'text-ink-500'}`}>
+
+              <h3 className={`text-3xl md:text-5xl font-black mb-6 leading-none tracking-tighter ${isDark ? 'text-white' : 'text-ink-900'} relative z-10`}>
+                 {T.qualityTile.title}
+              </h3>
+              
+              <p className={`text-base md:text-lg font-bold leading-relaxed mb-10 opacity-80 ${isDark ? 'text-ink-400' : 'text-ink-500'} relative z-10`}>
                  {T.qualityTile.desc}
               </p>
-              <div className="flex items-center gap-6 pt-6 border-t border-ink-500/10">
-                 <div>
-                    <p className={`text-2xl font-black ${isDark ? 'text-white' : 'text-ink-900'}`}>15k+</p>
-                    <p className="text-[10px] font-black uppercase text-[#f5b31d]">{T.stats.products}</p>
+
+              <div className="grid grid-cols-2 gap-10 pt-10 border-t border-ink-500/10 relative z-10">
+                 <div className="flex flex-col gap-1">
+                    <p className={`text-4xl lg:text-5xl font-black ${isDark ? 'text-white' : 'text-ink-900'} tracking-tighter`}>15k+</p>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-[#f5b31d] opacity-80">{T.stats.products}</p>
                  </div>
-                 <div className="w-px h-8 bg-ink-500/20"></div>
-                 <div>
-                    <p className={`text-2xl font-black ${isDark ? 'text-white' : 'text-ink-900'}`}>20+</p>
-                    <p className="text-[10px] font-black uppercase text-[#f5b31d]">{T.stats.years}</p>
+                 <div className="flex flex-col gap-1">
+                    <p className={`text-4xl lg:text-5xl font-black ${isDark ? 'text-white' : 'text-ink-900'} tracking-tighter`}>20+</p>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-[#f5b31d] opacity-80">{T.stats.years}</p>
                  </div>
               </div>
-           </div>
+           </motion.div>
            
-           {/* Sub-card/Badge */}
+           {/* Secondary Aesthetic Badge */}
            <motion.div 
-             animate={{ y: [0, -10, 0] }}
-             transition={{ duration: 4, repeat: Infinity }}
-             className={`mt-6 p-4 px-6 rounded-full border-2 flex items-center gap-3 self-center mr-12 ${
-               isDark ? 'bg-brand-500 text-ink-900 border-white/10' : 'bg-ink-900 text-brand-500 border-ink-900'
-             } shadow-xl`}
+             initial={{ x: 100, opacity: 0 }}
+             animate={{ x: 0, opacity: 1 }}
+             transition={{ delay: 1.2, duration: 0.8 }}
+             whileHover={{ scale: 1.1, x: -10 }}
+             whileTap={{ scale: 0.95 }}
+             className={`p-6 px-10 rounded-full border-2 flex items-center gap-5 mr-16 cursor-pointer shadow-2xl backdrop-blur-2xl group transition-all duration-300 ${
+               isDark 
+                 ? 'bg-ink-900/90 text-[#f5b31d] border-white/10 hover:bg-brand-500 hover:text-ink-900' 
+                 : 'bg-white text-ink-900 border-brand-500/20 hover:bg-ink-900 hover:text-brand-500'
+             }`}
            >
-              <Zap size={18} fill="currentColor" />
-              <span className="font-black text-xs uppercase tracking-widest">{T.qualityTile.title.split(' ')[0]}</span>
+              <div className="relative">
+                 <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
+                 >
+                    <Star size={24} className="fill-current" />
+                 </motion.div>
+                 <Sparkles className="absolute -top-3 -right-3 text-brand-500 opacity-50 transition-transform group-hover:scale-125" size={16} />
+              </div>
+              <div className="flex flex-col">
+                 <span className="font-black text-[10px] uppercase tracking-[0.4em] leading-none mb-1 opacity-60">PREMIUM</span>
+                 <span className="font-black text-lg uppercase tracking-[0.1em] leading-none">{T.qualityTile.title.split(' ')[0]}</span>
+              </div>
            </motion.div>
         </motion.div>
       </div>

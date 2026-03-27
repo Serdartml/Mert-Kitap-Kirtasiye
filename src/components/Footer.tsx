@@ -12,7 +12,7 @@ const Footer: React.FC<FooterProps> = ({ isDark, T, lang }) => {
   const currentYear = new Date().getFullYear();
 
   return (
-    <div className={`w-full py-16 md:py-24 transition-all duration-700 ${
+    <div className={`w-full py-10 md:py-16 transition-all duration-700 ${
       isDark ? 'bg-ink-900/40' : 'bg-ink-50'
     }`}>
       <div className="container mx-auto px-6">

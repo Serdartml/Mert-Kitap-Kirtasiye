@@ -35,29 +35,29 @@ function App() {
           Snap-scroll is applied only to md (desktop/tablet).
       */}
       <main className={`relative z-10 w-full md:h-screen md:overflow-y-auto snap-container scroll-smooth`}>
-        {/* Heroes & Categories: Normal h-screen Snap */}
+        {/* Heroes & Categories: Snap on desktop, natural on mobile */}
         <section id="hero" className="w-full h-screen md:snap-start relative flex flex-col justify-center overflow-hidden flex-shrink-0">
           <Hero isDark={isDark} T={T.hero} />
         </section>
         
-        <div id="kirtasiye" className="w-full h-screen md:snap-start relative flex items-center overflow-hidden flex-shrink-0">
+        <div id="kirtasiye" className="w-full min-h-[70vh] md:h-screen md:snap-start relative flex items-center overflow-hidden flex-shrink-0 py-10 md:py-0">
           <Categories isDark={isDark} type="stationery" T={T.categories} />
         </div>
 
-        <div id="kitap" className="w-full h-screen md:snap-start relative flex items-center overflow-hidden flex-shrink-0">
+        <div id="kitap" className="w-full min-h-[70vh] md:h-screen md:snap-start relative flex items-center overflow-hidden flex-shrink-0 py-10 md:py-0">
           <Categories isDark={isDark} type="books" T={T.categories} />
         </div>
 
-        <div id="hediyelik" className="w-full h-screen md:snap-start relative flex items-center overflow-hidden flex-shrink-0">
+        <div id="hediyelik" className="w-full min-h-[70vh] md:h-screen md:snap-start relative flex items-center overflow-hidden flex-shrink-0 py-10 md:py-0">
           <Categories isDark={isDark} type="gifts" T={T.categories} />
         </div>
         
-        {/* About Us & Contact: Extra limit scrolling (Reverted to 140vh) */}
-        <div id="hakkimizda" className="w-full min-h-[140vh] md:snap-start relative flex flex-col items-center overflow-hidden py-32 md:py-40">
+        {/* About Us & Contact: Reduced vertical space */}
+        <div id="hakkimizda" className="w-full md:min-h-screen md:snap-start relative flex flex-col items-center overflow-hidden py-10 md:py-24 pb-0 md:pb-24">
           <AboutUs isDark={isDark} T={T.about} />
         </div>
 
-        <div id="iletisim" className="w-full min-h-[140vh] md:snap-start relative flex flex-col items-center overflow-hidden py-32 md:py-40">
+        <div id="iletisim" className="w-full md:min-h-screen md:snap-start relative flex flex-col items-center overflow-hidden py-10 md:py-24 pt-0 md:pt-24">
           <Contact isDark={isDark} T={T.contact} />
         </div>
 
