@@ -37,10 +37,10 @@ const Contact: React.FC<ContactProps> = ({ isDark, T }) => {
           
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-8">
             {[
-              { icon: Phone, title: T.info.call, contact: '+90 555 123 45 67', bg: 'bg-brand-500/10' },
-              { icon: Mail, title: T.info.email, contact: 'merhaba@mertkitap.com', bg: 'bg-brand-500/10' },
-              { icon: MapPin, title: T.info.visit, contact: T.info.visit === 'Visit' ? 'Mert Kitap, Istanbul Cad. No:12' : 'Mert Kitap, İstanbul Cad. No:12', bg: 'bg-brand-500/10' },
-              { icon: Clock, title: T.info.hours, contact: T.info.schedule, bg: 'bg-brand-500/10' },
+              { icon: Phone, title: T.info.call, contact: '0232 374 25 00', bg: 'bg-brand-500/10' },
+              { icon: Mail, title: T.info.email, contact: 'mertkitapkirtasiye@hotmail.com', bg: 'bg-brand-500/10' },
+              { icon: MapPin, title: T.info.visit, contact: 'Bornova, İzmir', bg: 'bg-brand-500/10' },
+              { icon: Clock, title: T.info.hours, contact: `${T.info.schedule} / ${T.info.sunday}`, bg: 'bg-brand-500/10' },
             ].map((item, idx) => (
               <motion.div 
                  key={item.title}
@@ -66,40 +66,51 @@ const Contact: React.FC<ContactProps> = ({ isDark, T }) => {
            initial={{ opacity: 0, x: 30, rotate: 1 }}
            whileInView={{ opacity: 1, x: 0, rotate: 0 }}
            viewport={{ once: true }}
-           className={`p-8 md:p-12 rounded-[2.5rem] md:rounded-[3.5rem] shadow-2xl border-2 transition-all ${
+           className={`p-6 md:p-12 rounded-[2rem] md:rounded-[3.5rem] shadow-2xl border-2 transition-all ${
              isDark 
                ? 'bg-ink-800 border-white/5 shadow-black/50' 
                : 'bg-white border-brand-500/10 shadow-brand-500/5'
            }`}
         >
           <h3 className={`text-2xl md:text-3xl font-black mb-6 md:mb-8 ${isDark ? 'text-white' : 'text-ink-900'}`}>{T.form.title}</h3>
-          <form className="space-y-4 md:space-y-6">
+          <form 
+            className="space-y-4 md:space-y-6"
+            onSubmit={(e) => {
+              e.preventDefault();
+              const formData = new FormData(e.currentTarget);
+              const name = formData.get('name');
+              const email = formData.get('email');
+              const message = formData.get('message');
+              const mailtoLink = `mailto:mertkitapkirtasiye@hotmail.com?subject=İletişim Formu: ${name}&body=Gönderen: ${name}%0D%0AE-posta: ${email}%0D%0A%0D%0AMesaj:%0D%0A${message}`;
+              window.location.href = mailtoLink;
+            }}
+          >
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
-              <input type="text" placeholder={T.form.name} className={`w-full rounded-xl p-3 md:p-5 font-black text-sm outline-none border-2 focus:ring-4 transition-all ${
+              <input name="name" type="text" placeholder={T.form.name} required className={`w-full rounded-xl p-3 md:p-5 font-black text-xs md:text-sm outline-none border-2 focus:ring-4 transition-all ${
                 isDark 
                   ? 'bg-ink-900 border-ink-700 text-white focus:border-brand-500 focus:ring-brand-500/10' 
                   : 'bg-ink-50 border-ink-100 text-ink-900 focus:border-brand-500 focus:ring-brand-500/10'
               }`} />
-              <input type="email" placeholder={T.form.email} className={`w-full rounded-xl p-3 md:p-5 font-black text-sm outline-none border-2 focus:ring-4 transition-all ${
+              <input name="email" type="email" placeholder={T.form.email} required className={`w-full rounded-xl p-3 md:p-5 font-black text-xs md:text-sm outline-none border-2 focus:ring-4 transition-all ${
                  isDark 
                    ? 'bg-ink-900 border-ink-700 text-white focus:border-brand-500 focus:ring-brand-500/10' 
                    : 'bg-ink-50 border-ink-100 text-ink-900 focus:border-brand-500 focus:ring-brand-500/10'
                }`} />
             </div>
             
-            <textarea rows={3} placeholder={T.form.message} className={`w-full rounded-xl p-4 md:p-6 font-black text-sm outline-none border-2 focus:ring-4 resize-none transition-all ${
+            <textarea name="message" rows={3} placeholder={T.form.message} required className={`w-full rounded-xl p-3 md:p-6 font-black text-xs md:text-sm outline-none border-2 focus:ring-4 resize-none transition-all ${
               isDark 
                 ? 'bg-ink-900 border-ink-700 text-white focus:border-brand-500 focus:ring-brand-500/10' 
                 : 'bg-ink-50 border-ink-100 text-ink-900 focus:border-brand-500 focus:ring-brand-500/10'
             }`}></textarea>
             
-            <button className={`w-full p-5 md:p-6 rounded-xl md:rounded-2xl font-black text-lg md:text-xl shadow-xl transition-all flex items-center justify-center gap-3 active:scale-95 group ${
+            <button type="submit" className={`w-full p-4 md:p-6 rounded-xl md:rounded-2xl font-black text-base md:text-xl shadow-xl transition-all flex items-center justify-center gap-2 md:gap-3 active:scale-95 group ${
               isDark 
                 ? 'bg-brand-500 text-ink-900 hover:bg-brand-400' 
                 : 'bg-ink-900 text-brand-500 hover:bg-ink-800'
             }`}>
               {T.form.send}
-              <Send size={24} className="group-hover:translate-x-2 transition-transform" />
+              <Send size={20} className="group-hover:translate-x-2 transition-transform" />
             </button>
           </form>
         </motion.div>

@@ -22,6 +22,7 @@ export const translations = {
         products: 'Ürün Yelpazesi',
         years: 'Yıllık Güven'
       },
+      phone: '0232 374 25 00',
       qualityTile: {
         title: 'Kalite & Estetik',
         desc: 'Dünyanın en seçkin markalarıyla yaratıcılığınızı bir üst seviyeye taşıyın.'
@@ -59,7 +60,7 @@ export const translations = {
         'Yaratıcı hobi ve sanat malzemeleri'
       ],
       visit: 'Bize Uğrayın!',
-      address: 'Pınar Mah. İstanbul Cad. No: 12, Pınar Mah. Merkez, İstanbul',
+      address: 'Erzene Mah. Kazım Karabekir Cad. No:31/A, Bornova, İzmir',
       cardTitle: 'Yarınları Birlikte Kuruyoruz',
       stats: {
         quality: 'Kalite',
@@ -78,7 +79,8 @@ export const translations = {
         email: 'E-posta',
         visit: 'Ziyaret',
         hours: 'Saatler',
-        schedule: 'Pzt-Cmt: 08:00 - 20:00'
+        schedule: 'Pzt-Cmt: 09:00 - 21:00',
+        sunday: 'Pzr: 10:00 - 20:00'
       },
       social: 'Sosyal Medya',
       form: {
@@ -95,8 +97,8 @@ export const translations = {
       sections: 'Bölümler',
       store: 'Mağaza',
       hoursTitle: 'Saatler',
-      days: 'Pzt - Cmt:',
-      sunday: 'Pazar:',
+      days: 'Pzt - Cmt: 09:00 - 21:00',
+      sunday: 'Pazar: 10:00 - 20:00',
       closed: 'Kapalı'
     }
   },
@@ -121,6 +123,7 @@ export const translations = {
         products: 'Product Range',
         years: 'Years of Trust'
       },
+      phone: '0232 374 25 00',
       qualityTile: {
         title: 'Quality & Aesthetics',
         desc: 'Take your creativity to the next level with the world\'s most distinguished brands.'
@@ -158,7 +161,7 @@ export const translations = {
         'Materials special for creative hobby and art lovers'
       ],
       visit: 'Visit Us!',
-      address: 'Pınar Mah. Istanbul Cad. No: 12, Pınar Mah. Center, Istanbul',
+      address: 'Erzene Mah. Kazim Karabekir Cad. No:31/A, Bornova, Izmir',
       cardTitle: 'Building the Future Together',
       stats: {
         quality: 'Quality',
@@ -177,7 +180,8 @@ export const translations = {
         email: 'Email',
         visit: 'Visit',
         hours: 'Hours',
-        schedule: 'Mon-Sat: 08:00 - 20:00'
+        schedule: 'Mon-Sat: 09:00 - 21:00',
+        sunday: 'Sun: 10:00 - 20:00'
       },
       social: 'Social Media',
       form: {
@@ -194,8 +198,8 @@ export const translations = {
       sections: 'Sections',
       store: 'Store',
       hoursTitle: 'Hours',
-      days: 'Mon - Sat:',
-      sunday: 'Sunday:',
+      days: 'Mon - Sat: 09:00 - 21:00',
+      sunday: 'Sun: 10:00 - 20:00',
       closed: 'Closed'
     }
   }

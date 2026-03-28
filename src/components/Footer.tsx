@@ -56,18 +56,18 @@ const Footer: React.FC<FooterProps> = ({ isDark, T, lang }) => {
             <ul className="space-y-6 md:space-y-8">
               <li className="flex gap-4 md:gap-6">
                 <MapPin className="text-[#f5b31d] shrink-0" size={24} />
-                <span className={`font-bold text-base md:text-lg leading-relaxed transition-colors ${isDark ? 'text-ink-300' : 'text-ink-500'}`}>
-                   {lang === 'tr' ? 'İstanbul Cad. No: 12, Pınar Mah. Merkez, İstanbul' : '12 Istanbul St., Pinar Mah. Center, Istanbul'}
-                </span>
+                 <span className={`font-bold text-base md:text-lg leading-relaxed transition-colors ${isDark ? 'text-ink-300' : 'text-ink-500'}`}>
+                    {lang === 'tr' ? 'Erzene Mah. Kazım Karabekir Cad. No:31/A, Bornova, İzmir' : 'Erzene Mah. Kazim Karabekir Cad. No:31/A, Bornova, Izmir'}
+                 </span>
               </li>
               <li className="flex gap-4 md:gap-6 items-center">
                 <Phone className="text-[#f5b31d] shrink-0" size={20} />
-                <span className={`font-black text-lg md:text-xl transition-colors ${isDark ? 'text-white' : 'text-ink-900'}`}>+90 555 123 45 67</span>
+                <span className={`font-black text-lg md:text-xl transition-colors ${isDark ? 'text-white' : 'text-ink-900'}`}>0232 374 25 00</span>
               </li>
-              <li className="flex gap-4 md:gap-6 items-center">
-                <Mail className="text-[#f5b31d] shrink-0" size={20} />
-                <span className={`font-bold text-base md:text-lg underline underline-offset-8 decoration-brand-500/30 ${isDark ? 'text-white' : 'text-ink-900'}`}>iletisim@mertkitap.com</span>
-              </li>
+               <li className="flex gap-4 md:gap-6 items-center">
+                 <Mail className="text-[#f5b31d] shrink-0" size={20} />
+                 <span className={`font-bold text-base md:text-lg underline underline-offset-8 decoration-brand-500/30 ${isDark ? 'text-white' : 'text-ink-900'}`}>mertkitapkirtasiye@hotmail.com</span>
+               </li>
             </ul>
           </div>
 
@@ -79,18 +79,18 @@ const Footer: React.FC<FooterProps> = ({ isDark, T, lang }) => {
              <div className={`p-6 md:p-8 rounded-[2rem] border-2 space-y-4 md:space-y-6 transition-all shadow-sm ${
                 isDark ? 'bg-ink-800 border-ink-700' : 'bg-white border-brand-500/10'
              }`}>
-                <div className="flex items-center justify-between">
-                   <div className={`flex items-center gap-3 font-black text-xs uppercase tracking-wider ${isDark ? 'text-white' : 'text-ink-900'}`}>
-                      <Clock size={16} className="text-[#f5b31d]"/> {T.days}
-                   </div>
-                   <div className="text-[#f5b31d] font-black text-base md:text-lg">08:00 - 20:00</div>
-                </div>
-                <div className="flex items-center justify-between opacity-50">
-                   <div className={`flex items-center gap-3 font-black text-xs uppercase tracking-wider ${isDark ? 'text-white' : 'text-ink-900'}`}>
-                      <Clock size={16} className="text-[#f5b31d]"/> {T.sunday}
-                   </div>
-                   <div className={`font-black uppercase text-xs ${isDark ? 'text-white' : 'text-ink-900'}`}>{T.closed}</div>
-                </div>
+                 <div className="flex items-center justify-between">
+                    <div className={`flex items-center gap-3 font-black text-xs uppercase tracking-wider ${isDark ? 'text-white' : 'text-ink-900'}`}>
+                       <Clock size={16} className="text-[#f5b31d]"/> {T.days.split(':')[0]}
+                    </div>
+                    <div className="text-[#f5b31d] font-black text-base md:text-lg">09:00 - 21:00</div>
+                 </div>
+                 <div className="flex items-center justify-between">
+                    <div className={`flex items-center gap-3 font-black text-xs uppercase tracking-wider ${isDark ? 'text-white' : 'text-ink-900'}`}>
+                       <Clock size={16} className="text-[#f5b31d]"/> {T.sunday.split(':')[0]}
+                    </div>
+                    <div className="text-[#f5b31d] font-black text-base md:text-lg">10:00 - 20:00</div>
+                 </div>
              </div>
           </div>
         </div>

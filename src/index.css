@@ -44,7 +44,7 @@ html {
     }
   }
 
-  body.dark {
+  .dark body {
     @apply bg-ink-900 text-white;
   }
 }
@@ -57,4 +57,10 @@ html {
   .glass-nav {
     @apply backdrop-blur-md bg-white/80 border-b border-white/20;
   }
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
 }

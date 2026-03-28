@@ -53,16 +53,21 @@ const AboutUs: React.FC<AboutUsProps> = ({ isDark, T }) => {
               ))}
             </div>
 
-            {/* Clean Store Card */}
-            <div className={`p-8 rounded-[2rem] md:rounded-[3rem] border-2 flex items-center gap-4 transition-all ${
-               isDark ? 'bg-ink-800 border-white/5' : 'bg-brand-50 border-brand-100 shadow-sm shadow-brand-500/5'
-            }`}>
-               <div className="bg-[#f5b31d] p-4 rounded-2xl text-ink-900 shadow-lg shrink-0"><MapPin size={28}/></div>
+            {/* Clean Store Card - Now Linked to Maps */}
+            <a 
+               href="https://www.google.com/maps/dir/?api=1&destination=Erzene+Mah.+Kazim+Karabekir+Cad.+No:31/A+Izmir"
+               target="_blank"
+               rel="noopener noreferrer"
+               className={`p-5 md:p-8 rounded-[1.5rem] md:rounded-[3rem] border-2 flex items-center gap-3 md:gap-4 transition-all mb-8 ${
+                 isDark ? 'bg-ink-800 border-white/5 hover:border-brand-500/50' : 'bg-brand-50 border-brand-100 shadow-sm shadow-brand-500/5 hover:border-brand-500/50'
+               }`}
+            >
+               <div className="bg-[#f5b31d] p-3 md:p-4 rounded-xl md:rounded-2xl text-ink-900 shadow-lg shrink-0"><MapPin size={24}/></div>
                <div>
-                  <h4 className={`text-base md:text-xl font-black uppercase tracking-tight ${isDark ? 'text-white' : 'text-ink-900'}`}>{T.visit}</h4>
-                  <p className={`text-[10px] md:text-base font-bold text-ink-500`}>{T.address}</p>
+                  <h4 className={`text-sm md:text-xl font-black uppercase tracking-tight ${isDark ? 'text-white' : 'text-ink-900'}`}>{T.visit}</h4>
+                  <p className={`text-[9px] md:text-base font-bold text-ink-500`}>{T.address}</p>
                </div>
-            </div>
+            </a>
           </motion.div>
         </div>
 

@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Moon, Sun, Menu, X, Globe, ChevronRight } from 'lucide-react';
+import { Moon, Sun, Menu, X, Globe, ChevronRight, Pencil, Book, Compass, Pen, Palette } from 'lucide-react';
 import Logo from './Logo';
 import { Language } from '../translations';
+import { AnimatedThemeToggler } from './AnimatedThemeToggler';
+import AnimatedBackground from './AnimatedBackground';
 
 interface NavbarProps {
   isDark: boolean;
@@ -43,6 +45,19 @@ const Navbar: React.FC<NavbarProps> = ({ isDark, toggleTheme, lang, toggleLang, 
     } else {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
+  };
+
+  const [activeHash, setActiveHash] = useState(window.location.hash || '#');
+
+  useEffect(() => {
+    const handleHashChange = () => setActiveHash(window.location.hash || '#');
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
+  const isActive = (href: string) => {
+    if (href === '#' && activeHash === '') return true;
+    return activeHash === href;
   };
 
   const navLinks = [
@@ -100,16 +115,15 @@ const Navbar: React.FC<NavbarProps> = ({ isDark, toggleTheme, lang, toggleLang, 
               {lang === 'tr' ? 'EN' : 'TR'}
             </button>
 
-            <button 
-              onClick={toggleTheme}
+            <AnimatedThemeToggler 
+              isDark={isDark}
+              onToggle={toggleTheme}
               className={`p-2 rounded-xl transition-all h-10 w-10 flex items-center justify-center ${
                 isDark 
                   ? 'bg-brand-500 text-ink-900' 
                   : 'bg-ink-900 text-brand-500'
               } active:scale-95`}
-            >
-              {isDark ? <Sun size={18} /> : <Moon size={18} />}
-            </button>
+            />
           </div>
         </div>
 
@@ -124,14 +138,13 @@ const Navbar: React.FC<NavbarProps> = ({ isDark, toggleTheme, lang, toggleLang, 
              <Globe size={12} />
              {lang === 'tr' ? 'EN' : 'TR'}
           </button>
-          <button 
-            onClick={toggleTheme}
+          <AnimatedThemeToggler 
+            isDark={isDark}
+            onToggle={toggleTheme}
             className={`p-1.5 h-8 w-8 flex items-center justify-center rounded-lg ${
               isDark ? 'text-[#f5b31d]' : 'text-ink-900'
             }`}
-          >
-            {isDark ? <Sun size={14} /> : <Moon size={14} />}
-          </button>
+          />
           <button 
             onClick={() => setMobileMenuOpen(true)}
             className={`p-1.5 ${isDark ? 'text-white' : 'text-ink-900'}`}
@@ -147,9 +160,42 @@ const Navbar: React.FC<NavbarProps> = ({ isDark, toggleTheme, lang, toggleLang, 
             initial={{ opacity: 0, x: '100%' }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: '100%' }}
-            className={`fixed inset-0 z-[110] lg:hidden flex flex-col ${isDark ? 'bg-ink-900' : 'bg-white'}`}
+            className={`fixed inset-0 z-[110] lg:hidden flex flex-col overflow-hidden ${isDark ? 'bg-ink-900' : 'bg-brand-50'}`}
           >
-            <div className="p-6 flex justify-between items-center border-b border-ink-500/10">
+            {/* Stationery Items Animated Background */}
+            <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
+               {[...Array(15)].map((_, i) => {
+                 const Icons = [Pencil, Book, Compass, Pen, Palette];
+                 const Icon = Icons[i % Icons.length];
+                 return (
+                   <motion.div
+                     key={i}
+                     initial={{ opacity: 0 }}
+                     animate={{ 
+                       opacity: [0.03, 0.1, 0.03],
+                       y: [Math.random() * 50, Math.random() * -150],
+                       x: [Math.random() * 100, Math.random() * -100],
+                       rotate: [0, 360]
+                     }}
+                     transition={{ 
+                        duration: 15 + Math.random() * 20, 
+                        repeat: Infinity, 
+                        ease: 'linear',
+                        delay: i * 0.5
+                     }}
+                     className={`absolute ${isDark ? 'text-brand-500' : 'text-brand-400'}`}
+                     style={{ 
+                       left: Math.random() * 95 + '%', 
+                       top: Math.random() * 95 + '%',
+                     }}
+                   >
+                     <Icon size={Math.random() * 30 + 30} />
+                   </motion.div>
+                 );
+               })}
+            </div>
+
+            <div className="p-6 flex justify-between items-center border-b border-ink-500/10 relative z-20">
                <Logo isDark={isDark} className="scale-75 origin-left" />
                <button 
                  onClick={() => setMobileMenuOpen(false)} 
@@ -160,22 +206,44 @@ const Navbar: React.FC<NavbarProps> = ({ isDark, toggleTheme, lang, toggleLang, 
             </div>
             
             <div className="flex-grow flex flex-col px-6 py-8 overflow-y-auto">
-              <p className="text-[#f5b31d] font-black text-[10px] uppercase tracking-[0.3em] mb-8">{T.sections || 'BÖLÜMLER'}</p>
               <div className="flex flex-col gap-2">
                 {navLinks.map((link, idx) => (
                   <motion.a 
-                    key={link.name} 
+                    key={link.name}
                     href={link.href}
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: idx * 0.05 }}
                     onClick={(e) => { link.onClick?.(e); setMobileMenuOpen(false); }}
-                    className={`flex items-center justify-between p-5 rounded-2xl text-xl font-black uppercase tracking-tight transition-all active:scale-[0.98] ${
-                      isDark ? 'bg-ink-800/40 text-white' : 'bg-brand-50/50 text-ink-900'
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.05 * idx }}
+                    whileTap={{ scale: 0.98 }}
+                    className={`group relative p-[2px] rounded-2xl transition-all overflow-hidden flex-shrink-0 ${
+                      isActive(link.href) ? 'shadow-lg shadow-brand-500/40' : 'shadow-sm border-white/5'
                     }`}
                   >
-                    {link.name}
-                    <ChevronRight size={20} className="text-[#f5b31d]" />
+                    {/* Spiral Border Spinner - Visible on ALL buttons now */}
+                      <motion.div 
+                        animate={{ rotate: 360 }}
+                        transition={{ 
+                          duration: isActive(link.href) ? 3 : 8, // Active is faster
+                          repeat: Infinity, 
+                          ease: "linear" 
+                        }}
+                        className={`absolute inset-[-400%] z-0 ${
+                          isActive(link.href) 
+                            ? 'bg-[conic-gradient(from_0deg,transparent_40%,#f5b31d_70%,#f5b31d_100%)]'
+                            : (isDark ? 'bg-[conic-gradient(from_0deg,transparent_90%,rgba(245,179,29,0.3)_100%)]' : 'bg-[conic-gradient(from_0deg,transparent_90%,rgba(245,179,29,0.2)_100%)]')
+                        }`}
+                      />
+
+                    {/* Button Content */}
+                    <div className={`relative z-10 w-full p-5 rounded-[14px] font-black uppercase tracking-tight text-xl flex items-center justify-between transition-all ${
+                      isActive(link.href)
+                        ? (isDark ? 'bg-ink-900 text-brand-500' : 'bg-white text-brand-500')
+                        : (isDark ? 'bg-ink-800/90 text-white/80' : 'bg-white text-ink-900/80')
+                    }`}>
+                      <span>{link.name}</span>
+                      <ChevronRight size={20} className={isActive(link.href) ? 'text-brand-500 animate-pulse' : 'text-ink-500 opacity-30'} />
+                    </div>
                   </motion.a>
                 ))}
               </div>
@@ -187,12 +255,15 @@ const Navbar: React.FC<NavbarProps> = ({ isDark, toggleTheme, lang, toggleLang, 
                    <Globe size={16} />
                    {lang === 'tr' ? 'ENGLISH' : 'TÜRKÇE'}
                  </button>
-                 <button onClick={toggleTheme} className={`flex items-center justify-center gap-3 p-5 rounded-2xl font-black text-xs uppercase tracking-widest ${
-                   isDark ? 'bg-brand-500 text-ink-900' : 'bg-ink-900 text-brand-500'
-                 }`}>
-                   {isDark ? <Sun size={16} /> : <Moon size={16} />}
+                 <AnimatedThemeToggler 
+                   isDark={isDark}
+                   onToggle={toggleTheme}
+                   className={`flex items-center justify-center gap-3 p-5 rounded-2xl font-black text-xs uppercase tracking-widest ${
+                     isDark ? 'bg-brand-500 text-ink-900' : 'bg-ink-900 text-brand-500'
+                   }`}
+                 >
                    {isDark ? 'AYDINLIK' : 'KARANLIK'}
-                 </button>
+                 </AnimatedThemeToggler>
               </div>
             </div>
           </motion.div>

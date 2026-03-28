@@ -22,14 +22,14 @@ function App() {
 
   const toggleTheme = () => setIsDark(!isDark);
   const toggleLang = () => setLang(prev => prev === 'tr' ? 'en' : 'tr');
-  
+
   const T = translations[lang];
 
   return (
     <div className={`min-h-screen ${isDark ? 'bg-ink-900 text-white' : 'bg-white text-ink-900'} relative transition-colors duration-300 font-sans`}>
       <AnimatedBackground isDark={isDark} />
       <Navbar isDark={isDark} toggleTheme={toggleTheme} lang={lang} toggleLang={toggleLang} T={T.nav} />
-      
+
       {/* 
           Main container scroller. 
           Snap-scroll is applied only to md (desktop/tablet).
@@ -39,7 +39,7 @@ function App() {
         <section id="hero" className="w-full h-screen md:snap-start relative flex flex-col justify-center overflow-hidden flex-shrink-0">
           <Hero isDark={isDark} T={T.hero} />
         </section>
-        
+
         <div id="kirtasiye" className="w-full min-h-[70vh] md:h-screen md:snap-start relative flex items-center overflow-hidden flex-shrink-0 py-10 md:py-0">
           <Categories isDark={isDark} type="stationery" T={T.categories} />
         </div>
@@ -51,7 +51,7 @@ function App() {
         <div id="hediyelik" className="w-full min-h-[70vh] md:h-screen md:snap-start relative flex items-center overflow-hidden flex-shrink-0 py-10 md:py-0">
           <Categories isDark={isDark} type="gifts" T={T.categories} />
         </div>
-        
+
         {/* About Us & Contact: Reduced vertical space */}
         <div id="hakkimizda" className="w-full md:min-h-screen md:snap-start relative flex flex-col items-center overflow-hidden py-10 md:py-24 pb-0 md:pb-24">
           <AboutUs isDark={isDark} T={T.about} />
