@@ -26,8 +26,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-// Bilinçli tercih: params <Suspense> dışında okunuyor (aşağıdaki 404 kontrolü için). Geliştirme modundaki
-// "instant-shell-url-data" uyarısı bundandır; `instant = false` eklemeyin (kategori sayfasındaki nota bakın).
+// Bilinçli tercih: params <Suspense> dışında okunuyor (aşağıdaki 404 kontrolü için); instant = false
+// bu rotanın beklemesine izin verildiğini bildirir. 404 davranışı için kategori sayfasındaki nota bakın.
+export const instant = false;
 
 // Öne çıkan ürünler build sırasında üretilir; diğerleri ilk ziyarette üretilip önbelleğe alınır.
 export async function generateStaticParams() {
