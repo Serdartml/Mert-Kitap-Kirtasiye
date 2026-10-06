@@ -57,7 +57,12 @@ export default async function Header() {
         </div>
       </div>
 
-      <header className="sticky top-0 z-40 border-b border-neutral-200 bg-surface shadow-sm">
+      {/*
+        Yapışma davranışı: masaüstünde logo satırı ve kategori menüsü birlikte üstte kalır.
+        Mobilde logo satırı sayfayla birlikte kayar, yalnızca arama çubuğu üstte kalır.
+        Üç parça da kardeş öğedir; position: sticky ancak uzun bir kapsayıcının doğrudan çocuğunda işe yarar.
+      */}
+      <header className="bg-surface md:sticky md:top-0 md:z-40">
         {/* Menü (mobil), logo, arama, hesap ve sepet */}
         <div className="container-page flex h-14 items-center gap-2 md:h-20 md:gap-8">
           <MobileMenu categories={categories} />
@@ -80,18 +85,25 @@ export default async function Header() {
               </span>
               <span className="sr-only lg:not-sr-only">Sepetim</span>
             </Link>
-            <span className="ml-1 flex md:ml-2">
+            <span className="flex md:ml-2">
               <ThemeToggle />
             </span>
           </div>
         </div>
 
-        <div className="container-page pb-2.5 md:hidden">
+      </header>
+
+      <div className="sticky top-0 z-40 border-b border-neutral-200 bg-surface py-2 shadow-sm md:hidden">
+        <div className="container-page">
           <SearchForm />
         </div>
+      </div>
 
-        {/* Masaüstü kategori menüsü; mobilde kategoriler MobileMenu içinde. */}
-        <nav aria-label="Kategoriler" className="hidden border-t border-neutral-200 md:block">
+      {/* Masaüstü kategori menüsü; mobilde kategoriler MobileMenu içinde. top-20 = logo satırının yüksekliği. */}
+      <nav
+        aria-label="Kategoriler"
+        className="sticky top-20 z-30 hidden border-y border-neutral-200 bg-surface shadow-sm md:block"
+      >
           <ul className="container-page flex flex-wrap gap-1">
             {categories.map((category) => (
               <li key={category.id} className="group relative">
@@ -115,8 +127,7 @@ export default async function Header() {
               </li>
             ))}
           </ul>
-        </nav>
-      </header>
+      </nav>
     </>
   );
 }

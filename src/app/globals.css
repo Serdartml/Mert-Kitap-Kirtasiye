@@ -42,6 +42,15 @@
   yüzey/yazı çifti yer değiştirir, nötr gri ölçeği ters çevrilir (açık gri zemin -> koyu gri zemin,
   koyu gri yazı -> açık gri yazı), sarının açık tonları koyu sarıya döner.
 */
+/*
+  Tema yalnızca sitedeki düğmeyle değişir. "only light", telefon tarayıcılarının otomatik karartma
+  özelliğini (Chrome/Samsung "koyu tema") aydınlık temada devre dışı bırakır; yoksa tarayıcı sayfayı
+  kendi kafasına göre karartır ve düğme çalışmıyormuş gibi görünür.
+*/
+:root {
+  color-scheme: only light;
+}
+
 .dark {
   color-scheme: dark;
 

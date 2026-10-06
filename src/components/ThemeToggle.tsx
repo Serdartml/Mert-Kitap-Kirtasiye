@@ -39,13 +39,29 @@ export default function ThemeToggle({ duration = 500 }: { duration?: number }) {
     const viewportHeight = window.visualViewport?.height ?? window.innerHeight;
     const maxRadius = Math.hypot(Math.max(x, viewportWidth - x), Math.max(y, viewportHeight - y));
 
-    const transition = document.startViewTransition(apply);
-    transition.ready.then(() => {
-      document.documentElement.animate(
-        { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${maxRadius}px at ${x}px ${y}px)`] },
-        { duration, easing: "ease-in-out", pseudoElement: "::view-transition-new(root)" },
-      );
-    });
+    // Bazı mobil tarayıcılar geçiş API'sini yarım destekler. Animasyon kurulamazsa tema yine de
+    // değişmiş olmalı; bu yüzden hatalar yutulur ve gerekirse tema doğrudan uygulanır.
+    let applied = false;
+    const applyOnce = () => {
+      if (applied) return;
+      applied = true;
+      apply();
+    };
+
+    try {
+      const transition = document.startViewTransition(applyOnce);
+      transition.ready
+        .then(() => {
+          document.documentElement.animate(
+            { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${maxRadius}px at ${x}px ${y}px)`] },
+            { duration, easing: "ease-in-out", pseudoElement: "::view-transition-new(root)" },
+          );
+        })
+        .catch(() => {});
+      transition.finished.catch(() => {}).finally(applyOnce);
+    } catch {
+      applyOnce();
+    }
   }, [duration]);
 
   return (
@@ -53,7 +69,7 @@ export default function ThemeToggle({ duration = 500 }: { duration?: number }) {
       type="button"
       ref={buttonRef}
       onClick={toggleTheme}
-      className="relative inline-flex size-8 shrink-0 items-center justify-center rounded-lg p-1.5 text-ink transition-all active:scale-95 md:size-10 md:rounded-xl md:bg-ink md:p-2 md:text-brand-500 dark:text-brand-500 md:dark:bg-brand-500 md:dark:text-ink"
+      className="relative inline-flex size-10 shrink-0 touch-manipulation items-center justify-center rounded-lg p-1.5 text-fg transition-all active:scale-95 md:rounded-xl md:bg-ink md:p-2 md:text-brand-500 dark:text-brand-500 md:dark:bg-brand-500 md:dark:text-ink"
     >
       <Sun className="hidden size-5 shrink-0 dark:block" />
       <Moon className="size-5 shrink-0 dark:hidden" />

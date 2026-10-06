@@ -119,7 +119,7 @@ export default async function HomePage() {
           {categories.map((category) => {
             const Icon = categoryIcons[category.slug] ?? fallbackCategoryIcon;
             return (
-              <div key={category.id} className="min-w-0 rounded-2xl border border-neutral-200 p-3 sm:p-6">
+              <div key={category.id} className="min-w-0 rounded-2xl border border-neutral-200 bg-neutral-50 p-3 sm:p-6">
                 <Link href={`/kategori/${category.slug}`} className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:gap-3">
                   <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-brand-500 sm:size-12">
                     <Icon className="size-5 sm:size-6" />
