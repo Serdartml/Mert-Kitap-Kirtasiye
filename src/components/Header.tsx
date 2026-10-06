@@ -62,7 +62,7 @@ export default async function Header() {
         Mobilde logo satırı sayfayla birlikte kayar, yalnızca arama çubuğu üstte kalır.
         Üç parça da kardeş öğedir; position: sticky ancak uzun bir kapsayıcının doğrudan çocuğunda işe yarar.
       */}
-      <header className="bg-surface md:sticky md:top-0 md:z-40">
+      <header className="bg-raised md:sticky md:top-0 md:z-40">
         {/* Menü (mobil), logo, arama, hesap ve sepet */}
         <div className="container-page flex h-14 items-center gap-2 md:h-20 md:gap-8">
           <MobileMenu categories={categories} />
@@ -93,7 +93,7 @@ export default async function Header() {
 
       </header>
 
-      <div className="sticky top-0 z-40 border-b border-neutral-200 bg-surface py-2 shadow-sm md:hidden">
+      <div className="sticky top-0 z-40 border-b border-neutral-200 bg-raised py-2 shadow-sm md:hidden dark:shadow-[0_6px_16px_rgb(0_0_0/0.7)]">
         <div className="container-page">
           <SearchForm />
         </div>
@@ -102,7 +102,7 @@ export default async function Header() {
       {/* Masaüstü kategori menüsü; mobilde kategoriler MobileMenu içinde. top-20 = logo satırının yüksekliği. */}
       <nav
         aria-label="Kategoriler"
-        className="sticky top-20 z-30 hidden border-y border-neutral-200 bg-surface shadow-sm md:block"
+        className="sticky top-20 z-30 hidden border-y border-neutral-200 bg-raised shadow-sm md:block dark:shadow-[0_6px_16px_rgb(0_0_0/0.7)]"
       >
           <ul className="container-page flex flex-wrap gap-1">
             {categories.map((category) => (
@@ -114,7 +114,7 @@ export default async function Header() {
                   {category.name}
                 </Link>
                 {category.children.length > 0 && (
-                  <ul className="invisible absolute left-0 top-full z-50 min-w-56 rounded-b-lg border border-t-0 border-neutral-200 bg-surface py-2 opacity-0 shadow-lg transition-opacity group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100">
+                  <ul className="invisible absolute left-0 top-full z-50 min-w-56 rounded-b-lg border border-t-0 border-neutral-200 bg-raised py-2 opacity-0 shadow-lg transition-opacity group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100">
                     {category.children.map((child) => (
                       <li key={child.id}>
                         <Link href={`/kategori/${child.slug}`} className="block px-4 py-2 text-sm font-medium hover:bg-brand-50">

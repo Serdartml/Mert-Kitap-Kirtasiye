@@ -79,7 +79,7 @@ export default async function HomePage() {
               </span>
             </div>
           </Link>
-          <Link href="/kategori/kultur-kitaplari" className="group flex min-w-0 flex-col justify-between rounded-2xl border-2 border-fg bg-surface p-4 sm:p-7">
+          <Link href="/kategori/kultur-kitaplari" className="group flex min-w-0 flex-col justify-between rounded-2xl border-2 border-fg bg-raised p-4 sm:p-7">
             <BookOpen className="size-7 sm:size-8" />
             <div className="mt-4 sm:mt-6">
               <h2 className="text-base font-extrabold leading-tight sm:text-2xl">Kültür Kitapları</h2>
@@ -96,7 +96,7 @@ export default async function HomePage() {
       <section className="container-page mt-3 md:mt-4">
         <ul className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-neutral-200 bg-neutral-200 lg:grid-cols-4">
           {trustItems.map((item) => (
-            <li key={item.title} className="flex items-center gap-2.5 bg-surface p-3 sm:gap-3 sm:p-4">
+            <li key={item.title} className="flex items-center gap-2.5 bg-raised p-3 sm:gap-3 sm:p-4">
               <span className="grid size-9 shrink-0 place-items-center rounded-full bg-brand-100 sm:size-10">
                 <item.icon size={18} />
               </span>
@@ -119,7 +119,7 @@ export default async function HomePage() {
           {categories.map((category) => {
             const Icon = categoryIcons[category.slug] ?? fallbackCategoryIcon;
             return (
-              <div key={category.id} className="min-w-0 rounded-2xl border border-neutral-200 bg-neutral-50 p-3 sm:p-6">
+              <div key={category.id} className="min-w-0 rounded-2xl border border-neutral-200 bg-raised p-3 sm:p-6">
                 <Link href={`/kategori/${category.slug}`} className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:gap-3">
                   <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-brand-500 sm:size-12">
                     <Icon className="size-5 sm:size-6" />

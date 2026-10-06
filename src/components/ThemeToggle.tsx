@@ -2,11 +2,8 @@
 
 import { useCallback, useRef } from "react";
 import { Moon, Sun } from "lucide-react";
+import { COLOR_SCHEME_META_ID, DARK_SCHEME, LIGHT_SCHEME, THEME_STORAGE_KEY } from "@/lib/theme";
 
-export const THEME_STORAGE_KEY = "theme";
-
-// Sayfa boyanmadan önce <head> içinde çalışır; kayıtlı tema koyuysa html'e "dark" sınıfını ekler.
-export const themeInitScript = `try{if(localStorage.getItem("${THEME_STORAGE_KEY}")==="dark")document.documentElement.classList.add("dark")}catch(e){}`;
 
 // Eski sitedeki AnimatedThemeToggler ile aynı düğme ve aynı mekanik: yeni tema, düğmenin
 // merkezinden büyüyen bir daire olarak açılır (View Transition API). Tek fark, seçimin saklanması.
@@ -20,6 +17,7 @@ export default function ThemeToggle({ duration = 500 }: { duration?: number }) {
 
     const apply = () => {
       const isDark = document.documentElement.classList.toggle("dark");
+      document.getElementById(COLOR_SCHEME_META_ID)?.setAttribute("content", isDark ? DARK_SCHEME : LIGHT_SCHEME);
       try {
         localStorage.setItem(THEME_STORAGE_KEY, isDark ? "dark" : "light");
       } catch {

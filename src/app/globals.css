@@ -21,6 +21,9 @@
   --color-surface: #ffffff;
   --color-fg: #111111;
   --color-marker: #ffdd4d;
+  /* Sayfanın üstünde duran katmanlar: kartlar, yapışan çubuklar, açılır menü, çekmece.
+     Aydınlıkta zeminle aynı (gölgeyle ayrılır), koyuda bir ton açık ki zeminle karışmasın. */
+  --color-raised: #ffffff;
 
   --font-sans: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
 
@@ -54,14 +57,15 @@
 .dark {
   color-scheme: dark;
 
-  --color-surface: #141414;
+  --color-surface: #0e0e0e;
+  --color-raised: #212121;
   --color-fg: #f2f2f2;
   --color-marker: #6b5600;
 
-  --color-neutral-50: #1a1a1a;
-  --color-neutral-100: #1f1f1f;
-  --color-neutral-200: #2e2e2e;
-  --color-neutral-300: #3d3d3d;
+  --color-neutral-50: #181818;
+  --color-neutral-100: #2a2a2a;
+  --color-neutral-200: #383838;
+  --color-neutral-300: #4a4a4a;
   --color-neutral-400: #7a7a7a;
   --color-neutral-500: #a3a3a3;
   --color-neutral-600: #b8b8b8;
@@ -78,6 +82,7 @@
 */
 .theme-fixed {
   --color-surface: #ffffff;
+  --color-raised: #ffffff;
   --color-fg: #111111;
   --color-marker: #ffdd4d;
 

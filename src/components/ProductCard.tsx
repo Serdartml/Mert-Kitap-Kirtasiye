@@ -9,7 +9,7 @@ export default function ProductCard({ product }: { product: ProductCardData }) {
   const rootSlug = product.category.parent?.slug ?? product.category.slug;
 
   return (
-    <article className="group flex min-w-0 flex-col rounded-xl border border-neutral-200 bg-surface p-2 transition duration-200 hover:-translate-y-1 hover:shadow-lg sm:p-3">
+    <article className="group flex min-w-0 flex-col rounded-xl border border-neutral-200 bg-raised p-2 transition duration-200 hover:-translate-y-1 hover:shadow-lg sm:p-3">
       <Link href={`/urun/${product.slug}`} className="relative block">
         <ProductVisual name={product.name} rootCategorySlug={rootSlug} image={product.images[0]} />
         {discount && (

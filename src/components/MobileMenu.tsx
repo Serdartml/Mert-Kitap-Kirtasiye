@@ -45,9 +45,9 @@ export default function MobileMenu({ categories }: { categories: MenuCategory[] 
 
       {open && (
         <div className="fixed inset-0 z-50 md:hidden" role="dialog" aria-modal="true" aria-label="Menü">
-          <button type="button" aria-label="Menüyü kapat" onClick={close} className="absolute inset-0 bg-black/50" />
+          <button type="button" aria-label="Menüyü kapat" onClick={close} className="absolute inset-0 bg-black/70" />
 
-          <div className="absolute inset-y-0 left-0 flex w-[85%] max-w-sm flex-col bg-surface shadow-xl">
+          <div className="absolute inset-y-0 left-0 flex w-[85%] max-w-sm flex-col border-r border-neutral-200 bg-raised shadow-2xl">
             <div className="theme-fixed flex items-center justify-between bg-brand-500 px-4 py-3">
               <span className="text-base font-extrabold">Kategoriler</span>
               <button type="button" aria-label="Menüyü kapat" onClick={close} className="grid size-10 place-items-center rounded-lg">
@@ -64,7 +64,7 @@ export default function MobileMenu({ categories }: { categories: MenuCategory[] 
                         {category.name}
                         <ChevronDown size={18} className="text-neutral-400 transition-transform group-open:rotate-180" />
                       </summary>
-                      <ul className="bg-neutral-50 pb-2">
+                      <ul className="bg-surface pb-2">
                         <li>
                           <Link href={`/kategori/${category.slug}`} onClick={close} className="block px-6 py-2.5 text-sm font-bold">
                             Tüm {category.name}

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Manrope } from "next/font/google";
-import { themeInitScript } from "@/components/ThemeToggle";
+import { COLOR_SCHEME_META_ID, themeInitScript } from "@/lib/theme";
 import { site } from "@/lib/site";
 import "./globals.css";
 
@@ -29,6 +29,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     // suppressHydrationWarning: tema betiği, React devreye girmeden önce html'e "dark" sınıfını ekleyebilir.
     <html lang="tr" className={manrope.variable} suppressHydrationWarning>
       <head>
+        <meta id={COLOR_SCHEME_META_ID} name="color-scheme" content="only light" suppressHydrationWarning />
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
       <body className="font-sans antialiased">{children}</body>
