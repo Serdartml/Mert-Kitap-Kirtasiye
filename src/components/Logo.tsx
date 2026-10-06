@@ -1,35 +1,32 @@
-import React from 'react';
+import Link from "next/link";
+import { site } from "@/lib/site";
 
 interface LogoProps {
-  isDark: boolean;
-  className?: string;
-  onClick?: () => void;
+  onDark?: boolean;
 }
 
-const Logo: React.FC<LogoProps> = ({ isDark, className = "", onClick }) => {
+// Logo dosyası henüz gelmedi; kesik çizgili kutu onun yerini tutuyor.
+// Logo geldiğinde public/logo.svg olarak ekleyip kutuyu <Image src="/logo.svg" ... /> ile değiştirin
+// (gerekirse yandaki yazıyı da kaldırın). Header ve footer buradan beslenir.
+export default function Logo({ onDark = false }: LogoProps) {
   return (
-    <div onClick={onClick} className={`flex items-center gap-3 md:gap-4 ${className}`}>
-      {/* 3-Book Stack Icon */}
-      <div className="flex flex-col gap-[3px] md:gap-[4px] shrink-0">
-        <div className="w-8 h-2.5 md:w-10 md:h-3 bg-[#42a2d4] rounded-sm shadow-sm" style={{ borderLeft: '3px solid rgba(255,255,255,0.4)' }}></div>
-        <div className="w-9 h-2.5 md:w-11 md:h-3 bg-[#d43a3a] rounded-sm shadow-sm" style={{ borderLeft: '3px solid rgba(255,255,255,0.4)' }}></div>
-        <div className="w-10 h-2.5 md:w-12 md:h-3 bg-[#f5b31d] rounded-sm shadow-sm" style={{ borderLeft: '3px solid rgba(255,255,255,0.4)' }}></div>
-      </div>
-
-      {/* Text Logo */}
-      <div className="flex flex-col leading-none">
-        <div className="flex items-baseline gap-2">
-          <span className={`text-2xl md:text-4xl font-black tracking-tighter text-[#f5b31d]`} style={{ fontFamily: 'system-ui' }}>
-            MERT
-          </span>
-          <span className={`text-[10px] md:text-xs font-black tracking-[0.2em] text-[#f5b31d] uppercase`}>
-            KİTAP & KIRTASİYE
-          </span>
-        </div>
-        <div className="h-[2px] w-full bg-gradient-to-r from-[#f5b31d] to-transparent opacity-50 mt-1"></div>
-      </div>
-    </div>
+    <Link href="/" aria-label={`${site.name} ana sayfa`} className="flex shrink-0 items-center gap-2.5">
+      <span
+        aria-hidden
+        className={`grid h-10 w-14 place-items-center rounded-md border-2 border-dashed text-[9px] font-bold tracking-widest ${
+          onDark ? "border-neutral-600 text-neutral-500" : "border-neutral-300 text-neutral-400"
+        }`}
+      >
+        LOGO
+      </span>
+      <span className="flex flex-col leading-none">
+        <span className={`text-xl font-extrabold tracking-tight ${onDark ? "text-white" : "text-ink"}`}>MERT</span>
+        <span
+          className={`mt-1 text-[10px] font-bold tracking-[0.18em] ${onDark ? "text-brand-500" : "text-neutral-500"}`}
+        >
+          KİTAP · KIRTASİYE
+        </span>
+      </span>
+    </Link>
   );
-};
-
-export default Logo;
+}
