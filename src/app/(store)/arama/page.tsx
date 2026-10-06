@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import EmptyState from "@/components/EmptyState";
 import { ListingSkeleton } from "@/components/Skeletons";
 import { Pagination, SortBar } from "@/components/ListingControls";
 import ProductGrid from "@/components/ProductGrid";
@@ -46,18 +47,18 @@ async function SearchContent({ searchParams }: PageProps) {
 
       <div className="mt-5">
         {!query ? (
-          <p className="rounded-xl bg-neutral-100 p-8 text-center text-sm text-neutral-600">
-            Aramak istediğiniz ürünü yukarıdaki kutuya yazın.
-          </p>
+          <EmptyState title="Ne aramıştınız?" text="Aramak istediğiniz ürünü yukarıdaki kutuya yazın." />
         ) : (
           <>
             <SortBar state={state} total={result.total} />
             {result.items.length > 0 ? (
-              <ProductGrid products={result.items} />
+              <ProductGrid products={result.items} dense />
             ) : (
-              <p className="rounded-xl bg-neutral-100 p-8 text-center text-sm text-neutral-600">
-                Aramanızla eşleşen ürün bulunamadı. Farklı bir kelime deneyin.
-              </p>
+              <EmptyState
+                title="Aramanızla eşleşen ürün bulunamadı"
+                text="Farklı bir kelime deneyin veya kategorilere göz atın."
+                action={{ href: "/", label: "Ana sayfaya dön" }}
+              />
             )}
             <Pagination state={state} pageCount={result.pageCount} />
           </>

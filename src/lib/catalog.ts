@@ -3,7 +3,8 @@ import type { Prisma } from "@prisma/client";
 import { cacheLife, cacheTag } from "next/cache";
 import { db } from "./db";
 
-export const PAGE_SIZE = 12;
+// 2, 4 ve 5 sütunlu ızgaralarda son satır yarım kalmasın diye 20.
+export const PAGE_SIZE = 20;
 
 export const productCardInclude = {
   category: { include: { parent: true } },
@@ -63,6 +64,14 @@ export async function getCategoryBySlug(slug: string) {
     where: { slug },
     include: { parent: true, children: { orderBy: { sortOrder: "asc" } } },
   });
+}
+
+export async function countCategoryProducts(categoryIds: string[]) {
+  "use cache";
+  cacheLife("minutes");
+  cacheTag(CATALOG_TAG);
+
+  return db.product.count({ where: { isActive: true, categoryId: { in: categoryIds } } });
 }
 
 export async function getAllCategorySlugs() {

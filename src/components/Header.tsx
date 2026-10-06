@@ -2,11 +2,13 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { Clock, MapPin, Phone, Search, ShoppingCart, User } from "lucide-react";
 import CartBadge from "./CartBadge";
+import CategoryArt from "./CategoryArt";
 import Logo from "./Logo";
 import MobileMenu from "./MobileMenu";
 import ThemeToggle from "./ThemeToggle";
 import { site } from "@/lib/site";
 import { getNavCategories } from "@/lib/catalog";
+import { categoryIcons, categoryPatterns, fallbackCategoryIcon, fallbackCategoryPattern } from "@/lib/category-icons";
 
 function SearchForm({ className = "" }: { className?: string }) {
   return (
@@ -104,29 +106,51 @@ export default async function Header() {
         aria-label="Kategoriler"
         className="sticky top-20 z-30 hidden border-y border-neutral-200 bg-raised shadow-sm md:block dark:shadow-[0_6px_16px_rgb(0_0_0/0.7)]"
       >
-          <ul className="container-page flex flex-wrap gap-1">
-            {categories.map((category) => (
+        <ul className="container-page flex flex-wrap gap-1">
+          {categories.map((category, index) => {
+            const Icon = categoryIcons[category.slug] ?? fallbackCategoryIcon;
+            const pattern = categoryPatterns[category.slug] ?? fallbackCategoryPattern;
+            // Sağdaki kategorilerde açılır kutu ekrandan taşmasın diye sağa hizalanır.
+            const alignRight = index >= categories.length - 2;
+            return (
               <li key={category.id} className="group relative">
                 <Link
                   href={`/kategori/${category.slug}`}
-                  className="block border-b-[3px] border-transparent px-3 py-3 text-sm font-bold group-hover:border-brand-500 lg:px-4"
+                  className="flex items-center gap-2 px-3 py-3 text-sm font-bold lg:px-4"
                 >
-                  {category.name}
+                  <Icon size={16} aria-hidden className="shrink-0" />
+                  <span className="marker-hover">{category.name}</span>
                 </Link>
                 {category.children.length > 0 && (
-                  <ul className="invisible absolute left-0 top-full z-50 min-w-56 rounded-b-lg border border-t-0 border-neutral-200 bg-raised py-2 opacity-0 shadow-lg transition-opacity group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100">
-                    {category.children.map((child) => (
-                      <li key={child.id}>
-                        <Link href={`/kategori/${child.slug}`} className="block px-4 py-2 text-sm font-medium hover:bg-brand-50">
-                          {child.name}
+                  <div
+                    className={`invisible absolute top-full z-50 flex w-80 overflow-hidden rounded-b-xl border border-t-0 border-neutral-200 bg-raised opacity-0 shadow-lg transition-opacity group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100 ${
+                      alignRight ? "right-0" : "left-0"
+                    }`}
+                  >
+                    <ul className="flex-1 py-2">
+                      <li>
+                        <Link href={`/kategori/${category.slug}`} className="block px-4 py-2 text-sm font-extrabold hover:bg-brand-50">
+                          Tüm {category.name}
                         </Link>
                       </li>
-                    ))}
-                  </ul>
+                      {category.children.map((child) => (
+                        <li key={child.id}>
+                          <Link href={`/kategori/${child.slug}`} className="block px-4 py-2 text-sm font-medium hover:bg-brand-50">
+                            {child.name}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                    {/* Kategorinin dokusu ve çizimi */}
+                    <div className={`theme-fixed ${pattern} grid w-28 shrink-0 place-items-end bg-brand-500`}>
+                      <CategoryArt rootSlug={category.slug} className="-mb-1 -mr-2 w-28" />
+                    </div>
+                  </div>
                 )}
               </li>
-            ))}
-          </ul>
+            );
+          })}
+        </ul>
       </nav>
     </>
   );

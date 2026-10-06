@@ -1,14 +1,16 @@
+import { gridClasses } from "./ProductGrid";
+
 // Veri akarken gösterilen yer tutucular. Gerçek düzenle aynı ölçülerde tutulur ki içerik gelince sayfa zıplamasın.
 
 function Bar({ className = "" }: { className?: string }) {
   return <div className={`animate-pulse rounded-md bg-neutral-200 ${className}`} />;
 }
 
-export function ProductGridSkeleton({ count = 8 }: { count?: number }) {
+export function ProductGridSkeleton({ count = 10, dense = false }: { count?: number; dense?: boolean }) {
   return (
-    <div className="grid grid-cols-2 gap-2.5 sm:gap-3 md:grid-cols-3 md:gap-4 lg:grid-cols-4" aria-hidden>
+    <div className={dense ? gridClasses.dense : gridClasses.default} aria-hidden>
       {Array.from({ length: count }, (_, i) => (
-        <div key={i} className="rounded-xl border border-neutral-200 p-2 sm:p-3">
+        <div key={i} className="rounded-xl border border-neutral-200 bg-raised p-2 sm:p-3">
           <Bar className="aspect-square w-full rounded-lg" />
           <Bar className="mt-3 h-3 w-1/3" />
           <Bar className="mt-2 h-4 w-4/5" />
@@ -20,22 +22,28 @@ export function ProductGridSkeleton({ count = 8 }: { count?: number }) {
   );
 }
 
+// Sıralama çubuğu + ürün ızgarası. Kategori sayfasında başlık şeridinin altında gösterilir.
+export function ProductListSkeleton() {
+  return (
+    <div role="status" aria-label="Ürünler yükleniyor">
+      <div className="mb-4 flex gap-2">
+        <Bar className="h-8 w-16 sm:mr-auto" />
+        {Array.from({ length: 3 }, (_, i) => (
+          <Bar key={i} className="h-8 w-24 rounded-full" />
+        ))}
+      </div>
+      <ProductGridSkeleton dense />
+    </div>
+  );
+}
+
+// Arama sayfası: başlık da veriyle birlikte geldiği için o da yer tutucu.
 export function ListingSkeleton() {
   return (
-    <div className="container-page py-6" role="status" aria-label="Ürünler yükleniyor">
+    <div className="container-page py-6">
       <Bar className="mb-5 h-3 w-40" />
-      <div className="grid gap-5 lg:grid-cols-[14rem_1fr] lg:gap-8">
-        <div className="flex gap-2 lg:flex-col">
-          {Array.from({ length: 4 }, (_, i) => (
-            <Bar key={i} className="h-9 w-24 lg:w-full" />
-          ))}
-        </div>
-        <div className="min-w-0">
-          <Bar className="h-8 w-48" />
-          <Bar className="mb-5 mt-2 h-4 w-64 max-w-full" />
-          <ProductGridSkeleton />
-        </div>
-      </div>
+      <Bar className="mb-5 h-8 w-64 max-w-full" />
+      <ProductListSkeleton />
     </div>
   );
 }

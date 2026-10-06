@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ChevronDown, Menu, Phone, X } from "lucide-react";
+import { categoryIcons, fallbackCategoryIcon } from "@/lib/category-icons";
 import { site } from "@/lib/site";
 
 interface MenuCategory {
@@ -10,6 +11,15 @@ interface MenuCategory {
   slug: string;
   name: string;
   children: { id: string; slug: string; name: string }[];
+}
+
+function CategoryIcon({ slug }: { slug: string }) {
+  const Icon = categoryIcons[slug] ?? fallbackCategoryIcon;
+  return (
+    <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-brand-500">
+      <Icon size={16} aria-hidden />
+    </span>
+  );
 }
 
 export default function MobileMenu({ categories }: { categories: MenuCategory[] }) {
@@ -61,7 +71,10 @@ export default function MobileMenu({ categories }: { categories: MenuCategory[] 
                   <li key={category.id}>
                     <details className="group">
                       <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3.5 text-[15px] font-bold [&::-webkit-details-marker]:hidden">
-                        {category.name}
+                        <span className="flex items-center gap-3">
+                          <CategoryIcon slug={category.slug} />
+                          {category.name}
+                        </span>
                         <ChevronDown size={18} className="text-neutral-400 transition-transform group-open:rotate-180" />
                       </summary>
                       <ul className="bg-surface pb-2">

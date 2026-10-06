@@ -52,11 +52,14 @@
 */
 :root {
   color-scheme: only light;
+  /* Kâğıt dokularının çizgi rengi; zemine göre değişir. */
+  --pattern-color: rgb(17 17 17 / 0.13);
 }
 
 .dark {
   color-scheme: dark;
 
+  --pattern-color: rgb(255 255 255 / 0.07);
   --color-surface: #0e0e0e;
   --color-raised: #212121;
   --color-fg: #f2f2f2;
@@ -81,6 +84,7 @@
   aynı kaldığı için içlerindeki değişkenler açık tema değerlerine geri alınır.
 */
 .theme-fixed {
+  --pattern-color: rgb(17 17 17 / 0.13);
   --color-surface: #ffffff;
   --color-raised: #ffffff;
   --color-fg: #111111;
@@ -174,10 +178,67 @@
     --color-marker: rgb(255 255 255 / 0.6);
   }
 
-  /* Noktalı defter kâğıdı dokusu. */
-  .paper-dots {
-    background-image: radial-gradient(rgb(17 17 17 / 0.13) 1px, transparent 1.3px);
+  /* Kâğıt dokuları. Yalnızca CSS degrade; görsel dosyası yok. Renk --pattern-color'dan gelir. */
+
+  /* Noktalı defter */
+  .pattern-dots {
+    background-image: radial-gradient(var(--pattern-color) 1px, transparent 1.3px);
     background-size: 18px 18px;
+  }
+
+  /* Kareli matematik defteri */
+  .pattern-grid {
+    background-image:
+      linear-gradient(var(--pattern-color) 1px, transparent 1px),
+      linear-gradient(90deg, var(--pattern-color) 1px, transparent 1px);
+    background-size: 22px 22px;
+  }
+
+  /* Çizgili defter */
+  .pattern-lines {
+    background-image: linear-gradient(transparent 25px, var(--pattern-color) 25px);
+    background-size: 100% 26px;
+  }
+
+  /* Çapraz kurdele şeritleri */
+  .pattern-ribbon {
+    background-image: repeating-linear-gradient(
+      45deg,
+      var(--pattern-color) 0 6px,
+      transparent 6px 30px
+    );
+  }
+
+  /* Boya lekeleri: 260x180'lik karo içinde beş leke, tekrar eder. */
+  .pattern-blobs {
+    background-image:
+      radial-gradient(circle 26px at 40px 46px, var(--pattern-color) 98%, transparent),
+      radial-gradient(circle 14px at 104px 138px, var(--pattern-color) 98%, transparent),
+      radial-gradient(circle 10px at 142px 34px, var(--pattern-color) 98%, transparent),
+      radial-gradient(circle 32px at 206px 118px, var(--pattern-color) 98%, transparent),
+      radial-gradient(circle 8px at 232px 28px, var(--pattern-color) 98%, transparent);
+    background-size: 260px 180px;
+  }
+  /* İnce ızgara */
+  .pattern-fine-grid {
+    background-image:
+      linear-gradient(var(--pattern-color) 1px, transparent 1px),
+      linear-gradient(90deg, var(--pattern-color) 1px, transparent 1px);
+    background-size: 11px 11px;
+  }
+
+  /* Üst menüde kategori adının altından geçen fosforlu kalem: üzerine gelince soldan sağa çizilir. */
+  .marker-hover {
+    background-image: linear-gradient(transparent 58%, var(--color-marker) 58%, var(--color-marker) 94%, transparent 94%);
+    background-repeat: no-repeat;
+    background-size: 0% 100%;
+    transition: background-size 0.25s ease-out;
+  }
+
+  .group:hover .marker-hover,
+  .group:focus-within .marker-hover,
+  .marker-hover[aria-current="page"] {
+    background-size: 100% 100%;
   }
 
   /* Cetvel: 8px'te bir kısa, 40px'te bir uzun çentik. */

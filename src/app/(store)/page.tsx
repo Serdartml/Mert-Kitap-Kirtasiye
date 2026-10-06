@@ -45,7 +45,7 @@ export default async function HomePage() {
     <>
       {/* Vitrin */}
       <section className="container-page mt-4 grid gap-3 md:mt-5 md:gap-4 lg:grid-cols-3">
-        <div className="theme-fixed paper-dots relative overflow-hidden rounded-2xl bg-brand-500 p-5 sm:p-7 md:p-12 lg:col-span-2">
+        <div className="theme-fixed pattern-dots relative overflow-hidden rounded-2xl bg-brand-500 p-5 sm:p-7 md:p-12 lg:col-span-2">
           {/* Etiket hafif eğik: yapıştırılmış bir bant gibi. */}
           <p className="inline-block -rotate-2 rounded-sm bg-ink px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-brand-500 shadow-md sm:text-xs">
             Okula Dönüş Fırsatları
@@ -165,7 +165,7 @@ export default async function HomePage() {
 
       {/* Mağaza */}
       <section className="container-page mt-8 md:mt-12">
-        <div className="theme-fixed paper-dots flex flex-col gap-5 rounded-2xl bg-brand-500 p-5 sm:p-7 md:flex-row md:items-center md:justify-between md:p-10">
+        <div className="theme-fixed pattern-dots flex flex-col gap-5 rounded-2xl bg-brand-500 p-5 sm:p-7 md:flex-row md:items-center md:justify-between md:p-10">
           <div className="min-w-0">
             <h2 className="text-xl font-extrabold sm:text-2xl md:text-3xl">Mağazamıza bekleriz</h2>
             <p className="mt-2 flex items-start gap-2 text-sm font-medium sm:text-base">
