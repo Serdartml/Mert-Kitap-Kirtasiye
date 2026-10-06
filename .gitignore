@@ -15,3 +15,6 @@ next-env.d.ts
 # yerel geliştirme veritabanı
 prisma/*.db
 prisma/*.db-journal
+
+# logonun kaynak taraması; depoya girmez
+/logo.pdf

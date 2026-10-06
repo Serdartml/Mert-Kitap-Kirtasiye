@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ExternalLink, LogOut } from "lucide-react";
 import { adminLogout } from "@/actions/auth";
 import AdminNav from "@/components/admin/AdminNav";
+import { LogoMark } from "@/components/Logo";
 import ThemeToggle from "@/components/ThemeToggle";
 import { requireAdmin } from "@/lib/auth";
 import { site } from "@/lib/site";
@@ -31,9 +32,12 @@ async function PanelShell({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen bg-neutral-50 md:grid md:grid-cols-[15rem_1fr]">
       <aside className="theme-fixed flex flex-col gap-4 bg-ink p-4 text-white md:sticky md:top-0 md:h-screen md:gap-6">
         <div className="flex items-center justify-between gap-3">
-          <Link href="/yonetim" className="leading-tight">
-            <span className="block text-lg font-extrabold">MERT</span>
-            <span className="block text-[10px] font-bold tracking-[0.18em] text-brand-500">YÖNETİM PANELİ</span>
+          <Link href="/yonetim" className="flex items-center gap-3 leading-tight">
+            <LogoMark className="h-9" />
+            <span>
+              <span className="block text-lg font-extrabold">MERT</span>
+              <span className="block text-[10px] font-bold tracking-[0.18em] text-brand-500">YÖNETİM PANELİ</span>
+            </span>
           </Link>
           <span className="md:hidden">
             <ThemeToggle variant="onDark" />

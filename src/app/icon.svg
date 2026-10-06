@@ -1,4 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="12" fill="#ffc800"/>
-  <path d="M14 46V18h8l10 15 10-15h8v28h-8V31l-10 14-10-14v15z" fill="#111111"/>
+  <!-- Sekme ikonu: logodaki kitap yığını, siyah zemin üstünde. Logo.tsx ile aynı çizim, küçültülmüş. -->
+  <rect width="64" height="64" rx="12" fill="#111111"/>
+  <g transform="translate(9 9.5) scale(0.172)" fill="none" stroke-width="20">
+    <path d="M205 16H33a15 15 0 0 0-15 15v20a15 15 0 0 0 15 15h172" stroke="#6bb5e6"/>
+    <path d="M8 98h201a15 15 0 0 1 15 15v20a15 15 0 0 1-15 15H8" stroke="#e8478f"/>
+    <path d="M262 180H33a15 15 0 0 0-15 15v20a15 15 0 0 0 15 15h229" stroke="#e9e61c"/>
+  </g>
 </svg>

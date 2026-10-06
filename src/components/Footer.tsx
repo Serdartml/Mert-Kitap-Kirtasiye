@@ -19,7 +19,7 @@ export default async function Footer() {
       <div aria-hidden className="ruler h-4 bg-brand-500" />
       <div className="container-page grid gap-10 py-12 sm:grid-cols-2 lg:grid-cols-4">
         <div className="space-y-4">
-          <Logo onDark />
+          <Logo className="h-10" />
           <p className="text-sm leading-relaxed">{site.about.footer}</p>
           <p className="flex items-center gap-2 text-sm font-bold text-brand-500">
             <ShieldCheck size={18} /> Orijinal Ürün Garantisi
