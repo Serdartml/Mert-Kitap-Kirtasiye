@@ -1,5 +1,7 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import { ListingSkeleton } from "@/components/Skeletons";
 import { Pagination, SortBar } from "@/components/ListingControls";
 import ProductGrid from "@/components/ProductGrid";
 import { listProducts, parsePage, parseSort } from "@/lib/catalog";
@@ -13,7 +15,15 @@ interface PageProps {
   searchParams: Promise<{ q?: string; sirala?: string; sayfa?: string; stok?: string }>;
 }
 
-export default async function SearchPage({ searchParams }: PageProps) {
+export default function SearchPage(props: PageProps) {
+  return (
+    <Suspense fallback={<ListingSkeleton />}>
+      <SearchContent {...props} />
+    </Suspense>
+  );
+}
+
+async function SearchContent({ searchParams }: PageProps) {
   const params = await searchParams;
   const query = (params.q ?? "").trim().slice(0, 100);
 

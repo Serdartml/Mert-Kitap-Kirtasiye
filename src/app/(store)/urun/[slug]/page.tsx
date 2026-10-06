@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { MapPin, Phone } from "lucide-react";
@@ -5,7 +6,8 @@ import AddToCartButton from "@/components/AddToCartButton";
 import Breadcrumbs, { type Crumb } from "@/components/Breadcrumbs";
 import ProductGrid from "@/components/ProductGrid";
 import ProductVisual from "@/components/ProductVisual";
-import { getProductBySlug, getRelatedProducts } from "@/lib/catalog";
+import { ProductDetailSkeleton } from "@/components/Skeletons";
+import { getPrerenderProductSlugs, getProductBySlug, getRelatedProducts } from "@/lib/catalog";
 import { discountPercent, formatPrice } from "@/lib/format";
 import { site } from "@/lib/site";
 
@@ -24,8 +26,27 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
+// Öne çıkan ürünler build sırasında üretilir; diğerleri ilk ziyarette üretilip önbelleğe alınır.
+export async function generateStaticParams() {
+  return (await getPrerenderProductSlugs()).map((slug) => ({ slug }));
+}
+
+// Varlık kontrolü <Suspense>'ten önce yapılır: akış başladıktan sonra durum kodu değiştirilemez,
+// olmayan ürün gerçek bir 404 dönsün diye notFound() burada çağrılır.
 export default async function ProductPage({ params }: PageProps) {
   const { slug } = await params;
+  const product = await getProductBySlug(slug);
+  if (!product || !product.isActive) notFound();
+
+  return (
+    <Suspense fallback={<ProductDetailSkeleton />}>
+      <ProductContent slug={slug} />
+    </Suspense>
+  );
+}
+
+async function ProductContent({ slug }: { slug: string }) {
+  // Önbellekten gelir; yukarıdaki kontrolle aynı kayıt.
   const product = await getProductBySlug(slug);
   if (!product || !product.isActive) notFound();
 

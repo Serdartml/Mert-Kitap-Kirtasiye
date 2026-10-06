@@ -1,5 +1,7 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { PanelSkeleton } from "@/components/Skeletons";
 import { Minus, Plus, ShoppingCart, Trash2 } from "lucide-react";
 import { removeCartItem, setCartItemQuantity } from "@/actions/cart";
 import ProductVisual from "@/components/ProductVisual";
@@ -11,7 +13,16 @@ export const metadata: Metadata = {
   robots: { index: false },
 };
 
-export default async function CartPage() {
+export default function CartPage() {
+  return (
+    <Suspense fallback={<PanelSkeleton />}>
+      <CartContent />
+    </Suspense>
+  );
+}
+
+// Sepet çerezden okunur ve hiç önbelleğe alınmaz.
+async function CartContent() {
   const cart = await getCart();
   const { subtotalKurus, count } = cartTotals(cart);
 

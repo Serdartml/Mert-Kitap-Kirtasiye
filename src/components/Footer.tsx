@@ -1,3 +1,4 @@
+import { cacheLife } from "next/cache";
 import Link from "next/link";
 import { Clock, Mail, MapPin, Phone, ShieldCheck } from "lucide-react";
 import Logo from "./Logo";
@@ -5,6 +6,10 @@ import { infoPages, site } from "@/lib/site";
 import { getNavCategories } from "@/lib/catalog";
 
 export default async function Footer() {
+  // Yıl için tarih okunduğundan bileşen önbelleğe alınır; günde bir yenilenir.
+  "use cache";
+  cacheLife("days");
+
   const categories = await getNavCategories();
   const year = new Date().getFullYear();
 

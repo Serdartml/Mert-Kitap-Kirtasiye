@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Phone } from "lucide-react";
@@ -12,10 +13,21 @@ export const metadata: Metadata = {
 
 // Ödeme sağlayıcısı (iyzico / PayTR) bağlanana kadar yer tutucu.
 // Akış: adres formu -> Order(PENDING) oluştur -> sağlayıcıya yönlendir -> callback'te PAID yap, stoğu düş, sepeti boşalt.
-export default async function CheckoutPage() {
-  const cart = await getCart();
-  const { subtotalKurus, count } = cartTotals(cart);
+async function CartSummary() {
+  const { subtotalKurus, count } = cartTotals(await getCart());
+  if (count < 1) return null;
 
+  return (
+    <p className="mt-6 flex justify-between rounded-xl border border-neutral-200 p-5 text-sm">
+      <span>
+        Sepetinizde <strong>{count}</strong> ürün var
+      </span>
+      <strong>{formatPrice(subtotalKurus)}</strong>
+    </p>
+  );
+}
+
+export default function CheckoutPage() {
   return (
     <div className="container-page max-w-2xl py-12">
       <h1 className="text-2xl font-extrabold md:text-3xl">Ödeme</h1>
@@ -34,14 +46,9 @@ export default async function CheckoutPage() {
         </div>
       </div>
 
-      {count > 0 && (
-        <p className="mt-6 flex justify-between rounded-xl border border-neutral-200 p-5 text-sm">
-          <span>
-            Sepetinizde <strong>{count}</strong> ürün var
-          </span>
-          <strong>{formatPrice(subtotalKurus)}</strong>
-        </p>
-      )}
+      <Suspense fallback={null}>
+        <CartSummary />
+      </Suspense>
 
       <Link href="/sepet" className="mt-6 inline-block text-sm font-bold hover:underline">
         ← Sepete dön

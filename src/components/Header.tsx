@@ -1,10 +1,11 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { Clock, MapPin, Phone, Search, ShoppingCart, User } from "lucide-react";
+import CartBadge from "./CartBadge";
 import Logo from "./Logo";
 import MobileMenu from "./MobileMenu";
 import { site } from "@/lib/site";
 import { getNavCategories } from "@/lib/catalog";
-import { getCartCount } from "@/lib/cart";
 
 function SearchForm({ className = "" }: { className?: string }) {
   return (
@@ -30,7 +31,7 @@ function SearchForm({ className = "" }: { className?: string }) {
 }
 
 export default async function Header() {
-  const [categories, cartCount] = await Promise.all([getNavCategories(), getCartCount()]);
+  const categories = await getNavCategories();
 
   return (
     <>
@@ -68,18 +69,15 @@ export default async function Header() {
             </Link>
             <Link
               href="/sepet"
-              aria-label={cartCount > 0 ? `Sepetim, ${cartCount} ürün` : "Sepetim"}
               className="flex items-center gap-2 rounded-lg p-2.5 text-sm font-bold hover:bg-neutral-100 md:px-3 md:py-2"
             >
               <span className="relative">
-                <ShoppingCart size={22} />
-                {cartCount > 0 && (
-                  <span className="absolute -right-2.5 -top-2.5 grid min-w-5 place-items-center rounded-full bg-brand-500 px-1 text-[11px] font-extrabold leading-5 text-ink">
-                    {cartCount}
-                  </span>
-                )}
+                <ShoppingCart size={22} aria-hidden />
+                <Suspense fallback={null}>
+                  <CartBadge />
+                </Suspense>
               </span>
-              <span className="hidden lg:inline">Sepetim</span>
+              <span className="sr-only lg:not-sr-only">Sepetim</span>
             </Link>
           </div>
         </div>

@@ -1,10 +1,12 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import Breadcrumbs, { type Crumb } from "@/components/Breadcrumbs";
 import { Pagination, SortBar } from "@/components/ListingControls";
 import ProductGrid from "@/components/ProductGrid";
-import { getCategoryBySlug, listProducts, parsePage, parseSort } from "@/lib/catalog";
+import { ListingSkeleton } from "@/components/Skeletons";
+import { getAllCategorySlugs, getCategoryBySlug, listProducts, parsePage, parseSort } from "@/lib/catalog";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -22,9 +24,27 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
+// Bütün kategori sayfaları build sırasında üretilir.
+export async function generateStaticParams() {
+  return (await getAllCategorySlugs()).map((slug) => ({ slug }));
+}
+
+// Varlık kontrolü <Suspense>'ten önce yapılır: akış başladıktan sonra durum kodu değiştirilemez,
+// olmayan kategori gerçek bir 404 dönsün diye notFound() burada çağrılır.
+// searchParams (sıralama, sayfa) istek anında bilindiği için liste <Suspense> içinde akar.
 export default async function CategoryPage({ params, searchParams }: PageProps) {
-  const [{ slug }, query] = await Promise.all([params, searchParams]);
-  const category = await getCategoryBySlug(slug);
+  const { slug } = await params;
+  if (!(await getCategoryBySlug(slug))) notFound();
+
+  return (
+    <Suspense fallback={<ListingSkeleton />}>
+      <CategoryContent slug={slug} searchParams={searchParams} />
+    </Suspense>
+  );
+}
+
+async function CategoryContent({ slug, searchParams }: { slug: string; searchParams: PageProps["searchParams"] }) {
+  const [category, query] = await Promise.all([getCategoryBySlug(slug), searchParams]);
   if (!category) notFound();
 
   const state = {
