@@ -99,6 +99,8 @@ model Product {
   id          String  @id @default(cuid())
   slug        String  @unique
   sku         String  @unique
+  // Stok programından içe aktarmada ve görsel eşleştirmede anahtar olarak kullanılır.
+  barcode     String? @unique
   name        String
   description String?
   // Fiyatlar kuruş cinsinden tam sayı tutulur (KDV dahil).

@@ -1,14 +1,9 @@
 import Link from "next/link";
-import { ArrowRight, Award, BookOpen, Gift, MapPin, PenLine, Phone, ShieldCheck, Store, type LucideIcon } from "lucide-react";
+import { ArrowRight, Award, BookOpen, GraduationCap, MapPin, PenLine, Phone, ShieldCheck, Store } from "lucide-react";
 import ProductGrid from "@/components/ProductGrid";
 import { getDiscountedProducts, getFeaturedProducts, getNavCategories, getNewestProducts, type ProductCardData } from "@/lib/catalog";
+import { categoryIcons, fallbackCategoryIcon } from "@/lib/category-icons";
 import { site } from "@/lib/site";
-
-const categoryIcons: Record<string, LucideIcon> = {
-  kirtasiye: PenLine,
-  kitap: BookOpen,
-  hediyelik: Gift,
-};
 
 const trustItems = [
   { icon: Award, title: "20 yıllık tecrübe", text: "Eğitimde yol arkadaşınız" },
@@ -69,21 +64,21 @@ export default async function HomePage() {
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
-          <Link href="/kategori/kitap" className="group flex flex-col justify-between rounded-2xl bg-ink p-7 text-white">
-            <BookOpen className="text-brand-500" size={32} />
+          <Link href="/kategori/hazirlik-kitaplari" className="group flex flex-col justify-between rounded-2xl bg-ink p-7 text-white">
+            <GraduationCap className="text-brand-500" size={32} />
             <div className="mt-6">
-              <h2 className="text-2xl font-extrabold">Kitap Koleksiyonu</h2>
-              <p className="mt-1 text-sm text-neutral-300">En güncel eserler ve akademik kaynaklar</p>
+              <h2 className="text-2xl font-extrabold">Hazırlık Kitapları</h2>
+              <p className="mt-1 text-sm text-neutral-300">Sınavlara hazırlık ve okula yardımcı kaynaklar</p>
               <span className="mt-3 inline-flex items-center gap-1 text-sm font-bold text-brand-500">
                 Keşfet <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
               </span>
             </div>
           </Link>
-          <Link href="/kategori/hediyelik" className="group flex flex-col justify-between rounded-2xl border-2 border-ink bg-white p-7">
-            <Gift size={32} />
+          <Link href="/kategori/kultur-kitaplari" className="group flex flex-col justify-between rounded-2xl border-2 border-ink bg-white p-7">
+            <BookOpen size={32} />
             <div className="mt-6">
-              <h2 className="text-2xl font-extrabold">Hediyelik & Hobi</h2>
-              <p className="mt-1 text-sm text-neutral-600">Sevdiklerinize özel seçkin hediye alternatifleri</p>
+              <h2 className="text-2xl font-extrabold">Kültür Kitapları</h2>
+              <p className="mt-1 text-sm text-neutral-600">Roman, klasikler, çocuk kitapları ve daha fazlası</p>
               <span className="mt-3 inline-flex items-center gap-1 text-sm font-bold">
                 Keşfet <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
               </span>
@@ -112,9 +107,9 @@ export default async function HomePage() {
       {/* Kategoriler */}
       <section className="container-page mt-12">
         <h2 className="mb-5 border-l-4 border-brand-500 pl-3 text-xl font-extrabold md:text-2xl">Kategoriler</h2>
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {categories.map((category) => {
-            const Icon = categoryIcons[category.slug] ?? PenLine;
+            const Icon = categoryIcons[category.slug] ?? fallbackCategoryIcon;
             return (
               <div key={category.id} className="rounded-2xl border border-neutral-200 p-6">
                 <Link href={`/kategori/${category.slug}`} className="flex items-center gap-3">

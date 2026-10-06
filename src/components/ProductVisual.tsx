@@ -1,11 +1,5 @@
 import Image from "next/image";
-import { BookOpen, Gift, PenLine, type LucideIcon } from "lucide-react";
-
-const rootIcons: Record<string, LucideIcon> = {
-  kirtasiye: PenLine,
-  kitap: BookOpen,
-  hediyelik: Gift,
-};
+import { categoryIcons, fallbackCategoryIcon } from "@/lib/category-icons";
 
 interface ProductVisualProps {
   name: string;
@@ -17,7 +11,7 @@ interface ProductVisualProps {
 
 // Ürün görseli varsa onu, yoksa kategoriye göre bir yer tutucu gösterir.
 export default function ProductVisual({ name, rootCategorySlug, image, sizes = "(min-width: 1024px) 25vw, 50vw", priority }: ProductVisualProps) {
-  const Icon = rootIcons[rootCategorySlug] ?? PenLine;
+  const Icon = categoryIcons[rootCategorySlug] ?? fallbackCategoryIcon;
 
   return (
     <div className="relative aspect-square overflow-hidden rounded-lg bg-neutral-100">
