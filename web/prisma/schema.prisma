@@ -1,0 +1,259 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Yerelde SQLite; canlıya çıkarken provider "postgresql" yapılır (bkz. README).
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  CUSTOMER
+  ADMIN
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  PREPARING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+// ---------- Üyelik (arayüzü henüz yok, şema hazır) ----------
+
+model User {
+  id              String    @id @default(cuid())
+  email           String    @unique
+  passwordHash    String?
+  name            String?
+  phone           String?
+  role            Role      @default(CUSTOMER)
+  emailVerifiedAt DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  sessions  Session[]
+  addresses Address[]
+  cart      Cart?
+  orders    Order[]
+  favorites Favorite[]
+  reviews   Review[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Address {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title      String
+  fullName   String
+  phone      String
+  city       String
+  district   String
+  line       String
+  postalCode String?
+  isDefault  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+}
+
+// ---------- Katalog ----------
+
+model Category {
+  id          String     @id @default(cuid())
+  slug        String     @unique
+  name        String
+  description String?
+  sortOrder   Int        @default(0)
+  parentId    String?
+  parent      Category?  @relation("CategoryTree", fields: [parentId], references: [id])
+  children    Category[] @relation("CategoryTree")
+  products    Product[]
+
+  @@index([parentId])
+}
+
+model Brand {
+  id       String    @id @default(cuid())
+  slug     String    @unique
+  name     String
+  products Product[]
+}
+
+model Product {
+  id          String  @id @default(cuid())
+  slug        String  @unique
+  sku         String  @unique
+  name        String
+  description String?
+  // Fiyatlar kuruş cinsinden tam sayı tutulur (KDV dahil).
+  priceKurus     Int
+  compareAtKurus Int?
+  stock          Int     @default(0)
+  isActive       Boolean @default(true)
+  isFeatured     Boolean @default(false)
+
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id])
+  brandId    String?
+  brand      Brand?   @relation(fields: [brandId], references: [id])
+
+  images     ProductImage[]
+  attributes ProductAttribute[]
+  cartItems  CartItem[]
+  orderItems OrderItem[]
+  favorites  Favorite[]
+  reviews    Review[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([categoryId])
+  @@index([brandId])
+  @@index([isActive, isFeatured])
+}
+
+model ProductImage {
+  id        String  @id @default(cuid())
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  url       String
+  alt       String?
+  sortOrder Int     @default(0)
+
+  @@index([productId])
+}
+
+model ProductAttribute {
+  id        String  @id @default(cuid())
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  name      String
+  value     String
+  sortOrder Int     @default(0)
+
+  @@index([productId])
+}
+
+// ---------- Sepet ----------
+
+// Misafir sepeti çerezdeki id ile bulunur; giriş yapıldığında userId bağlanır.
+model Cart {
+  id        String     @id @default(cuid())
+  userId    String?    @unique
+  user      User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     CartItem[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model CartItem {
+  id        String   @id @default(cuid())
+  cartId    String
+  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  quantity  Int
+  createdAt DateTime @default(now())
+
+  @@unique([cartId, productId])
+}
+
+// ---------- Sipariş (ödeme entegrasyonu gelince kullanılacak) ----------
+
+model Order {
+  id      String      @id @default(cuid())
+  orderNo String      @unique
+  userId  String?
+  user    User?       @relation(fields: [userId], references: [id])
+  status  OrderStatus @default(PENDING)
+
+  email    String
+  fullName String
+  phone    String
+
+  // Adres, sipariş anındaki haliyle kopyalanır.
+  shipCity       String
+  shipDistrict   String
+  shipLine       String
+  shipPostalCode String?
+
+  subtotalKurus Int
+  shippingKurus Int @default(0)
+  totalKurus    Int
+
+  paymentProvider String?
+  paymentRef      String?
+  note            String?
+
+  items     OrderItem[]
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  @@index([userId])
+  @@index([status])
+}
+
+model OrderItem {
+  id        String   @id @default(cuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String?
+  product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  // Ürün sonradan değişse de sipariş kaydı bozulmasın diye kopya alanlar.
+  name           String
+  sku            String
+  unitPriceKurus Int
+  quantity       Int
+
+  @@index([orderId])
+}
+
+// ---------- Etkileşim ----------
+
+model Favorite {
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([userId, productId])
+}
+
+model Review {
+  id         String   @id @default(cuid())
+  productId  String
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rating     Int
+  comment    String?
+  isApproved Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  @@unique([productId, userId])
+}
+
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  message   String
+  createdAt DateTime @default(now())
+}

@@ -1,0 +1,67 @@
+@import "tailwindcss";
+
+/* Marka paleti: sarı, siyah, beyaz. Sarı zemin olarak kullanılır; beyaz üstünde yazı rengi olarak değil. */
+@theme {
+  --color-brand-50: #fffbe6;
+  --color-brand-100: #fff3b8;
+  --color-brand-200: #ffe880;
+  --color-brand-300: #ffdd4d;
+  --color-brand-400: #ffd426;
+  --color-brand-500: #ffc800;
+  --color-brand-600: #e6b400;
+  --color-brand-700: #a68200;
+
+  --color-ink: #111111;
+  --color-ink-soft: #262626;
+
+  --font-sans: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+}
+
+@utility container-page {
+  margin-inline: auto;
+  width: 100%;
+  max-width: 80rem;
+  padding-inline: 1rem;
+
+  @media (width >= 40rem) {
+    padding-inline: 1.5rem;
+  }
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background: #ffffff;
+    color: var(--color-ink);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-ink);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-5 py-3 text-sm font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .btn-primary {
+    @apply bg-brand-500 text-ink hover:bg-brand-400;
+  }
+
+  .btn-dark {
+    @apply bg-ink text-white hover:bg-ink-soft;
+  }
+
+  .btn-outline {
+    @apply border border-neutral-300 bg-white text-ink hover:border-ink;
+  }
+
+  .field {
+    @apply w-full rounded-lg border border-neutral-300 bg-white px-4 py-3 text-sm outline-none transition-colors placeholder:text-neutral-400 focus:border-ink;
+  }
+}
