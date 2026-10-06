@@ -30,6 +30,23 @@ verisi dakikada bir yenilenir. Sepet gibi çerez okuyan parçalar `<Suspense>` i
 - `npm run dev` her sayfayı istek anında derlediği için yavaştır. Gerçek hızı görmek için
   `npm run build` ardından `npm run start` kullanın.
 
+## Yönetim paneli
+
+Adres: `/yonetim` (giriş: `/yonetim/giris`). Ürün ekleme/düzenleme/silme, kategoriler ve iletişim
+mesajları buradan yönetilir. Yapılan değişiklik mağazaya hemen yansır.
+
+Yönetici hesabı oluşturmak veya parolasını değiştirmek için:
+
+```bash
+npm run admin:create -- ornek@eposta.com
+```
+
+Parola sorulur (en az 10 karakter). Hesaplar veritabanında durur; her ortam (yerel, canlı) için
+kendi veritabanında ayrıca oluşturulmalıdır.
+
+Yeni bir yönetim sayfası veya action yazarken ilk satırda `await requireAdmin()` çağırın; layout'taki
+kontrol tek başına yetmez.
+
 ## Yapı
 
 ```

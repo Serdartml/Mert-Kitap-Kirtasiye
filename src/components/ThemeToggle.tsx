@@ -8,7 +8,15 @@ import { COLOR_SCHEME_META_ID, DARK_SCHEME, LIGHT_SCHEME, THEME_STORAGE_KEY } fr
 // Eski sitedeki AnimatedThemeToggler ile aynı düğme ve aynı mekanik: yeni tema, düğmenin
 // merkezinden büyüyen bir daire olarak açılır (View Transition API). Tek fark, seçimin saklanması.
 // İkonlar React durumuyla değil CSS ile değişir; böylece sunucu çıktısıyla uyuşmazlık olmaz.
-export default function ThemeToggle({ duration = 500 }: { duration?: number }) {
+// "header": eski sitedeki görünüm (masaüstünde dolu kare, mobilde yalın ikon).
+// "onDark": siyah zemin üstünde (yönetim paneli kenar çubuğu) görünür kalan sürüm.
+const variants = {
+  header:
+    "rounded-lg p-1.5 text-fg md:rounded-xl md:bg-ink md:p-2 md:text-brand-500 dark:text-brand-500 md:dark:bg-brand-500 md:dark:text-ink",
+  onDark: "rounded-xl bg-white/10 p-2 text-brand-500 hover:bg-white/20",
+};
+
+export default function ThemeToggle({ duration = 500, variant = "header" }: { duration?: number; variant?: keyof typeof variants }) {
   const buttonRef = useRef<HTMLButtonElement>(null);
 
   const toggleTheme = useCallback(() => {
@@ -67,7 +75,7 @@ export default function ThemeToggle({ duration = 500 }: { duration?: number }) {
       type="button"
       ref={buttonRef}
       onClick={toggleTheme}
-      className="relative inline-flex size-10 shrink-0 touch-manipulation items-center justify-center rounded-lg p-1.5 text-fg transition-all active:scale-95 md:rounded-xl md:bg-ink md:p-2 md:text-brand-500 dark:text-brand-500 md:dark:bg-brand-500 md:dark:text-ink"
+      className={`relative inline-flex size-10 shrink-0 touch-manipulation items-center justify-center transition-all active:scale-95 ${variants[variant]}`}
     >
       <Sun className="hidden size-5 shrink-0 dark:block" />
       <Moon className="size-5 shrink-0 dark:hidden" />
