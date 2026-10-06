@@ -6,11 +6,14 @@ Next.js (App Router) + TypeScript + Tailwind CSS v4 + Prisma.
 
 ```bash
 npm install
-cp .env.example .env      # Windows: copy .env.example .env
-npm run db:push           # şemayı prisma/dev.db içine kurar
+cp .env.example .env      # Windows: copy .env.example .env; sonra Neon adreslerini yazın
+npm run db:deploy         # mevcut migration'ları veritabanına uygular
 npm run db:seed           # ÖRNEK kategori ve ürünleri yükler
 npm run dev               # http://localhost:3000
 ```
+
+Veritabanı PostgreSQL (Neon). Şemayı değiştirdikten sonra `npm run db:migrate -- --name aciklama`
+ile yeni migration oluşturun; `prisma/migrations/` klasörü git'e girer.
 
 Diğer komutlar: `npm run build`, `npm run lint`, `npm run typecheck`, `npm run db:studio`.
 
@@ -51,13 +54,3 @@ src/app/globals.css       renk paleti ve ortak sınıflar
 - **Ödeme ve sipariş:** `Order` / `OrderItem` tabloları hazır; ödeme entegrasyonu ve sipariş oluşturma yok.
 - **Yönetim paneli:** Yok. Ürünler şimdilik seed veya `npm run db:studio` ile girilir.
 - **Yasal metinler:** `/bilgi/*` sayfaları boş.
-
-## PostgreSQL'e geçiş
-
-Yerelde kurulum gerektirmesin diye SQLite kullanılıyor. Canlı ortam için:
-
-1. `prisma/schema.prisma` içinde `provider = "postgresql"` yapın.
-2. `DATABASE_URL` değerini PostgreSQL bağlantı adresiyle değiştirin.
-3. `npx prisma migrate dev --name init` ile ilk migration'ı oluşturun.
-4. `src/lib/catalog.ts` içindeki aramada `contains` filtrelerine `mode: "insensitive"` ekleyin
-   (SQLite'ta Türkçe karakterlerde büyük/küçük harf duyarsız arama çalışmaz).

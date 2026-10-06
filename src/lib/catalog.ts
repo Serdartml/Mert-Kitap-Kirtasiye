@@ -65,7 +65,14 @@ export async function listProducts({ categoryIds, query, inStockOnly, sort = "on
     ...(categoryIds ? { categoryId: { in: categoryIds } } : {}),
     ...(inStockOnly ? { stock: { gt: 0 } } : {}),
     ...(query
-      ? { OR: [{ name: { contains: query } }, { description: { contains: query } }, { sku: { contains: query } }] }
+      ? {
+          OR: [
+            { name: { contains: query, mode: "insensitive" } },
+            { description: { contains: query, mode: "insensitive" } },
+            { sku: { contains: query, mode: "insensitive" } },
+            { barcode: query },
+          ],
+        }
       : {}),
   };
 
