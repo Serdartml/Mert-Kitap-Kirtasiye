@@ -63,11 +63,11 @@ async function CartContent() {
                       </Link>
                       <p className="mt-1 text-xs text-neutral-500">Birim fiyat: {formatPrice(product.priceKurus)}</p>
                       {item.quantity > product.stock && (
-                        <p className="mt-1 text-xs font-bold text-red-700">Stokta yalnızca {product.stock} adet kaldı.</p>
+                        <p className="mt-1 text-xs font-bold text-red-700 dark:text-red-400">Stokta yalnızca {product.stock} adet kaldı.</p>
                       )}
                     </div>
                     <form action={removeCartItem.bind(null, item.id)} className="-mr-1 -mt-1 shrink-0">
-                      <button type="submit" aria-label={`${product.name} ürününü sepetten çıkar`} className="grid size-9 place-items-center rounded-lg text-neutral-500 hover:bg-neutral-100 hover:text-red-700">
+                      <button type="submit" aria-label={`${product.name} ürününü sepetten çıkar`} className="grid size-9 place-items-center rounded-lg text-neutral-500 hover:bg-neutral-100 hover:text-red-700 dark:text-red-400">
                         <Trash2 size={18} />
                       </button>
                     </form>

@@ -34,7 +34,7 @@ export default function ContactForm() {
         <textarea name="message" rows={5} required className="field mt-1.5 resize-none font-normal" />
       </label>
       {state.message && (
-        <p role="alert" className="text-sm font-semibold text-red-700">{state.message}</p>
+        <p role="alert" className="text-sm font-semibold text-red-700 dark:text-red-400">{state.message}</p>
       )}
       <button type="submit" disabled={pending} className="btn btn-dark w-full sm:w-auto">
         <Send size={16} /> {pending ? "Gönderiliyor..." : "Gönder"}

@@ -37,7 +37,7 @@ export default function AboutPage() {
             href={site.mapsUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-8 flex items-center gap-4 rounded-xl border border-neutral-200 p-5 hover:border-ink"
+            className="mt-8 flex items-center gap-4 rounded-xl border border-neutral-200 p-5 hover:border-fg"
           >
             <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-brand-500">
               <MapPin size={24} />
@@ -49,7 +49,7 @@ export default function AboutPage() {
           </a>
         </div>
 
-        <div className="rounded-2xl bg-ink p-8 text-white md:p-12">
+        <div className="theme-fixed rounded-2xl bg-ink p-8 text-white md:p-12">
           <h2 className="text-2xl font-extrabold md:text-4xl">Yarınları birlikte kuruyoruz</h2>
           <ul className="mt-8 space-y-6">
             <li className="flex items-center gap-4">

@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* Marka paleti: sarı, siyah, beyaz. Sarı zemin olarak kullanılır; beyaz üstünde yazı rengi olarak değil. */
 @theme {
   --color-brand-50: #fffbe6;
@@ -11,10 +13,77 @@
   --color-brand-600: #e6b400;
   --color-brand-700: #a68200;
 
+  /* ink her temada siyahtır (sarı üstündeki yazı, siyah bölümler). */
   --color-ink: #111111;
   --color-ink-soft: #262626;
 
+  /* Temaya göre değişen çift: sayfa zemini ve onun üstündeki yazı. */
+  --color-surface: #ffffff;
+  --color-fg: #111111;
+  --color-marker: #ffdd4d;
+
   --font-sans: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+
+  --animate-float: float 7s ease-in-out infinite;
+
+  @keyframes float {
+    0%,
+    100% {
+      translate: 0 0;
+    }
+    50% {
+      translate: 0 -8px;
+    }
+  }
+}
+
+/*
+  Koyu tema. Bileşenlere tek tek dark: sınıfı yazmak yerine renk değişkenleri burada değiştirilir:
+  yüzey/yazı çifti yer değiştirir, nötr gri ölçeği ters çevrilir (açık gri zemin -> koyu gri zemin,
+  koyu gri yazı -> açık gri yazı), sarının açık tonları koyu sarıya döner.
+*/
+.dark {
+  color-scheme: dark;
+
+  --color-surface: #141414;
+  --color-fg: #f2f2f2;
+  --color-marker: #6b5600;
+
+  --color-neutral-50: #1a1a1a;
+  --color-neutral-100: #1f1f1f;
+  --color-neutral-200: #2e2e2e;
+  --color-neutral-300: #3d3d3d;
+  --color-neutral-400: #7a7a7a;
+  --color-neutral-500: #a3a3a3;
+  --color-neutral-600: #b8b8b8;
+  --color-neutral-700: #d4d4d4;
+
+  --color-brand-50: #241f0d;
+  --color-brand-100: #3a3112;
+  --color-brand-200: #4d4116;
+}
+
+/*
+  Temadan bağımsız bölümler (sarı vitrin, siyah üst şerit, footer...). Bu bölümlerin zemini her temada
+  aynı kaldığı için içlerindeki değişkenler açık tema değerlerine geri alınır.
+*/
+.theme-fixed {
+  --color-surface: #ffffff;
+  --color-fg: #111111;
+  --color-marker: #ffdd4d;
+
+  --color-neutral-50: #fafafa;
+  --color-neutral-100: #f5f5f5;
+  --color-neutral-200: #e5e5e5;
+  --color-neutral-300: #d4d4d4;
+  --color-neutral-400: #a3a3a3;
+  --color-neutral-500: #737373;
+  --color-neutral-600: #525252;
+  --color-neutral-700: #404040;
+
+  --color-brand-50: #fffbe6;
+  --color-brand-100: #fff3b8;
+  --color-brand-200: #ffe880;
 }
 
 @utility container-page {
@@ -34,12 +103,22 @@
   }
 
   body {
-    background: #ffffff;
+    background: var(--color-surface);
+    color: var(--color-fg);
+  }
+
+  .theme-fixed {
+    color: var(--color-fg);
+  }
+
+  /* Sarı zemindeki yazı ve ikonlar her temada siyah kalır (koyu temada açık yazı devralmasınlar). */
+  .bg-brand-500,
+  .bg-brand-400 {
     color: var(--color-ink);
   }
 
   :focus-visible {
-    outline: 2px solid var(--color-ink);
+    outline: 2px solid var(--color-fg);
     outline-offset: 2px;
   }
 }
@@ -53,16 +132,66 @@
     @apply bg-brand-500 text-ink hover:bg-brand-400;
   }
 
+  /* Açık temada siyah, koyu temada beyaz: her zaman zeminle zıt. */
   .btn-dark {
-    @apply bg-ink text-white hover:bg-ink-soft;
+    @apply bg-fg text-surface hover:opacity-85;
   }
 
   .btn-outline {
-    @apply border border-neutral-300 bg-white text-ink hover:border-ink;
+    @apply border border-neutral-300 bg-surface text-fg hover:border-fg;
   }
 
   .field {
     /* Mobilde 16px: daha küçük yazı iOS'ta odaklanınca sayfayı yakınlaştırır. */
-    @apply w-full rounded-lg border border-neutral-300 bg-white px-4 py-3 text-base outline-none transition-colors placeholder:text-neutral-400 focus:border-ink md:text-sm;
+    @apply w-full rounded-lg border border-neutral-300 bg-surface px-4 py-3 text-base outline-none transition-colors placeholder:text-neutral-400 focus:border-fg md:text-sm;
+  }
+
+  /* Fosforlu kalem: yazının alt yarısından geçen sarı çizgi. */
+  .marker {
+    background: linear-gradient(transparent 58%, var(--color-marker) 58%, var(--color-marker) 94%, transparent 94%);
+    padding-inline: 0.15em;
+    margin-inline: -0.15em;
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+  }
+
+  /* Sarı zeminde aynı efekt beyazla. */
+  .marker-light {
+    --color-marker: rgb(255 255 255 / 0.6);
+  }
+
+  /* Noktalı defter kâğıdı dokusu. */
+  .paper-dots {
+    background-image: radial-gradient(rgb(17 17 17 / 0.13) 1px, transparent 1.3px);
+    background-size: 18px 18px;
+  }
+
+  /* Cetvel: 8px'te bir kısa, 40px'te bir uzun çentik. */
+  .ruler {
+    background-image:
+      repeating-linear-gradient(90deg, var(--color-ink) 0 1.5px, transparent 1.5px 40px),
+      repeating-linear-gradient(90deg, var(--color-ink) 0 1px, transparent 1px 8px);
+    background-size:
+      100% 100%,
+      100% 45%;
+    background-position: left bottom;
+    background-repeat: no-repeat;
+  }
+}
+
+/* Tema değişiminde dairesel açılma efekti ThemeToggle içinden çizilir; varsayılan geçiş kapatılır. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
   }
 }

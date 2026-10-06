@@ -110,7 +110,7 @@ async function ProductContent({ slug }: { slug: string }) {
             )}
           </div>
 
-          <p className={`mt-3 text-sm font-bold ${product.stock > 0 ? "text-green-700" : "text-red-700"}`}>
+          <p className={`mt-3 text-sm font-bold ${product.stock > 0 ? "text-green-700 dark:text-green-400" : "text-red-700 dark:text-red-400"}`}>
             {product.stock > 0 ? "Stokta var" : "Stokta yok"}
           </p>
 
@@ -153,7 +153,7 @@ async function ProductContent({ slug }: { slug: string }) {
 
       {related.length > 0 && (
         <section className="mt-14">
-          <h2 className="mb-5 border-l-4 border-brand-500 pl-3 text-xl font-extrabold">Benzer Ürünler</h2>
+          <h2 className="mb-5 text-xl font-extrabold"><span className="marker">Benzer Ürünler</span></h2>
           <ProductGrid products={related} />
         </section>
       )}

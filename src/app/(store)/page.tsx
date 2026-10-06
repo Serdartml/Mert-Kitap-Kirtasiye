@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { ArrowRight, Award, BookOpen, GraduationCap, MapPin, PenLine, Phone, ShieldCheck, Store } from "lucide-react";
+import { ArrowRight, Award, BookOpen, GraduationCap, MapPin, Phone, ShieldCheck, Store } from "lucide-react";
+import HeroArt from "@/components/HeroArt";
 import ProductGrid from "@/components/ProductGrid";
 import { getDiscountedProducts, getFeaturedProducts, getNavCategories, getNewestProducts, type ProductCardData } from "@/lib/catalog";
 import { categoryIcons, fallbackCategoryIcon } from "@/lib/category-icons";
@@ -18,7 +19,9 @@ function ProductSection({ title, href, products }: { title: string; href?: strin
   return (
     <section className="container-page mt-8 md:mt-12">
       <div className="mb-4 flex items-end justify-between gap-4 md:mb-5">
-        <h2 className="border-l-4 border-brand-500 pl-3 text-xl font-extrabold md:text-2xl">{title}</h2>
+        <h2 className="text-xl font-extrabold md:text-2xl">
+          <span className="marker">{title}</span>
+        </h2>
         {href && (
           <Link href={href} className="flex items-center gap-1 text-sm font-bold hover:underline">
             Tümünü gör <ArrowRight size={16} />
@@ -42,17 +45,18 @@ export default async function HomePage() {
     <>
       {/* Vitrin */}
       <section className="container-page mt-4 grid gap-3 md:mt-5 md:gap-4 lg:grid-cols-3">
-        <div className="relative overflow-hidden rounded-2xl bg-brand-500 p-5 sm:p-7 md:p-12 lg:col-span-2">
-          <p className="inline-block rounded-full bg-ink px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-brand-500 sm:text-xs">
+        <div className="theme-fixed paper-dots relative overflow-hidden rounded-2xl bg-brand-500 p-5 sm:p-7 md:p-12 lg:col-span-2">
+          {/* Etiket hafif eğik: yapıştırılmış bir bant gibi. */}
+          <p className="inline-block -rotate-2 rounded-sm bg-ink px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-brand-500 shadow-md sm:text-xs">
             Okula Dönüş Fırsatları
           </p>
-          <h1 className="mt-4 text-[2rem] font-extrabold leading-[1.05] tracking-tight sm:text-4xl md:mt-5 md:text-6xl">
+          <h1 className="relative z-10 mt-4 text-[2rem] font-extrabold leading-[1.05] tracking-tight sm:text-4xl md:mt-5 md:text-6xl">
             Gelecek
             <br />
-            burada başlar
+            <span className="marker marker-light">burada başlar</span>
           </h1>
-          <p className="mt-3 max-w-xl text-sm font-medium text-ink/80 sm:text-base md:mt-4 md:text-lg">{site.description}</p>
-          <div className="mt-5 flex flex-wrap gap-2.5 md:mt-7 md:gap-3">
+          <p className="relative z-10 mt-3 max-w-md text-sm font-medium text-ink/80 sm:text-base md:mt-4 md:text-lg">{site.description}</p>
+          <div className="relative z-10 mt-5 flex flex-wrap gap-2.5 md:mt-7 md:gap-3">
             <Link href="/kategori/kirtasiye" className="btn btn-dark">
               Alışverişe Başla <ArrowRight size={18} />
             </Link>
@@ -60,12 +64,12 @@ export default async function HomePage() {
               Hakkımızda
             </Link>
           </div>
-          <PenLine aria-hidden className="absolute -bottom-8 -right-6 hidden size-56 text-ink/10 md:block" strokeWidth={1} />
+          <HeroArt className="pointer-events-none absolute -bottom-6 -right-4 hidden w-72 md:block lg:w-80 xl:right-4 xl:w-[22rem]" />
         </div>
 
         {/* Mobilde iki küçük kutu yan yana; açıklama satırı yer açmak için gizlenir. */}
         <div className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-1">
-          <Link href="/kategori/hazirlik-kitaplari" className="group flex min-w-0 flex-col justify-between rounded-2xl bg-ink p-4 text-white sm:p-7">
+          <Link href="/kategori/hazirlik-kitaplari" className="theme-fixed group flex min-w-0 flex-col justify-between rounded-2xl border border-white/15 bg-ink p-4 text-white sm:p-7">
             <GraduationCap className="size-7 text-brand-500 sm:size-8" />
             <div className="mt-4 sm:mt-6">
               <h2 className="text-base font-extrabold leading-tight sm:text-2xl">Hazırlık Kitapları</h2>
@@ -75,7 +79,7 @@ export default async function HomePage() {
               </span>
             </div>
           </Link>
-          <Link href="/kategori/kultur-kitaplari" className="group flex min-w-0 flex-col justify-between rounded-2xl border-2 border-ink bg-white p-4 sm:p-7">
+          <Link href="/kategori/kultur-kitaplari" className="group flex min-w-0 flex-col justify-between rounded-2xl border-2 border-fg bg-surface p-4 sm:p-7">
             <BookOpen className="size-7 sm:size-8" />
             <div className="mt-4 sm:mt-6">
               <h2 className="text-base font-extrabold leading-tight sm:text-2xl">Kültür Kitapları</h2>
@@ -92,7 +96,7 @@ export default async function HomePage() {
       <section className="container-page mt-3 md:mt-4">
         <ul className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-neutral-200 bg-neutral-200 lg:grid-cols-4">
           {trustItems.map((item) => (
-            <li key={item.title} className="flex items-center gap-2.5 bg-white p-3 sm:gap-3 sm:p-4">
+            <li key={item.title} className="flex items-center gap-2.5 bg-surface p-3 sm:gap-3 sm:p-4">
               <span className="grid size-9 shrink-0 place-items-center rounded-full bg-brand-100 sm:size-10">
                 <item.icon size={18} />
               </span>
@@ -107,7 +111,9 @@ export default async function HomePage() {
 
       {/* Kategoriler */}
       <section className="container-page mt-8 md:mt-12">
-        <h2 className="mb-4 border-l-4 border-brand-500 pl-3 text-xl font-extrabold md:mb-5 md:text-2xl">Kategoriler</h2>
+        <h2 className="mb-4 text-xl font-extrabold md:mb-5 md:text-2xl">
+          <span className="marker">Kategoriler</span>
+        </h2>
         {/* Mobilde yalnızca ikon + ad; açıklama ve alt kategoriler sm ve üstünde görünür. */}
         <div className="grid grid-cols-2 gap-2.5 sm:gap-4 lg:grid-cols-3">
           {categories.map((category) => {
@@ -159,7 +165,7 @@ export default async function HomePage() {
 
       {/* Mağaza */}
       <section className="container-page mt-8 md:mt-12">
-        <div className="flex flex-col gap-5 rounded-2xl bg-brand-500 p-5 sm:p-7 md:flex-row md:items-center md:justify-between md:p-10">
+        <div className="theme-fixed paper-dots flex flex-col gap-5 rounded-2xl bg-brand-500 p-5 sm:p-7 md:flex-row md:items-center md:justify-between md:p-10">
           <div className="min-w-0">
             <h2 className="text-xl font-extrabold sm:text-2xl md:text-3xl">Mağazamıza bekleriz</h2>
             <p className="mt-2 flex items-start gap-2 text-sm font-medium sm:text-base">

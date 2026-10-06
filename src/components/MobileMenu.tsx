@@ -47,8 +47,8 @@ export default function MobileMenu({ categories }: { categories: MenuCategory[] 
         <div className="fixed inset-0 z-50 md:hidden" role="dialog" aria-modal="true" aria-label="Menü">
           <button type="button" aria-label="Menüyü kapat" onClick={close} className="absolute inset-0 bg-black/50" />
 
-          <div className="absolute inset-y-0 left-0 flex w-[85%] max-w-sm flex-col bg-white shadow-xl">
-            <div className="flex items-center justify-between bg-brand-500 px-4 py-3">
+          <div className="absolute inset-y-0 left-0 flex w-[85%] max-w-sm flex-col bg-surface shadow-xl">
+            <div className="theme-fixed flex items-center justify-between bg-brand-500 px-4 py-3">
               <span className="text-base font-extrabold">Kategoriler</span>
               <button type="button" aria-label="Menüyü kapat" onClick={close} className="grid size-10 place-items-center rounded-lg">
                 <X size={22} />

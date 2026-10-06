@@ -69,7 +69,7 @@ export default function AddToCartButton({ productId, stock, variant = "compact" 
         </button>
       </div>
       {feedback && (
-        <p role="status" className={`text-xs font-semibold ${feedback.ok ? "text-green-700" : "text-red-700"}`}>
+        <p role="status" className={`text-xs font-semibold ${feedback.ok ? "text-green-700 dark:text-green-400" : "text-red-700 dark:text-red-400"}`}>
           {feedback.message}
         </p>
       )}

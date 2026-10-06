@@ -4,6 +4,7 @@ import { Clock, MapPin, Phone, Search, ShoppingCart, User } from "lucide-react";
 import CartBadge from "./CartBadge";
 import Logo from "./Logo";
 import MobileMenu from "./MobileMenu";
+import ThemeToggle from "./ThemeToggle";
 import { site } from "@/lib/site";
 import { getNavCategories } from "@/lib/catalog";
 
@@ -17,7 +18,7 @@ function SearchForm({ className = "" }: { className?: string }) {
         required
         placeholder="Ürün, kategori veya marka ara"
         aria-label="Ürün ara"
-        className="min-w-0 flex-1 rounded-l-lg border-2 border-r-0 border-brand-500 bg-white px-4 py-2 text-base outline-none placeholder:text-neutral-400 md:py-2.5 md:text-sm"
+        className="min-w-0 flex-1 rounded-l-lg border-2 border-r-0 border-brand-500 bg-surface px-4 py-2 text-base outline-none placeholder:text-neutral-400 md:py-2.5 md:text-sm"
       />
       <button
         type="submit"
@@ -36,7 +37,7 @@ export default async function Header() {
   return (
     <>
       {/* Üst bilgi şeridi: sayfayla birlikte kayar, yapışmaz. */}
-      <div className="bg-ink text-xs text-white">
+      <div className="theme-fixed bg-ink text-xs text-white">
         <div className="container-page flex h-9 items-center justify-between gap-4">
           <a href={site.phoneHref} className="flex items-center gap-1.5 font-semibold hover:text-brand-500">
             <Phone size={13} /> {site.phone}
@@ -56,20 +57,20 @@ export default async function Header() {
         </div>
       </div>
 
-      <header className="sticky top-0 z-40 bg-white shadow-sm">
+      <header className="sticky top-0 z-40 border-b border-neutral-200 bg-surface shadow-sm">
         {/* Menü (mobil), logo, arama, hesap ve sepet */}
         <div className="container-page flex h-14 items-center gap-2 md:h-20 md:gap-8">
           <MobileMenu categories={categories} />
           <Logo />
           <SearchForm className="hidden flex-1 md:flex" />
           <div className="ml-auto flex items-center md:ml-0 md:gap-1">
-            <Link href="/giris" aria-label="Giriş yap" className="flex items-center gap-2 rounded-lg p-2.5 text-sm font-bold hover:bg-neutral-100 md:px-3 md:py-2">
+            <Link href="/giris" aria-label="Giriş yap" className="flex items-center gap-2 rounded-lg p-2 text-sm font-bold hover:bg-neutral-100 md:px-3 md:py-2">
               <User size={22} />
               <span className="hidden lg:inline">Giriş Yap</span>
             </Link>
             <Link
               href="/sepet"
-              className="flex items-center gap-2 rounded-lg p-2.5 text-sm font-bold hover:bg-neutral-100 md:px-3 md:py-2"
+              className="flex items-center gap-2 rounded-lg p-2 text-sm font-bold hover:bg-neutral-100 md:px-3 md:py-2"
             >
               <span className="relative">
                 <ShoppingCart size={22} aria-hidden />
@@ -79,6 +80,9 @@ export default async function Header() {
               </span>
               <span className="sr-only lg:not-sr-only">Sepetim</span>
             </Link>
+            <span className="ml-1 flex md:ml-2">
+              <ThemeToggle />
+            </span>
           </div>
         </div>
 
@@ -98,7 +102,7 @@ export default async function Header() {
                   {category.name}
                 </Link>
                 {category.children.length > 0 && (
-                  <ul className="invisible absolute left-0 top-full z-50 min-w-56 rounded-b-lg border border-t-0 border-neutral-200 bg-white py-2 opacity-0 shadow-lg transition-opacity group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100">
+                  <ul className="invisible absolute left-0 top-full z-50 min-w-56 rounded-b-lg border border-t-0 border-neutral-200 bg-surface py-2 opacity-0 shadow-lg transition-opacity group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100">
                     {category.children.map((child) => (
                       <li key={child.id}>
                         <Link href={`/kategori/${child.slug}`} className="block px-4 py-2 text-sm font-medium hover:bg-brand-50">

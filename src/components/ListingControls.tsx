@@ -24,7 +24,7 @@ export function SortBar({ state, total }: { state: ListingState; total: number }
   return (
     <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
       <p className="text-sm text-neutral-600 sm:mr-auto">
-        <span className="font-bold text-ink">{total}</span> ürün
+        <span className="font-bold text-fg">{total}</span> ürün
       </p>
       {/* Mobilde tek satır, yatay kayar; kenarlara kadar uzasın diye container boşluğu geri alınır. */}
       <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0">
@@ -32,7 +32,7 @@ export function SortBar({ state, total }: { state: ListingState; total: number }
         href={buildHref(state, { inStockOnly: !state.inStockOnly, page: 1 })}
         aria-pressed={state.inStockOnly}
         className={`shrink-0 whitespace-nowrap rounded-full border px-3.5 py-2 text-xs font-bold sm:px-3 sm:py-1.5 ${
-          state.inStockOnly ? "border-ink bg-ink text-white" : "border-neutral-300 hover:border-ink"
+          state.inStockOnly ? "border-fg bg-fg text-surface" : "border-neutral-300 hover:border-fg"
         }`}
       >
         Yalnızca stoktakiler
@@ -43,7 +43,7 @@ export function SortBar({ state, total }: { state: ListingState; total: number }
           href={buildHref(state, { sort: option.key, page: 1 })}
           aria-current={state.sort === option.key ? "true" : undefined}
           className={`shrink-0 whitespace-nowrap rounded-full border px-3.5 py-2 text-xs font-bold sm:px-3 sm:py-1.5 ${
-            state.sort === option.key ? "border-brand-500 bg-brand-500 text-ink" : "border-neutral-300 hover:border-ink"
+            state.sort === option.key ? "border-brand-500 bg-brand-500 text-ink" : "border-neutral-300 hover:border-fg"
           }`}
         >
           {option.label}
@@ -65,7 +65,7 @@ export function Pagination({ state, pageCount }: { state: ListingState; pageCoun
           href={buildHref(state, { page })}
           aria-current={page === state.page ? "page" : undefined}
           className={`grid size-10 place-items-center rounded-lg border text-sm font-bold ${
-            page === state.page ? "border-ink bg-ink text-white" : "border-neutral-300 hover:border-ink"
+            page === state.page ? "border-fg bg-fg text-surface" : "border-neutral-300 hover:border-fg"
           }`}
         >
           {page}

@@ -14,7 +14,9 @@ export default async function Footer() {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="mt-16 bg-ink text-neutral-300">
+    <footer className="theme-fixed mt-16 bg-ink text-neutral-300">
+      {/* Sarı cetvel şeridi */}
+      <div aria-hidden className="ruler h-4 bg-brand-500" />
       <div className="container-page grid gap-10 py-12 sm:grid-cols-2 lg:grid-cols-4">
         <div className="space-y-4">
           <Logo onDark />
