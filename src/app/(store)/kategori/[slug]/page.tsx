@@ -34,10 +34,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-// Bilinçli tercih: params <Suspense> dışında okunuyor (aşağıdaki 404 kontrolü için). Next.js bunu
-// "anında gezinmeyi yavaşlatabilir" diye uyarır; instant = false bu rotanın beklemesine izin verildiğini
-// bildirir. Sayfa yine önceden üretilir; okunan veri önbellekten geldiği için bekleme birkaç ms'dir.
-export const instant = false;
+// Bilinçli tercih: params <Suspense> dışında okunuyor (aşağıdaki 404 kontrolü için). Geliştirme modunda
+// Next.js bunu "instant-shell-url-data" uyarısıyla bildirir; okunan veri önbellekten geldiği için
+// bekleme birkaç ms'dir. Uyarıyı susturmak için `export const instant = false` EKLEMEYİN: denendi,
+// olmayan adresler arama motoru botlarına 404 yerine 200 dönmeye başlıyor.
 
 // Bütün kategori sayfaları build sırasında üretilir.
 export async function generateStaticParams() {
