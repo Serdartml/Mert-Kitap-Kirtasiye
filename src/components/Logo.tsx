@@ -1,4 +1,3 @@
-import { useId } from "react";
 import Link from "next/link";
 import { site } from "@/lib/site";
 
@@ -76,22 +75,31 @@ interface LogoProps {
   href?: string;
 }
 
-export default function Logo({ className = "h-6 min-[360px]:h-[30px] md:h-10", href = "/" }: LogoProps) {
-  const clipId = useId();
-
+export default function Logo({ className = "h-[26px] min-[360px]:h-[34px] min-[400px]:h-9 md:h-10", href = "/" }: LogoProps) {
   return (
     <Link href={href} aria-label={`${site.name} ana sayfa`} className="inline-flex shrink-0 rounded-lg bg-ink px-2 py-1.5 md:px-3 md:py-2">
-      <svg viewBox="-10 0 1056 244" role="img" aria-label={site.name} className={`w-auto ${className}`}>
+      {/*
+        width/height öznitelikleri ve aspect-ratio bilerek var: yalnızca viewBox'ı olan satır içi SVG,
+        mobil Safari'de esnek kutu içinde "width: auto" ile sıfır genişliğe çökebiliyor ve logo kayboluyor.
+      */}
+      <svg
+        viewBox="-10 0 1056 244"
+        width="1056"
+        height="244"
+        role="img"
+        aria-label={site.name}
+        className={`block w-auto max-w-none shrink-0 ${className}`}
+        style={{ aspectRatio: "1056 / 244" }}
+      >
         <BookStack />
 
         {/* MERT: geometrik kalın harfler, yazı tipine bağlı kalmasın diye çizim olarak. */}
-        <g transform="translate(378 6)" fill={YELLOW}>
-          <clipPath id={clipId}>
-            <rect x="-10" y="0" width="240" height="180" />
-          </clipPath>
-          {/* M: eğik bacaklı, sivri tepeli. Kalın çizgi köşeleri taşar; üstten ve alttan kırpılır. */}
+        {/*
+          M: eğik bacaklı, sivri tepeli. Kalın çizginin köşeleri taşar; iç içe <svg> kendi kutusunun
+          dışını kırptığı için üstten ve alttan düz kesilir (clipPath ve id gerektirmez).
+        */}
+        <svg x="368" y="6" width="240" height="180" viewBox="-10 0 240 180">
           <polyline
-            clipPath={`url(#${clipId})`}
             points="24,200 50,35 110,150 170,35 196,200"
             fill="none"
             stroke={YELLOW}
@@ -99,6 +107,8 @@ export default function Logo({ className = "h-6 min-[360px]:h-[30px] md:h-10", h
             strokeLinejoin="miter"
             strokeMiterlimit="10"
           />
+        </svg>
+        <g transform="translate(378 6)" fill={YELLOW}>
           {/* E */}
           <path d="M238 0h112v40h-62v30h56v38h-56v32h62v40h-112z" />
           {/* R: gövde + kavis (içi boş) + bacak */}
@@ -130,7 +140,14 @@ export default function Logo({ className = "h-6 min-[360px]:h-[30px] md:h-10", h
 // Yalnızca kitap yığını: dar alanlar için (yönetim paneli başlığı gibi).
 export function LogoMark({ className = "h-9" }: { className?: string }) {
   return (
-    <svg viewBox="-10 0 290 244" aria-hidden className={`w-auto ${className}`}>
+    <svg
+      viewBox="-10 0 290 244"
+      width="290"
+      height="244"
+      aria-hidden
+      className={`block w-auto max-w-none shrink-0 ${className}`}
+      style={{ aspectRatio: "290 / 244" }}
+    >
       <Book y={6} color={BLUE} spineLeft from={10} to={205} />
       <Book y={88} color={PINK} spineLeft={false} from={8} to={232} />
       <Book y={170} color={YELLOW} spineLeft from={10} to={262} />
