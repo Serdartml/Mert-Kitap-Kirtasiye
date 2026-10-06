@@ -50,17 +50,18 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
     <div className="container-page py-6">
       <Breadcrumbs items={crumbs} />
 
-      <div className="grid gap-8 lg:grid-cols-[14rem_1fr]">
-        <aside>
-          <h2 className="mb-3 text-sm font-extrabold uppercase tracking-wider">{root?.name}</h2>
-          <ul className="flex gap-2 overflow-x-auto pb-1 lg:flex-col lg:gap-0.5 lg:overflow-visible">
+      <div className="grid gap-5 lg:grid-cols-[14rem_1fr] lg:gap-8">
+        {/* min-w-0: yatay kayan liste grid sütununu ekrandan dışarı itmesin. */}
+        <aside className="min-w-0">
+          <h2 className="mb-3 hidden text-sm font-extrabold uppercase tracking-wider lg:block">{root?.name}</h2>
+          <ul className="-mx-4 flex gap-2 overflow-x-auto whitespace-nowrap px-4 pb-1 sm:-mx-6 sm:px-6 lg:mx-0 lg:flex-col lg:gap-0.5 lg:overflow-visible lg:whitespace-normal lg:px-0">
             {root && (
               <li className="shrink-0">
                 <Link
                   href={`/kategori/${root.slug}`}
                   aria-current={root.id === category.id ? "page" : undefined}
                   className={`block rounded-lg px-3 py-2 text-sm font-semibold ${
-                    root.id === category.id ? "bg-brand-500 font-extrabold" : "hover:bg-neutral-100"
+                    root.id === category.id ? "bg-brand-500 font-extrabold" : "bg-neutral-100 hover:bg-neutral-200 lg:bg-transparent lg:hover:bg-neutral-100"
                   }`}
                 >
                   Tümü
@@ -73,7 +74,7 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
                   href={`/kategori/${child.slug}`}
                   aria-current={child.id === category.id ? "page" : undefined}
                   className={`block rounded-lg px-3 py-2 text-sm font-semibold ${
-                    child.id === category.id ? "bg-brand-500 font-extrabold" : "hover:bg-neutral-100"
+                    child.id === category.id ? "bg-brand-500 font-extrabold" : "bg-neutral-100 hover:bg-neutral-200 lg:bg-transparent lg:hover:bg-neutral-100"
                   }`}
                 >
                   {child.name}
@@ -83,7 +84,7 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
           </ul>
         </aside>
 
-        <div>
+        <div className="min-w-0">
           <h1 className="text-2xl font-extrabold md:text-3xl">{category.name}</h1>
           {category.description && <p className="mt-1 text-sm text-neutral-600">{category.description}</p>}
 

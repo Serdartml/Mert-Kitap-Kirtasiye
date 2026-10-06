@@ -38,23 +38,31 @@ export default async function CartPage() {
             const { product } = item;
             const rootSlug = product.category.parent?.slug ?? product.category.slug;
             return (
-              <li key={item.id} className="flex gap-4 p-4">
-                <Link href={`/urun/${product.slug}`} className="w-20 shrink-0 sm:w-24">
+              <li key={item.id} className="flex gap-3 p-3 sm:gap-4 sm:p-4">
+                <Link href={`/urun/${product.slug}`} className="w-16 shrink-0 sm:w-24">
                   <ProductVisual name={product.name} rootCategorySlug={rootSlug} image={product.images[0]} sizes="96px" />
                 </Link>
 
-                <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:items-center">
-                  <div className="min-w-0 flex-1">
-                    <Link href={`/urun/${product.slug}`} className="text-sm font-bold hover:underline">
-                      {product.name}
-                    </Link>
-                    <p className="mt-1 text-xs text-neutral-500">Birim fiyat: {formatPrice(product.priceKurus)}</p>
-                    {item.quantity > product.stock && (
-                      <p className="mt-1 text-xs font-bold text-red-700">Stokta yalnızca {product.stock} adet kaldı.</p>
-                    )}
+                {/* Üstte ad + sil, altta adet + tutar: dar ekranda yan yana sığmayan dört öğe iki satıra bölünür. */}
+                <div className="flex min-w-0 flex-1 flex-col justify-between gap-3">
+                  <div className="flex items-start gap-2">
+                    <div className="min-w-0 flex-1">
+                      <Link href={`/urun/${product.slug}`} className="break-words text-sm font-bold hover:underline">
+                        {product.name}
+                      </Link>
+                      <p className="mt-1 text-xs text-neutral-500">Birim fiyat: {formatPrice(product.priceKurus)}</p>
+                      {item.quantity > product.stock && (
+                        <p className="mt-1 text-xs font-bold text-red-700">Stokta yalnızca {product.stock} adet kaldı.</p>
+                      )}
+                    </div>
+                    <form action={removeCartItem.bind(null, item.id)} className="-mr-1 -mt-1 shrink-0">
+                      <button type="submit" aria-label={`${product.name} ürününü sepetten çıkar`} className="grid size-9 place-items-center rounded-lg text-neutral-500 hover:bg-neutral-100 hover:text-red-700">
+                        <Trash2 size={18} />
+                      </button>
+                    </form>
                   </div>
 
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center rounded-lg border border-neutral-300">
                       <form action={setCartItemQuantity.bind(null, item.id, item.quantity - 1)}>
                         <button type="submit" aria-label="Adedi azalt" className="grid size-9 place-items-center">
@@ -74,15 +82,9 @@ export default async function CartPage() {
                       </form>
                     </div>
 
-                    <span className="w-24 text-right text-base font-extrabold">
+                    <span className="whitespace-nowrap text-base font-extrabold">
                       {formatPrice(product.priceKurus * item.quantity)}
                     </span>
-
-                    <form action={removeCartItem.bind(null, item.id)}>
-                      <button type="submit" aria-label={`${product.name} ürününü sepetten çıkar`} className="grid size-9 place-items-center rounded-lg text-neutral-500 hover:bg-neutral-100 hover:text-red-700">
-                        <Trash2 size={18} />
-                      </button>
-                    </form>
                   </div>
                 </div>
               </li>
@@ -90,7 +92,7 @@ export default async function CartPage() {
           })}
         </ul>
 
-        <aside className="h-fit rounded-xl border border-neutral-200 p-5 lg:sticky lg:top-48">
+        <aside className="h-fit rounded-xl border border-neutral-200 p-5 lg:sticky lg:top-36">
           <h2 className="text-lg font-extrabold">Sipariş Özeti</h2>
           <dl className="mt-4 space-y-2 text-sm">
             <div className="flex justify-between">

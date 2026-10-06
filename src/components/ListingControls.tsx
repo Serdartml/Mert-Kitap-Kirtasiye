@@ -22,14 +22,16 @@ function buildHref(state: ListingState, overrides: Partial<Pick<ListingState, "s
 
 export function SortBar({ state, total }: { state: ListingState; total: number }) {
   return (
-    <div className="mb-4 flex flex-wrap items-center gap-2">
-      <p className="mr-auto text-sm text-neutral-600">
+    <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+      <p className="text-sm text-neutral-600 sm:mr-auto">
         <span className="font-bold text-ink">{total}</span> ürün
       </p>
+      {/* Mobilde tek satır, yatay kayar; kenarlara kadar uzasın diye container boşluğu geri alınır. */}
+      <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0">
       <Link
         href={buildHref(state, { inStockOnly: !state.inStockOnly, page: 1 })}
         aria-pressed={state.inStockOnly}
-        className={`rounded-full border px-3 py-1.5 text-xs font-bold ${
+        className={`shrink-0 whitespace-nowrap rounded-full border px-3.5 py-2 text-xs font-bold sm:px-3 sm:py-1.5 ${
           state.inStockOnly ? "border-ink bg-ink text-white" : "border-neutral-300 hover:border-ink"
         }`}
       >
@@ -40,13 +42,14 @@ export function SortBar({ state, total }: { state: ListingState; total: number }
           key={option.key}
           href={buildHref(state, { sort: option.key, page: 1 })}
           aria-current={state.sort === option.key ? "true" : undefined}
-          className={`rounded-full border px-3 py-1.5 text-xs font-bold ${
+          className={`shrink-0 whitespace-nowrap rounded-full border px-3.5 py-2 text-xs font-bold sm:px-3 sm:py-1.5 ${
             state.sort === option.key ? "border-brand-500 bg-brand-500 text-ink" : "border-neutral-300 hover:border-ink"
           }`}
         >
           {option.label}
         </Link>
       ))}
+      </div>
     </div>
   );
 }

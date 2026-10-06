@@ -11,6 +11,9 @@ interface AddToCartButtonProps {
   variant?: "compact" | "full";
 }
 
+// Mobilde iki sütunlu kartlara sığması için dar iç boşluk ve küçük yazı.
+const compactClasses = "gap-1.5 whitespace-nowrap px-2 py-2.5 text-xs sm:gap-2 sm:px-4 sm:text-sm";
+
 export default function AddToCartButton({ productId, stock, variant = "compact" }: AddToCartButtonProps) {
   const [quantity, setQuantity] = useState(1);
   const [feedback, setFeedback] = useState<{ ok: boolean; message: string } | null>(null);
@@ -18,7 +21,7 @@ export default function AddToCartButton({ productId, stock, variant = "compact" 
 
   if (stock < 1) {
     return (
-      <button type="button" disabled className={`btn btn-outline w-full ${variant === "compact" ? "py-2.5" : ""}`}>
+      <button type="button" disabled className={`btn btn-outline w-full ${variant === "compact" ? compactClasses : ""}`}>
         Stokta yok
       </button>
     );
@@ -59,9 +62,9 @@ export default function AddToCartButton({ productId, stock, variant = "compact" 
           type="button"
           onClick={submit}
           disabled={pending}
-          className={`btn btn-primary flex-1 ${variant === "compact" ? "py-2.5" : ""}`}
+          className={`btn btn-primary min-w-0 flex-1 ${variant === "compact" ? compactClasses : ""}`}
         >
-          <ShoppingCart size={18} />
+          <ShoppingCart size={variant === "compact" ? 16 : 18} className="shrink-0" />
           {pending ? "Ekleniyor..." : "Sepete Ekle"}
         </button>
       </div>

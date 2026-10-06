@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Clock, MapPin, Phone, Search, ShoppingCart, User } from "lucide-react";
 import Logo from "./Logo";
+import MobileMenu from "./MobileMenu";
 import { site } from "@/lib/site";
 import { getNavCategories } from "@/lib/catalog";
 import { getCartCount } from "@/lib/cart";
@@ -8,13 +9,14 @@ import { getCartCount } from "@/lib/cart";
 function SearchForm({ className = "" }: { className?: string }) {
   return (
     <form action="/arama" role="search" className={`flex ${className}`}>
+      {/* Mobilde 16px: daha küçük yazı iOS'ta odaklanınca sayfayı yakınlaştırır. */}
       <input
         type="search"
         name="q"
         required
         placeholder="Ürün, kategori veya marka ara"
         aria-label="Ürün ara"
-        className="min-w-0 flex-1 rounded-l-lg border-2 border-r-0 border-brand-500 bg-white px-4 py-2.5 text-sm outline-none placeholder:text-neutral-400"
+        className="min-w-0 flex-1 rounded-l-lg border-2 border-r-0 border-brand-500 bg-white px-4 py-2 text-base outline-none placeholder:text-neutral-400 md:py-2.5 md:text-sm"
       />
       <button
         type="submit"
@@ -31,8 +33,8 @@ export default async function Header() {
   const [categories, cartCount] = await Promise.all([getNavCategories(), getCartCount()]);
 
   return (
-    <header className="sticky top-0 z-40 bg-white shadow-sm">
-      {/* Üst bilgi şeridi */}
+    <>
+      {/* Üst bilgi şeridi: sayfayla birlikte kayar, yapışmaz. */}
       <div className="bg-ink text-xs text-white">
         <div className="container-page flex h-9 items-center justify-between gap-4">
           <a href={site.phoneHref} className="flex items-center gap-1.5 font-semibold hover:text-brand-500">
@@ -53,59 +55,66 @@ export default async function Header() {
         </div>
       </div>
 
-      {/* Logo, arama, hesap ve sepet */}
-      <div className="container-page flex h-16 items-center gap-4 md:h-20 md:gap-8">
-        <Logo />
-        <SearchForm className="hidden flex-1 md:flex" />
-        <div className="ml-auto flex items-center gap-1 md:ml-0">
-          <Link href="/giris" className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-bold hover:bg-neutral-100">
-            <User size={20} />
-            <span className="hidden lg:inline">Giriş Yap</span>
-          </Link>
-          <Link href="/sepet" className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-bold hover:bg-neutral-100">
-            <span className="relative">
-              <ShoppingCart size={20} />
-              {cartCount > 0 && (
-                <span className="absolute -right-2.5 -top-2.5 grid min-w-5 place-items-center rounded-full bg-brand-500 px-1 text-[11px] font-extrabold leading-5 text-ink">
-                  {cartCount}
-                </span>
-              )}
-            </span>
-            <span className="hidden lg:inline">Sepetim</span>
-          </Link>
+      <header className="sticky top-0 z-40 bg-white shadow-sm">
+        {/* Menü (mobil), logo, arama, hesap ve sepet */}
+        <div className="container-page flex h-14 items-center gap-2 md:h-20 md:gap-8">
+          <MobileMenu categories={categories} />
+          <Logo />
+          <SearchForm className="hidden flex-1 md:flex" />
+          <div className="ml-auto flex items-center md:ml-0 md:gap-1">
+            <Link href="/giris" aria-label="Giriş yap" className="flex items-center gap-2 rounded-lg p-2.5 text-sm font-bold hover:bg-neutral-100 md:px-3 md:py-2">
+              <User size={22} />
+              <span className="hidden lg:inline">Giriş Yap</span>
+            </Link>
+            <Link
+              href="/sepet"
+              aria-label={cartCount > 0 ? `Sepetim, ${cartCount} ürün` : "Sepetim"}
+              className="flex items-center gap-2 rounded-lg p-2.5 text-sm font-bold hover:bg-neutral-100 md:px-3 md:py-2"
+            >
+              <span className="relative">
+                <ShoppingCart size={22} />
+                {cartCount > 0 && (
+                  <span className="absolute -right-2.5 -top-2.5 grid min-w-5 place-items-center rounded-full bg-brand-500 px-1 text-[11px] font-extrabold leading-5 text-ink">
+                    {cartCount}
+                  </span>
+                )}
+              </span>
+              <span className="hidden lg:inline">Sepetim</span>
+            </Link>
+          </div>
         </div>
-      </div>
 
-      <div className="container-page pb-3 md:hidden">
-        <SearchForm />
-      </div>
+        <div className="container-page pb-2.5 md:hidden">
+          <SearchForm />
+        </div>
 
-      {/* Kategori menüsü: masaüstünde hover ile açılır, mobilde yatay kayar */}
-      <nav aria-label="Kategoriler" className="border-t border-neutral-200">
-        <ul className="container-page flex gap-1 overflow-x-auto md:overflow-visible">
-          {categories.map((category) => (
-            <li key={category.id} className="group relative shrink-0">
-              <Link
-                href={`/kategori/${category.slug}`}
-                className="block border-b-[3px] border-transparent px-3 py-3 text-sm font-bold group-hover:border-brand-500 md:px-4"
-              >
-                {category.name}
-              </Link>
-              {category.children.length > 0 && (
-                <ul className="invisible absolute left-0 top-full z-50 hidden min-w-56 rounded-b-lg border border-t-0 border-neutral-200 bg-white py-2 opacity-0 shadow-lg transition-opacity group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100 md:block">
-                  {category.children.map((child) => (
-                    <li key={child.id}>
-                      <Link href={`/kategori/${child.slug}`} className="block px-4 py-2 text-sm font-medium hover:bg-brand-50">
-                        {child.name}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </li>
-          ))}
-        </ul>
-      </nav>
-    </header>
+        {/* Masaüstü kategori menüsü; mobilde kategoriler MobileMenu içinde. */}
+        <nav aria-label="Kategoriler" className="hidden border-t border-neutral-200 md:block">
+          <ul className="container-page flex flex-wrap gap-1">
+            {categories.map((category) => (
+              <li key={category.id} className="group relative">
+                <Link
+                  href={`/kategori/${category.slug}`}
+                  className="block border-b-[3px] border-transparent px-3 py-3 text-sm font-bold group-hover:border-brand-500 lg:px-4"
+                >
+                  {category.name}
+                </Link>
+                {category.children.length > 0 && (
+                  <ul className="invisible absolute left-0 top-full z-50 min-w-56 rounded-b-lg border border-t-0 border-neutral-200 bg-white py-2 opacity-0 shadow-lg transition-opacity group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100">
+                    {category.children.map((child) => (
+                      <li key={child.id}>
+                        <Link href={`/kategori/${child.slug}`} className="block px-4 py-2 text-sm font-medium hover:bg-brand-50">
+                          {child.name}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </li>
+            ))}
+          </ul>
+        </nav>
+      </header>
+    </>
   );
 }
