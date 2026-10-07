@@ -78,6 +78,15 @@ interface LogoProps {
 export default function Logo({ className = "h-[26px] min-[360px]:h-[34px] min-[400px]:h-9 md:h-10", href = "/" }: LogoProps) {
   return (
     <Link href={href} aria-label={`${site.name} ana sayfa`} className="inline-flex shrink-0 rounded-lg bg-ink px-2 py-1.5 md:px-3 md:py-2">
+      <LogoArt className={className} />
+    </Link>
+  );
+}
+
+// Logonun çizimi, bağlantı ve plaka olmadan (karşılama ekranı gibi yerler için).
+export function LogoArt({ className = "" }: { className?: string }) {
+  return (
+    <>
       {/*
         width/height öznitelikleri ve aspect-ratio bilerek var: yalnızca viewBox'ı olan satır içi SVG,
         mobil Safari'de esnek kutu içinde "width: auto" ile sıfır genişliğe çökebiliyor ve logo kayboluyor.
@@ -133,7 +142,7 @@ export default function Logo({ className = "h-[26px] min-[360px]:h-[34px] min-[4
         </text>
         <rect x="1000" y="220" width="36" height="16" fill={YELLOW} />
       </svg>
-    </Link>
+    </>
   );
 }
 

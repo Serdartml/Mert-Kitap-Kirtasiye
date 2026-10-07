@@ -2,7 +2,8 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { PanelSkeleton } from "@/components/Skeletons";
-import { Minus, Plus, ShoppingCart, Trash2 } from "lucide-react";
+import { Minus, Plus, Trash2 } from "lucide-react";
+import { EmptyCaseArt } from "@/components/SceneArt";
 import { removeCartItem, setCartItemQuantity } from "@/actions/cart";
 import ProductVisual from "@/components/ProductVisual";
 import { cartTotals, getCart } from "@/lib/cart";
@@ -28,9 +29,17 @@ async function CartContent() {
 
   if (!cart || cart.items.length === 0) {
     return (
-      <div className="container-page py-20 text-center">
-        <ShoppingCart className="mx-auto text-neutral-300" size={56} strokeWidth={1.25} />
-        <h1 className="mt-4 text-2xl font-extrabold">Sepetiniz boş</h1>
+      <div className="container-page py-12 text-center sm:py-16">
+        {/* Boş kalem kutusu */}
+        <div className="relative mx-auto w-fit">
+          <span className="theme-fixed pattern-dots grid size-44 place-items-center rounded-full bg-brand-500 sm:size-52">
+            <EmptyCaseArt className="w-36 animate-float sm:w-44" />
+          </span>
+          <p aria-hidden className="absolute -right-10 -top-1 rotate-6 font-hand text-2xl leading-none text-neutral-500 sm:-right-24 sm:text-3xl">
+            içi bomboş!
+          </p>
+        </div>
+        <h1 className="mt-6 text-2xl font-extrabold">Sepetiniz boş</h1>
         <p className="mt-2 text-sm text-neutral-600">Ürünleri inceleyip sepetinize ekleyebilirsiniz.</p>
         <Link href="/" className="btn btn-primary mt-6">Alışverişe Başla</Link>
       </div>

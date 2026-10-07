@@ -1,15 +1,24 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { MapPin, Phone } from "lucide-react";
+import { MapPin, MessageCircle, Phone } from "lucide-react";
 import AddToCartButton from "@/components/AddToCartButton";
+import StickyBuyBar from "@/components/StickyBuyBar";
 import Breadcrumbs, { type Crumb } from "@/components/Breadcrumbs";
+import ColorPalette from "@/components/ColorPalette";
+import Scribble from "@/components/Scribble";
+import { getProductPalette } from "@/lib/colors";
 import ProductGrid from "@/components/ProductGrid";
 import ProductVisual from "@/components/ProductVisual";
 import { ProductDetailSkeleton } from "@/components/Skeletons";
 import { getPrerenderProductSlugs, getProductBySlug, getRelatedProducts } from "@/lib/catalog";
 import { discountPercent, formatPrice } from "@/lib/format";
-import { site } from "@/lib/site";
+import { site, whatsappHref } from "@/lib/site";
+
+// Asıl "Sepete Ekle" alanı; ekrandan çıkınca mobilde StickyBuyBar görünür.
+const BUY_AREA_ID = "satin-al";
+// Ana ürün görseli; renk paleti seçilen rengi bu kutuya yansıtır.
+const VISUAL_ID = "urun-gorseli";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -57,6 +66,10 @@ async function ProductContent({ slug }: { slug: string }) {
   const related = await getRelatedProducts(product.categoryId, product.id);
   const discount = discountPercent(product.priceKurus, product.compareAtKurus);
   const rootSlug = product.category.parent?.slug ?? product.category.slug;
+  const palette = getProductPalette(product.attributes);
+  const whatsapp = whatsappHref(
+    `Merhaba, "${product.name}" (stok kodu: ${product.sku}) hakkında bilgi almak istiyorum.\n${site.url}/urun/${product.slug}`,
+  );
 
   const crumbs: Crumb[] = [
     ...(product.category.parent
@@ -92,6 +105,7 @@ async function ProductContent({ slug }: { slug: string }) {
 
       <div className="grid gap-8 md:grid-cols-2 lg:gap-12">
         <ProductVisual
+          id={VISUAL_ID}
           name={product.name}
           rootCategorySlug={rootSlug}
           image={product.images[0]}
@@ -104,8 +118,12 @@ async function ProductContent({ slug }: { slug: string }) {
           <h1 className="text-2xl font-extrabold leading-tight md:text-3xl">{product.name}</h1>
           <p className="mt-1 text-xs text-neutral-500">Stok kodu: {product.sku}</p>
 
-          <div className="mt-5 flex flex-wrap items-center gap-3">
-            <span className="text-3xl font-extrabold">{formatPrice(product.priceKurus)}</span>
+          <div className={`mt-5 flex flex-wrap items-center ${discount ? "gap-x-6 gap-y-3 pl-2" : "gap-3"}`}>
+            {/* İndirimli fiyatın etrafına kalemle halka çizilir. */}
+            <span className="relative text-3xl font-extrabold">
+              {formatPrice(product.priceKurus)}
+              {discount && <Scribble variant="circle" className="scribble-draw absolute -inset-x-4 -inset-y-2.5 h-[calc(100%+1.25rem)] w-[calc(100%+2rem)] [stroke-width:1.6]" />}
+            </span>
             {discount && product.compareAtKurus && (
               <>
                 <span className="text-base text-neutral-500 line-through">{formatPrice(product.compareAtKurus)}</span>
@@ -118,12 +136,19 @@ async function ProductContent({ slug }: { slug: string }) {
             {product.stock > 0 ? "Stokta var" : "Stokta yok"}
           </p>
 
-          <div className="mt-5 max-w-md">
+          {palette && <ColorPalette palette={palette} visualId={VISUAL_ID} />}
+
+          <div id={BUY_AREA_ID} className="mt-5 max-w-md">
             <AddToCartButton productId={product.id} stock={product.stock} variant="full" />
           </div>
 
           <div className="mt-6 space-y-2 rounded-xl bg-neutral-100 p-4 text-sm">
             <p className="font-extrabold">Mağazadan bilgi alın</p>
+            {whatsapp && (
+              <a href={whatsapp} target="_blank" rel="noopener noreferrer" className="btn btn-dark w-full py-2.5">
+                <MessageCircle size={16} /> WhatsApp&apos;tan sor
+              </a>
+            )}
             <a href={site.phoneHref} className="flex items-center gap-2 hover:underline">
               <Phone size={16} /> {site.phone}
             </a>
@@ -161,6 +186,14 @@ async function ProductContent({ slug }: { slug: string }) {
           <ProductGrid products={related} />
         </section>
       )}
+
+      <StickyBuyBar
+        productId={product.id}
+        stock={product.stock}
+        name={product.name}
+        price={formatPrice(product.priceKurus)}
+        targetId={BUY_AREA_ID}
+      />
     </div>
   );
 }

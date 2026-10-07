@@ -79,7 +79,8 @@ export default async function Header() {
               href="/sepet"
               className="flex items-center gap-2 rounded-lg p-2 text-sm font-bold hover:bg-neutral-100 md:px-3 md:py-2"
             >
-              <span className="relative">
+              {/* data-cart-target: sepete eklenen ürünün uçtuğu nokta (lib/fly-to-cart). */}
+              <span data-cart-target className="relative">
                 <ShoppingCart size={22} aria-hidden />
                 <Suspense fallback={null}>
                   <CartBadge />

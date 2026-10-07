@@ -7,6 +7,8 @@ import { getCartId, getOrCreateCartId } from "@/lib/cart";
 export interface CartActionResult {
   ok: boolean;
   message: string;
+  // İstenen adet stoğu aştığı için düşürüldüyse true.
+  adjusted?: boolean;
 }
 
 export async function addToCart(productId: string, quantity = 1): Promise<CartActionResult> {
@@ -33,7 +35,7 @@ export async function addToCart(productId: string, quantity = 1): Promise<CartAc
 
   revalidatePath("/", "layout");
   return finalQuantity < wanted
-    ? { ok: true, message: `Stokta ${product.stock} adet var; sepetiniz buna göre güncellendi.` }
+    ? { ok: true, adjusted: true, message: `Stokta ${product.stock} adet var; sepetiniz buna göre güncellendi.` }
     : { ok: true, message: "Sepete eklendi." };
 }
 

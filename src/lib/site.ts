@@ -8,6 +8,8 @@ export const site = {
   url: process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
   phone: "0232 374 25 00",
   phoneHref: "tel:+902323742500",
+  // WhatsApp numarası, ülke koduyla ve yalnızca rakam (ör. "905321234567"). Boşken WhatsApp butonları gizlenir.
+  whatsapp: "902323742500" as string,
   email: "mertkitapkirtasiye@hotmail.com",
   address: {
     line: "Erzene Mah. Kazım Karabekir Cad. No:31/A",
@@ -34,6 +36,12 @@ export const site = {
     ],
   },
 } as const;
+
+// Hazır mesajlı WhatsApp bağlantısı; numara tanımlı değilse null.
+export function whatsappHref(text: string): string | null {
+  if (!site.whatsapp) return null;
+  return `https://wa.me/${site.whatsapp}?text=${encodeURIComponent(text)}`;
+}
 
 // Yasal / bilgi sayfaları. Metinler henüz yazılmadı; içerik hukuki onayla eklenecek.
 export const infoPages = [

@@ -2,12 +2,13 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import BookShelf from "@/components/BookShelf";
 import Breadcrumbs, { type Crumb } from "@/components/Breadcrumbs";
 import CategoryArt from "@/components/CategoryArt";
 import EmptyState from "@/components/EmptyState";
 import { Pagination, SortBar } from "@/components/ListingControls";
 import ProductGrid from "@/components/ProductGrid";
-import { ProductListSkeleton } from "@/components/Skeletons";
+import { ProductListSkeleton, ShelfListSkeleton } from "@/components/Skeletons";
 import {
   countCategoryProducts,
   getAllCategorySlugs,
@@ -20,8 +21,11 @@ import { categoryIcons, categoryPatterns, fallbackCategoryIcon, fallbackCategory
 
 interface PageProps {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ sirala?: string; sayfa?: string; stok?: string }>;
+  searchParams: Promise<{ sirala?: string; sayfa?: string; stok?: string; gorunum?: string }>;
 }
+
+// Ürünleri kitap rafı olarak gösterilen ana kategori (BookShelf).
+const SHELF_ROOT_SLUG = "kultur-kitaplari";
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
@@ -124,7 +128,7 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
       </nav>
 
       <div className="mt-5">
-        <Suspense fallback={<ProductListSkeleton />}>
+        <Suspense fallback={root.slug === SHELF_ROOT_SLUG ? <ShelfListSkeleton /> : <ProductListSkeleton />}>
           <CategoryProducts
             slug={category.slug}
             rootSlug={root.slug}
@@ -152,15 +156,26 @@ async function CategoryProducts({ slug, rootSlug, categoryIds, searchParams }: C
     sort: parseSort(query.sirala),
     inStockOnly: query.stok === "1",
     page: parsePage(query.sayfa),
+    // Raf görünümü yalnızca kitap kategorisinde sunulur ve orada varsayılandır.
+    view: rootSlug === SHELF_ROOT_SLUG ? (query.gorunum === "liste" ? ("liste" as const) : ("raf" as const)) : undefined,
   };
 
-  const { items, total, pageCount } = await listProducts({ categoryIds, ...state });
+  const { items, total, pageCount } = await listProducts({
+    categoryIds,
+    sort: state.sort,
+    inStockOnly: state.inStockOnly,
+    page: state.page,
+  });
 
   return (
     <>
       <SortBar state={state} total={total} />
       {items.length > 0 ? (
-        <ProductGrid products={items} dense />
+        state.view === "raf" ? (
+          <BookShelf products={items} />
+        ) : (
+          <ProductGrid products={items} dense />
+        )
       ) : (
         <EmptyState
           rootSlug={rootSlug}
