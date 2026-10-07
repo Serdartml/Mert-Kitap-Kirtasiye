@@ -48,7 +48,7 @@ export default async function AdminMessagesPage({ searchParams }: { searchParams
                     <ConfirmButton
                       message="Bu mesaj silinecek. Emin misiniz?"
                       aria-label={`${message.name} adlı kişinin mesajını sil`}
-                      className="grid size-8 place-items-center rounded-lg text-neutral-500 hover:bg-neutral-100 hover:text-red-700"
+                      className="grid size-10 place-items-center rounded-lg text-neutral-500 hover:bg-neutral-100 hover:text-red-700"
                     >
                       <Trash2 size={16} aria-hidden />
                     </ConfirmButton>

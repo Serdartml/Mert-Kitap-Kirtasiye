@@ -21,34 +21,36 @@ function CategoryRow({ category, childCount, totalProducts, nested = false }: Ro
   const deletable = category._count.products === 0 && childCount === 0;
 
   return (
-    <li className={`flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-3 ${nested ? "pl-10" : ""}`}>
-      <div className="min-w-0 flex-1">
-        <Link href={`/yonetim/kategoriler/${category.id}`} className={`hover:underline ${nested ? "font-semibold" : "font-extrabold"}`}>
-          {category.name}
-        </Link>
+    // Mobilde adres (slug) gizlenir ve işlemler sıkışır; yoksa ad dar bir sütunda üç satıra bölünüyordu.
+    <li className={`flex items-center gap-x-1 py-1.5 pr-1.5 sm:gap-x-3 sm:px-4 sm:py-3 ${nested ? "pl-6 sm:pl-10" : "pl-3"}`}>
+      <Link href={`/yonetim/kategoriler/${category.id}`} className="min-w-0 flex-1 py-1.5 hover:underline">
+        <span className={`block break-words ${nested ? "font-semibold" : "font-extrabold"}`}>{category.name}</span>
         <span className="block text-xs text-neutral-500">
-          /kategori/{category.slug} · sıra {category.sortOrder}
+          <span className="hidden sm:inline">/kategori/{category.slug} · </span>sıra {category.sortOrder}
         </span>
-      </div>
-      <Link href={`/yonetim/urunler?kategori=${category.id}`} className="text-xs font-bold text-neutral-600 hover:underline">
+      </Link>
+      <Link
+        href={`/yonetim/urunler?kategori=${category.id}`}
+        className="grid min-h-10 shrink-0 place-items-center whitespace-nowrap px-2 text-xs font-bold text-neutral-600 hover:underline"
+      >
         {totalProducts ?? category._count.products} ürün
       </Link>
-      <Link href={`/yonetim/kategoriler/${category.id}`} className="text-sm font-bold hover:underline">
+      <Link href={`/yonetim/kategoriler/${category.id}`} className="grid min-h-10 shrink-0 place-items-center px-2 text-sm font-bold hover:underline">
         Düzenle
       </Link>
       {deletable ? (
-        <form action={deleteCategory.bind(null, category.id)}>
+        <form action={deleteCategory.bind(null, category.id)} className="shrink-0">
           <ConfirmButton
             message={`"${category.name}" kategorisi silinecek. Emin misiniz?`}
             aria-label={`${category.name} kategorisini sil`}
-            className="grid size-8 place-items-center rounded-lg text-neutral-500 hover:bg-neutral-100 hover:text-red-700"
+            className="grid size-10 place-items-center rounded-lg text-neutral-500 hover:bg-neutral-100 hover:text-red-700"
           >
             <Trash2 size={16} aria-hidden />
           </ConfirmButton>
         </form>
       ) : (
         // Dolu kategori silinemez; hizayı korumak için aynı genişlikte boşluk.
-        <span className="size-8" title="İçinde ürün veya alt kategori olduğu için silinemez" />
+        <span className="size-10 shrink-0" title="İçinde ürün veya alt kategori olduğu için silinemez" />
       )}
     </li>
   );

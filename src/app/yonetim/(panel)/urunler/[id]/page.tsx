@@ -30,14 +30,14 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
         </h1>
         <div className="flex flex-wrap gap-2">
           {product.isActive && (
-            <Link href={`/urun/${product.slug}`} target="_blank" className="btn btn-outline py-2">
+            <Link href={`/urun/${product.slug}`} target="_blank" className="btn btn-outline py-2.5">
               <ExternalLink size={16} aria-hidden /> Sitede gör
             </Link>
           )}
           <form action={deleteProduct.bind(null, product.id)}>
             <ConfirmButton
               message={`"${product.name}" kalıcı olarak silinecek. Bu işlem geri alınamaz. Emin misiniz?`}
-              className="btn border border-red-300 py-2 text-red-700 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950"
+              className="btn border border-red-300 py-2.5 text-red-700 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950"
             >
               <Trash2 size={16} aria-hidden /> Sil
             </ConfirmButton>

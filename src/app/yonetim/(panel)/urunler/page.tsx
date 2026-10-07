@@ -105,8 +105,9 @@ export default async function AdminProductsPage({ searchParams }: PageProps) {
 
       <form action="/yonetim/urunler" className="flex flex-wrap gap-2">
         {filter && <input type="hidden" name="filtre" value={filter} />}
-        <input name="q" defaultValue={q} placeholder="Ad, stok kodu veya barkod" aria-label="Ürün ara" className="field max-w-xs" />
-        <select name="kategori" defaultValue={categoryId} aria-label="Kategori" className="field max-w-56">
+        {/* Mobilde arama kutusu tam satır; kategori ile buton altında yan yana. */}
+        <input name="q" type="search" defaultValue={q} placeholder="Ad, stok kodu veya barkod" aria-label="Ürün ara" className="field basis-full sm:max-w-xs sm:basis-auto" />
+        <select name="kategori" defaultValue={categoryId} aria-label="Kategori" className="field min-w-0 flex-1 sm:max-w-56 sm:flex-none">
           <option value="">Tüm kategoriler</option>
           {categories.map((category) => (
             <optgroup key={category.id} label={category.name}>
@@ -128,7 +129,7 @@ export default async function AdminProductsPage({ searchParams }: PageProps) {
             key={item.key}
             href={href({ filtre: item.key, sayfa: 1 })}
             aria-current={filter === item.key ? "true" : undefined}
-            className={`rounded-full border px-3 py-1.5 text-xs font-bold ${
+            className={`flex min-h-10 items-center rounded-full border px-3.5 text-xs font-bold sm:min-h-8 sm:px-3 ${
               filter === item.key ? "border-brand-500 bg-brand-500 text-ink" : "border-neutral-300 hover:border-fg"
             }`}
           >
@@ -141,7 +142,49 @@ export default async function AdminProductsPage({ searchParams }: PageProps) {
         <span className="font-bold text-fg">{total}</span> ürün
       </p>
 
-      <div className="mt-2 overflow-x-auto rounded-xl border border-neutral-200 bg-raised">
+      {/* Mobil: tablo yerine kartlar. Altı sütun dar ekrana sığmıyor; fiyat, stok ve durum yana kayıp kayboluyordu. */}
+      <ul className="mt-2 space-y-2 md:hidden">
+        {items.map((product) => (
+          <li key={product.id} className="rounded-xl border border-neutral-200 bg-raised p-3">
+            <Link href={`/yonetim/urunler/${product.id}`} className="block">
+              <span className="block break-words font-bold">{product.name}</span>
+              <span className="mt-0.5 block text-xs text-neutral-500">
+                {product.sku} · {product.category.name}
+              </span>
+            </Link>
+            <div className="mt-2 flex items-center gap-3">
+              <p className="min-w-0 flex-1 text-sm">
+                <span className="font-extrabold">{formatPrice(product.priceKurus)}</span>
+                {product.compareAtKurus && (
+                  <span className="ml-1.5 text-xs text-neutral-500 line-through">{formatPrice(product.compareAtKurus)}</span>
+                )}
+                <span className={`mt-0.5 block text-xs font-bold ${product.stock === 0 ? "text-red-700 dark:text-red-400" : "text-neutral-600"}`}>
+                  {product.stock === 0 ? "Stokta yok" : `Stok: ${product.stock}`}
+                </span>
+              </p>
+              <form action={setProductActive.bind(null, product.id, !product.isActive)}>
+                <button
+                  type="submit"
+                  aria-label={`${product.name}: ${product.isActive ? "yayından kaldır" : "yayına al"}`}
+                  className={`min-h-10 rounded-full px-3.5 text-xs font-bold ${
+                    product.isActive ? "bg-brand-500 text-ink" : "bg-neutral-200 text-neutral-600"
+                  }`}
+                >
+                  {product.isActive ? "Yayında" : "Pasif"}
+                </button>
+              </form>
+              <Link href={`/yonetim/urunler/${product.id}`} className="grid min-h-10 place-items-center rounded-lg border border-neutral-300 px-3 text-xs font-bold">
+                Düzenle
+              </Link>
+            </div>
+          </li>
+        ))}
+        {items.length === 0 && (
+          <li className="rounded-xl border border-dashed border-neutral-300 p-10 text-center text-sm text-neutral-500">Bu seçime uygun ürün yok.</li>
+        )}
+      </ul>
+
+      <div className="mt-2 hidden overflow-x-auto rounded-xl border border-neutral-200 bg-raised md:block">
         <table className="w-full min-w-[46rem] text-left text-sm">
           <thead className="border-b border-neutral-200 text-xs uppercase tracking-wider text-neutral-500">
             <tr>
@@ -208,11 +251,11 @@ export default async function AdminProductsPage({ searchParams }: PageProps) {
 
       {pageCount > 1 && (
         <nav aria-label="Sayfalar" className="mt-5 flex items-center justify-center gap-3 text-sm font-bold">
-          {page > 1 ? <Link href={href({ sayfa: page - 1 })} className="btn btn-outline py-2">← Önceki</Link> : null}
+          {page > 1 ? <Link href={href({ sayfa: page - 1 })} className="btn btn-outline py-2.5">← Önceki</Link> : null}
           <span className="text-neutral-600">
             {page} / {pageCount}
           </span>
-          {page < pageCount ? <Link href={href({ sayfa: page + 1 })} className="btn btn-outline py-2">Sonraki →</Link> : null}
+          {page < pageCount ? <Link href={href({ sayfa: page + 1 })} className="btn btn-outline py-2.5">Sonraki →</Link> : null}
         </nav>
       )}
     </>

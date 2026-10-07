@@ -30,27 +30,45 @@ async function PanelShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-neutral-50 md:grid md:grid-cols-[15rem_1fr]">
-      <aside className="theme-fixed flex flex-col gap-4 bg-ink p-4 text-white md:sticky md:top-0 md:h-screen md:gap-6">
-        <div className="flex items-center justify-between gap-3">
-          <Link href="/yonetim" className="flex items-center gap-3 leading-tight">
+      {/* Mobilde üstte iki satır: logo + ikon düğmeler, altında beş sütunlu menü. Masaüstünde kenar çubuğu. */}
+      <aside className="theme-fixed flex flex-col gap-3 bg-ink p-3 text-white md:sticky md:top-0 md:h-screen md:gap-6 md:p-4">
+        <div className="flex items-center justify-between gap-2">
+          <Link href="/yonetim" className="flex min-w-0 items-center gap-3 leading-tight">
             <LogoMark className="h-9" />
             <span>
               <span className="block text-lg font-extrabold">MERT</span>
               <span className="block text-[10px] font-bold tracking-[0.18em] text-brand-500">YÖNETİM PANELİ</span>
             </span>
           </Link>
-          <span className="md:hidden">
+          <div className="flex shrink-0 items-center gap-1 md:hidden">
+            <Link
+              href="/"
+              target="_blank"
+              aria-label="Siteyi gör"
+              className="grid size-10 place-items-center rounded-xl text-neutral-300 hover:bg-white/10 hover:text-white"
+            >
+              <ExternalLink size={18} aria-hidden />
+            </Link>
+            <form action={adminLogout}>
+              <button
+                type="submit"
+                aria-label="Çıkış yap"
+                className="grid size-10 place-items-center rounded-xl text-neutral-300 hover:bg-white/10 hover:text-white"
+              >
+                <LogOut size={18} aria-hidden />
+              </button>
+            </form>
             <ThemeToggle variant="onDark" />
-          </span>
+          </div>
         </div>
 
         <AdminNav />
 
-        <div className="space-y-2 text-sm md:mt-auto">
-          <p className="hidden truncate text-xs text-neutral-400 md:block" title={user.email}>
+        <div className="mt-auto hidden space-y-2 text-sm md:block">
+          <p className="truncate text-xs text-neutral-400" title={user.email}>
             {user.email}
           </p>
-          <div className="flex items-center gap-2 md:flex-col md:items-stretch">
+          <div className="flex flex-col items-stretch gap-2">
             <Link
               href="/"
               target="_blank"
@@ -66,7 +84,7 @@ async function PanelShell({ children }: { children: React.ReactNode }) {
                 <LogOut size={16} aria-hidden /> Çıkış yap
               </button>
             </form>
-            <span className="ml-auto hidden md:ml-0 md:block">
+            <span>
               <ThemeToggle variant="onDark" />
             </span>
           </div>
@@ -74,7 +92,7 @@ async function PanelShell({ children }: { children: React.ReactNode }) {
         <p className="sr-only">{site.name}</p>
       </aside>
 
-      <main className="min-w-0 p-4 md:p-8">{children}</main>
+      <main className="min-w-0 p-3 sm:p-4 md:p-8">{children}</main>
     </div>
   );
 }

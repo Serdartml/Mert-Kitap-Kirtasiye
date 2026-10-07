@@ -76,7 +76,7 @@ async function CartContent() {
                       )}
                     </div>
                     <form action={removeCartItem.bind(null, item.id)} className="-mr-1 -mt-1 shrink-0">
-                      <button type="submit" aria-label={`${product.name} ürününü sepetten çıkar`} className="grid size-9 place-items-center rounded-lg text-neutral-500 hover:bg-neutral-100 hover:text-red-700 dark:text-red-400">
+                      <button type="submit" aria-label={`${product.name} ürününü sepetten çıkar`} className="grid size-10 place-items-center rounded-lg text-neutral-500 hover:bg-neutral-100 hover:text-red-700 dark:text-red-400">
                         <Trash2 size={18} />
                       </button>
                     </form>
@@ -85,7 +85,7 @@ async function CartContent() {
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center rounded-lg border border-neutral-300">
                       <form action={setCartItemQuantity.bind(null, item.id, item.quantity - 1)}>
-                        <button type="submit" aria-label="Adedi azalt" className="grid size-9 place-items-center">
+                        <button type="submit" aria-label="Adedi azalt" className="grid size-10 place-items-center">
                           <Minus size={14} />
                         </button>
                       </form>
@@ -95,7 +95,7 @@ async function CartContent() {
                           type="submit"
                           aria-label="Adedi artır"
                           disabled={item.quantity >= product.stock}
-                          className="grid size-9 place-items-center disabled:opacity-30"
+                          className="grid size-10 place-items-center disabled:opacity-30"
                         >
                           <Plus size={14} />
                         </button>

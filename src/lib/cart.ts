@@ -40,14 +40,63 @@ export async function getOrCreateCartId(): Promise<string> {
   }
 
   const cart = await db.cart.create({ data: {} });
-  (await cookies()).set(CART_COOKIE, cart.id, {
+  await setCartCookie(cart.id);
+  return cart.id;
+}
+
+async function setCartCookie(cartId: string): Promise<void> {
+  (await cookies()).set(CART_COOKIE, cartId, {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
     maxAge: CART_COOKIE_MAX_AGE,
     path: "/",
   });
-  return cart.id;
+}
+
+// Giriş ya da kayıt sonrası: misafir sepeti kullanıcıya bağlanır. Kullanıcının önceki oturumlardan
+// kalan bir sepeti varsa misafir sepetindeki ürünler ona eklenir (adetler toplanır; stok sınırı sepet
+// ve ödeme adımında ayrıca denetlenir). Yalnızca server action içinden çağrılabilir (çerez yazar).
+export async function attachCartToUser(userId: string): Promise<void> {
+  const [guestId, userCart] = await Promise.all([getCartId(), db.cart.findUnique({ where: { userId } })]);
+
+  const guest =
+    guestId && guestId !== userCart?.id
+      ? await db.cart.findUnique({ where: { id: guestId }, include: { items: true } })
+      : null;
+
+  // Çerezdeki sepet yoksa ya da başka bir üyeye aitse yalnızca kullanıcının kendi sepetine geçilir.
+  if (!guest || (guest.userId && guest.userId !== userId)) {
+    if (userCart) await setCartCookie(userCart.id);
+    else if (guest) (await cookies()).delete(CART_COOKIE);
+    return;
+  }
+
+  if (!userCart) {
+    await db.cart.update({ where: { id: guest.id }, data: { userId } });
+    return;
+  }
+
+  await db.$transaction([
+    ...guest.items.map((item) =>
+      db.cartItem.upsert({
+        where: { cartId_productId: { cartId: userCart.id, productId: item.productId } },
+        create: { cartId: userCart.id, productId: item.productId, quantity: item.quantity },
+        update: { quantity: { increment: item.quantity } },
+      }),
+    ),
+    db.cart.delete({ where: { id: guest.id } }),
+  ]);
+  await setCartCookie(userCart.id);
+}
+
+// Çıkışta: sepet üyeye bağlıysa çerez silinir ki aynı cihazdaki sonraki ziyaretçi onu görmesin.
+// Sepetin kendisi durur; üye tekrar giriş yapınca geri gelir.
+export async function releaseCartCookie(): Promise<void> {
+  const id = await getCartId();
+  if (!id) return;
+  const cart = await db.cart.findUnique({ where: { id }, select: { userId: true } });
+  if (!cart || cart.userId) (await cookies()).delete(CART_COOKIE);
 }
 
 export async function getCartCount(): Promise<number> {

@@ -108,34 +108,41 @@ export default function ProductForm({ values, categories }: { values: ProductFor
             name="attributes"
             defaultValue={values.attributes}
             rows={4}
-            className="field mt-1.5 font-mono text-sm font-normal"
+            // Mobilde 16px: daha küçük yazı iOS'ta odaklanınca sayfayı yakınlaştırır.
+            className="field mt-1.5 font-mono text-base font-normal md:text-sm"
             placeholder={"Renk: Siyah\nBoyut: A5"}
           />
           <span className={hint}>Her satıra bir özellik, &quot;Ad: Değer&quot; biçiminde.</span>
         </label>
-        <label className="flex items-center gap-2.5 text-sm font-bold">
-          <input type="checkbox" name="isActive" defaultChecked={values.isActive} className="size-4 accent-brand-500" />
+        <label className="flex min-h-10 items-center gap-3 text-sm font-bold">
+          <input type="checkbox" name="isActive" defaultChecked={values.isActive} className="size-5 shrink-0 accent-brand-500" />
           Sitede yayında
         </label>
-        <label className="flex items-center gap-2.5 text-sm font-bold">
-          <input type="checkbox" name="isFeatured" defaultChecked={values.isFeatured} className="size-4 accent-brand-500" />
+        <label className="flex min-h-10 items-center gap-3 text-sm font-bold">
+          <input type="checkbox" name="isFeatured" defaultChecked={values.isFeatured} className="size-5 shrink-0 accent-brand-500" />
           Ana sayfada &quot;Öne Çıkanlar&quot;da göster
         </label>
       </fieldset>
 
-      {state.error && (
-        <p role="alert" className="rounded-lg border border-red-300 bg-red-50 p-3 text-sm font-semibold text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-300">
-          {state.error}
-        </p>
-      )}
+      {/*
+        Mobilde form uzun olduğu için Kaydet çubuğu ekranın altına yapışır; hata mesajı da çubuğun
+        içindedir ki formun ortasındayken de görünsün. Negatif kenar boşluğu, panelin iç boşluğunu geri alır.
+      */}
+      <div className="sticky bottom-0 z-10 -mx-3 space-y-3 border-t border-neutral-200 bg-neutral-50 px-3 py-3 sm:-mx-4 sm:px-4 md:static md:mx-0 md:border-0 md:bg-transparent md:p-0">
+        {state.error && (
+          <p role="alert" className="rounded-lg border border-red-300 bg-red-50 p-3 text-sm font-semibold text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-300">
+            {state.error}
+          </p>
+        )}
 
-      <div className="flex flex-wrap gap-3">
-        <button type="submit" disabled={pending} className="btn btn-primary">
-          {pending ? "Kaydediliyor..." : "Kaydet"}
-        </button>
-        <Link href="/yonetim/urunler" className="btn btn-outline">
-          Vazgeç
-        </Link>
+        <div className="flex gap-3">
+          <button type="submit" disabled={pending} className="btn btn-primary flex-1 md:flex-none">
+            {pending ? "Kaydediliyor..." : "Kaydet"}
+          </button>
+          <Link href="/yonetim/urunler" className="btn btn-outline">
+            Vazgeç
+          </Link>
+        </div>
       </div>
     </form>
   );

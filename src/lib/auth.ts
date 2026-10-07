@@ -54,6 +54,22 @@ export async function destroySession(): Promise<void> {
   }
 }
 
+export const LOGIN_PATH = "/giris";
+
+// Giriş/kayıt sonrası dönülecek adres (?sonra=). Yalnızca site içi yollar kabul edilir; dışarıya
+// yönlendiren ("//site.com", "https://...") ya da geçersiz değerler ana hesap sayfasına düşer.
+export function safeNextPath(value: unknown, fallback = "/hesabim"): string {
+  const path = typeof value === "string" ? value : "";
+  return /^\/(?![/\\])[^\s]*$/.test(path) ? path : fallback;
+}
+
+// Üyelik gerektiren sayfalar ve action'lar için. next: girişten sonra dönülecek yol.
+export async function requireUser(next: string) {
+  const user = await getCurrentUser();
+  if (!user) redirect(`${LOGIN_PATH}?sonra=${encodeURIComponent(next)}`);
+  return user;
+}
+
 // Yönetim sayfalarının ve yönetim action'larının HER BİRİ bunu çağırmalıdır. Layout'taki kontrol tek başına
 // yetmez: sayfalar layout'u beklemeden çalışır, action'lar ise doğrudan POST ile çağrılabilir.
 export async function requireAdmin() {

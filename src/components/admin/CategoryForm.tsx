@@ -63,8 +63,8 @@ export default function CategoryForm({ values, parents }: { values: CategoryForm
         </p>
       )}
 
-      <div className="flex flex-wrap gap-3 pt-2">
-        <button type="submit" disabled={pending} className="btn btn-primary">
+      <div className="flex gap-3 pt-2">
+        <button type="submit" disabled={pending} className="btn btn-primary flex-1 md:flex-none">
           {pending ? "Kaydediliyor..." : "Kaydet"}
         </button>
         <Link href="/yonetim/kategoriler" className="btn btn-outline">

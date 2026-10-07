@@ -1,6 +1,7 @@
 const messages: Record<string, { text: string; tone: "ok" | "warn" }> = {
   kaydedildi: { text: "Kaydedildi.", tone: "ok" },
   silindi: { text: "Silindi.", tone: "ok" },
+  gecersiz: { text: "Bu sipariş o duruma geçirilemez; sayfayı yenileyip tekrar bakın.", tone: "warn" },
   dolu: { text: "Bu kategori silinemedi: içinde ürün veya alt kategori var. Önce onları taşıyın.", tone: "warn" },
 };
 

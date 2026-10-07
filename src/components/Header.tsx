@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
-import { Clock, MapPin, Phone, Search, ShoppingCart, User } from "lucide-react";
+import { Clock, MapPin, Phone, Search, ShoppingCart } from "lucide-react";
+import AccountLink, { GuestAccountLink } from "./AccountLink";
 import CartBadge from "./CartBadge";
 import CategoryArt from "./CategoryArt";
 import Logo from "./Logo";
@@ -71,10 +72,9 @@ export default async function Header() {
           <Logo />
           <SearchForm className="hidden flex-1 md:flex" />
           <div className="ml-auto flex items-center md:ml-0 md:gap-1">
-            <Link href="/giris" aria-label="Giriş yap" className="flex items-center gap-2 rounded-lg p-2 text-sm font-bold hover:bg-neutral-100 md:px-3 md:py-2">
-              <User size={22} />
-              <span className="hidden lg:inline">Giriş Yap</span>
-            </Link>
+            <Suspense fallback={<GuestAccountLink />}>
+              <AccountLink />
+            </Suspense>
             <Link
               href="/sepet"
               className="flex items-center gap-2 rounded-lg p-2 text-sm font-bold hover:bg-neutral-100 md:px-3 md:py-2"

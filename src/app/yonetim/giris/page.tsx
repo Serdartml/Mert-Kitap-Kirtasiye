@@ -17,7 +17,7 @@ export default function AdminLoginPage() {
           <span className="marker">Yönetim Paneli</span>
         </h1>
         <LoginForm />
-        <Link href="/" className="mt-6 block text-center text-sm font-semibold text-neutral-500 hover:text-fg">
+        <Link href="/" className="mt-4 block py-2.5 text-center text-sm font-semibold text-neutral-500 hover:text-fg">
           ← Siteye dön
         </Link>
       </div>

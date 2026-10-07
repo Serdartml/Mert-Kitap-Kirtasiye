@@ -8,7 +8,8 @@ const LOW_STOCK = 5;
 export default async function AdminDashboardPage() {
   await requireAdmin();
 
-  const [total, active, outOfStock, lowStock, categories, messages, lowStockItems, latestMessages] = await Promise.all([
+  const [openOrders, total, active, outOfStock, lowStock, categories, messages, lowStockItems, latestMessages] = await Promise.all([
+    db.order.count({ where: { status: { in: ["PENDING", "PAID", "PREPARING", "SHIPPED"] } } }),
     db.product.count(),
     db.product.count({ where: { isActive: true } }),
     db.product.count({ where: { isActive: true, stock: 0 } }),
@@ -25,6 +26,7 @@ export default async function AdminDashboardPage() {
   ]);
 
   const cards = [
+    { label: "Açık sipariş", value: openOrders, note: "teslim bekleyen", href: "/yonetim/siparisler" },
     { label: "Ürün", value: total, note: `${active} yayında`, href: "/yonetim/urunler" },
     { label: "Stokta yok", value: outOfStock, note: "yayındaki ürünler", href: "/yonetim/urunler?filtre=stoksuz" },
     { label: "Stok azalıyor", value: lowStock, note: `${LOW_STOCK} adet ve altı`, href: "/yonetim/urunler?filtre=azalan" },
@@ -38,7 +40,7 @@ export default async function AdminDashboardPage() {
         <span className="marker">Özet</span>
       </h1>
 
-      <ul className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-5">
+      <ul className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-6">
         {cards.map((card) => (
           <li key={card.label}>
             <Link href={card.href} className="block rounded-xl border border-neutral-200 bg-raised p-4 hover:border-fg">
@@ -58,8 +60,8 @@ export default async function AdminDashboardPage() {
           ) : (
             <ul className="mt-3 divide-y divide-neutral-200 text-sm">
               {lowStockItems.map((item) => (
-                <li key={item.id} className="flex items-center gap-3 py-2.5">
-                  <Link href={`/yonetim/urunler/${item.id}`} className="min-w-0 flex-1 truncate font-semibold hover:underline">
+                <li key={item.id} className="flex items-center gap-3">
+                  <Link href={`/yonetim/urunler/${item.id}`} className="min-w-0 flex-1 truncate py-2.5 font-semibold hover:underline">
                     {item.name}
                   </Link>
                   <span className="shrink-0 text-xs text-neutral-500">{formatPrice(item.priceKurus)}</span>
@@ -92,7 +94,7 @@ export default async function AdminDashboardPage() {
               ))}
             </ul>
           )}
-          <Link href="/yonetim/mesajlar" className="mt-3 inline-block text-sm font-bold hover:underline">
+          <Link href="/yonetim/mesajlar" className="mt-1 inline-block py-2.5 text-sm font-bold hover:underline">
             Tüm mesajlar →
           </Link>
         </section>

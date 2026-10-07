@@ -1,12 +1,13 @@
 "use server";
 
-import { Prisma } from "@prisma/client";
+import { Prisma, type OrderStatus } from "@prisma/client";
 import { updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/auth";
 import { CATALOG_TAG } from "@/lib/catalog";
 import { db } from "@/lib/db";
+import { closedStatuses, nextStatuses } from "@/lib/order-status";
 import { parsePriceToKurus, slugify } from "@/lib/slug";
 
 // Bu dosyadaki her action önce requireAdmin() çağırır: action'lar doğrudan POST ile de çağrılabilir.
@@ -203,6 +204,34 @@ export async function deleteCategory(id: string): Promise<void> {
   await db.category.delete({ where: { id } });
   updateTag(CATALOG_TAG);
   redirect("/yonetim/kategoriler?durum=silindi");
+}
+
+// ---------- Siparişler ----------
+
+// Durumu ilerletir ya da siparişi iptal eder. İptalde ayrılan stok ürünlere geri verilir.
+// Güncelleme koşulludur (beklenen eski durum): iki sekmeden aynı anda basılırsa stok iki kez dönmez.
+export async function setOrderStatus(id: string, status: OrderStatus): Promise<void> {
+  await requireAdmin();
+
+  const order = await db.order.findUnique({ where: { id }, include: { items: true } });
+  if (!order) redirect("/yonetim/siparisler");
+
+  const allowed = status === "CANCELLED" ? !closedStatuses.includes(order.status) && order.status !== "DELIVERED" : nextStatuses[order.status].includes(status);
+  if (!allowed) redirect(`/yonetim/siparisler/${id}?durum=gecersiz`);
+
+  await db.$transaction(async (tx) => {
+    const updated = await tx.order.updateMany({ where: { id, status: order.status }, data: { status } });
+    if (updated.count !== 1 || status !== "CANCELLED") return;
+    for (const item of order.items) {
+      // Ürün sonradan silinmişse (productId boş) geri verilecek stok kaydı yoktur.
+      if (item.productId) {
+        await tx.product.update({ where: { id: item.productId }, data: { stock: { increment: item.quantity } } });
+      }
+    }
+  });
+
+  if (status === "CANCELLED") updateTag(CATALOG_TAG);
+  redirect(`/yonetim/siparisler/${id}?durum=kaydedildi`);
 }
 
 // ---------- Mesajlar ----------
