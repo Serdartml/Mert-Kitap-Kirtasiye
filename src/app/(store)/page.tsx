@@ -1,18 +1,11 @@
 import Link from "next/link";
-import { ArrowRight, Award, MapPin, Phone, ShieldCheck, Store } from "lucide-react";
+import { ArrowRight, MapPin, Phone } from "lucide-react";
 import HeroShowcase from "@/components/HeroShowcase";
 import ProductGrid from "@/components/ProductGrid";
 import Scribble from "@/components/Scribble";
+import ShowcaseMarquee from "@/components/ShowcaseMarquee";
 import { getDiscountedProducts, getFeaturedProducts, getNavCategories, getNewestProducts, type ProductCardData } from "@/lib/catalog";
-import { categoryIcons, fallbackCategoryIcon } from "@/lib/category-icons";
-import { site } from "@/lib/site";
-
-const trustItems = [
-  { icon: Award, title: "20 yıllık tecrübe", text: "Eğitimde yol arkadaşınız" },
-  { icon: ShieldCheck, title: "Orijinal ürün garantisi", text: "Özenle seçilmiş ürünler" },
-  { icon: Store, title: "Bornova'da mağaza", text: "Haftanın 7 günü açık" },
-  { icon: Phone, title: site.phone, text: "Telefonla destek" },
-];
+import { site, stats } from "@/lib/site";
 
 // note: başlığın yanına el yazısıyla düşülen kısa not; ok başlığı gösterir.
 function ProductSection({ title, href, note, products }: { title: string; href?: string; note?: string; products: ProductCardData[] }) {
@@ -53,59 +46,20 @@ export default async function HomePage() {
     <>
       <HeroShowcase />
 
-      {/* Güven şeridi */}
-      <section className="container-page mt-3 md:mt-4">
-        <ul className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-neutral-200 bg-neutral-200 lg:grid-cols-4">
-          {trustItems.map((item) => (
-            <li key={item.title} className="flex items-center gap-2.5 bg-raised p-3 sm:gap-3 sm:p-4">
-              <span className="grid size-9 shrink-0 place-items-center rounded-full bg-brand-100 sm:size-10">
-                <item.icon size={18} />
-              </span>
-              <span className="min-w-0">
-                <span className="block text-xs font-extrabold leading-tight sm:text-sm">{item.title}</span>
-                <span className="mt-0.5 block text-[11px] leading-tight text-neutral-500 sm:text-xs">{item.text}</span>
-              </span>
-            </li>
-          ))}
-        </ul>
-      </section>
+      {/* Sürekli kayan vitrin: kategoriler ve mağaza mesajları */}
+      <ShowcaseMarquee categories={categories} />
 
-      {/* Kategoriler */}
-      <section className="container-page mt-8 md:mt-12">
-        <h2 className="mb-4 text-xl font-extrabold md:mb-5 md:text-2xl">
-          <span className="marker">Kategoriler</span>
-        </h2>
-        {/* Mobilde yalnızca ikon + ad; açıklama ve alt kategoriler sm ve üstünde görünür. */}
-        <div className="grid grid-cols-2 gap-2.5 sm:gap-4 lg:grid-cols-3">
-          {categories.map((category) => {
-            const Icon = categoryIcons[category.slug] ?? fallbackCategoryIcon;
-            return (
-              <div key={category.id} className="min-w-0 rounded-2xl border border-neutral-200 bg-raised p-3 sm:p-6">
-                <Link href={`/kategori/${category.slug}`} className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:gap-3">
-                  <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-brand-500 sm:size-12">
-                    <Icon className="size-5 sm:size-6" />
-                  </span>
-                  <span className="min-w-0">
-                    <span className="block text-sm font-extrabold leading-tight hover:underline sm:text-lg">{category.name}</span>
-                    <span className="hidden text-xs text-neutral-500 sm:block">{category.description}</span>
-                  </span>
-                </Link>
-                <ul className="mt-5 hidden flex-wrap gap-2 sm:flex">
-                  {category.children.map((child) => (
-                    <li key={child.id}>
-                      <Link
-                        href={`/kategori/${child.slug}`}
-                        className="block rounded-full bg-neutral-100 px-3 py-1.5 text-xs font-bold hover:bg-brand-200"
-                      >
-                        {child.name}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            );
-          })}
-        </div>
+      {/* Rakam bandı: siyah zemin, sarı büyük rakamlar, el yazısı açıklamalar. Mobilde 2x2. */}
+      <section className="container-page mt-3 md:mt-4">
+        <dl className="theme-fixed pattern-grid grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-white/15 bg-[#2e2e2e] [--pattern-color:rgb(255_255_255/0.06)] lg:grid-cols-4">
+          {stats.map((stat) => (
+            // Etiket (dt) okuma sırasında önce gelir, görsel olarak rakamın altında durur.
+            <div key={stat.label} className="flex min-w-0 flex-col-reverse bg-ink px-4 py-5 text-center sm:py-7">
+              <dt className="mt-1.5 font-hand text-xl leading-none text-white/80 sm:mt-2 sm:text-2xl">{stat.label}</dt>
+              <dd className="truncate text-3xl font-extrabold leading-none tracking-tight text-brand-500 sm:text-5xl">{stat.value}</dd>
+            </div>
+          ))}
+        </dl>
       </section>
 
       <ProductSection title="Öne Çıkanlar" products={featured} />

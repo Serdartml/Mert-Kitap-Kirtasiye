@@ -1,38 +1,16 @@
 import { Suspense } from "react";
 import Link from "next/link";
-import { Clock, MapPin, Phone, Search, ShoppingCart } from "lucide-react";
+import { Clock, MapPin, Phone, ShoppingCart } from "lucide-react";
 import AccountLink, { GuestAccountLink } from "./AccountLink";
 import CartBadge from "./CartBadge";
 import CategoryArt from "./CategoryArt";
 import Logo from "./Logo";
 import MobileMenu from "./MobileMenu";
+import SearchBox from "./SearchBox";
 import ThemeToggle from "./ThemeToggle";
 import { site } from "@/lib/site";
 import { getNavCategories } from "@/lib/catalog";
 import { categoryIcons, categoryPatterns, fallbackCategoryIcon, fallbackCategoryPattern } from "@/lib/category-icons";
-
-function SearchForm({ className = "" }: { className?: string }) {
-  return (
-    <form action="/arama" role="search" className={`flex ${className}`}>
-      {/* Mobilde 16px: daha küçük yazı iOS'ta odaklanınca sayfayı yakınlaştırır. */}
-      <input
-        type="search"
-        name="q"
-        required
-        placeholder="Ürün, kategori veya marka ara"
-        aria-label="Ürün ara"
-        className="min-w-0 flex-1 rounded-l-lg border-2 border-r-0 border-brand-500 bg-surface px-4 py-2 text-base outline-none placeholder:text-neutral-400 md:py-2.5 md:text-sm"
-      />
-      <button
-        type="submit"
-        aria-label="Ara"
-        className="grid w-12 shrink-0 place-items-center rounded-r-lg bg-brand-500 text-ink hover:bg-brand-400"
-      >
-        <Search size={20} />
-      </button>
-    </form>
-  );
-}
 
 export default async function Header() {
   const categories = await getNavCategories();
@@ -70,7 +48,7 @@ export default async function Header() {
         <div className="container-page flex h-14 items-center gap-2 md:h-20 md:gap-8">
           <MobileMenu categories={categories} />
           <Logo />
-          <SearchForm className="hidden flex-1 md:flex" />
+          <SearchBox className="hidden flex-1 md:block" />
           <div className="ml-auto flex items-center md:ml-0 md:gap-1">
             <Suspense fallback={<GuestAccountLink />}>
               <AccountLink />
@@ -98,7 +76,7 @@ export default async function Header() {
 
       <div className="sticky top-0 z-40 border-b border-neutral-200 bg-raised py-2 shadow-sm md:hidden dark:shadow-[0_6px_16px_rgb(0_0_0/0.7)]">
         <div className="container-page">
-          <SearchForm />
+          <SearchBox />
         </div>
       </div>
 

@@ -32,8 +32,9 @@ verisi dakikada bir yenilenir. Sepet gibi çerez okuyan parçalar `<Suspense>` i
 
 ## Yönetim paneli
 
-Adres: `/yonetim` (giriş: `/yonetim/giris`). Ürün ekleme/düzenleme/silme, kategoriler ve iletişim
-mesajları buradan yönetilir. Yapılan değişiklik mağazaya hemen yansır.
+Adres: `/yonetim` (giriş: `/yonetim/giris`). Bölümler: Özet, Siparişler (durum değiştirme; iptalde
+stok geri verilir), Ürünler, Kategoriler, Müşteriler (üyeler, kayıt tarihine göre sıralı) ve Mesajlar
+(iletişim formu). Katalogdaki değişiklik mağazaya hemen yansır.
 
 Yönetici hesabı oluşturmak veya parolasını değiştirmek için:
 
@@ -47,18 +48,47 @@ kendi veritabanında ayrıca oluşturulmalıdır.
 Yeni bir yönetim sayfası veya action yazarken ilk satırda `await requireAdmin()` çağırın; layout'taki
 kontrol tek başına yetmez.
 
+Her yönetim sayfasında ve panel layout'unda `export const instant = false;` bulunur. Next, oturum çerezini okuyan her sayfayı
+"anında gezinme" denetiminden geçirir ve bulamayınca geliştirme sunucusunda hata katmanı açar
+("encountered uncached data during prerendering or a navigation"); telefonda bu katman sayfayı kapatır.
+Panel zaten oturum arkasında olduğundan denetimden çıkarıldı. Yeni yönetim sayfasına da ekleyin.
+Sayfalar arası geçişte `(panel)/loading.tsx` iskeleti görünür. Önbelleğe girmemesi gereken zaman
+okumaları (`new Date()`, `Math.random()`) için render sırasında `await io()` (`next/cache`) çağırın;
+`getCurrentUser` oturum süresini böyle kontrol eder.
+
+## Ana sayfa ve arama
+
+- Üst vitrinin altındaki kayan şerit `ShowcaseMarquee` / `Marquee`: kategoriler ve mağaza mesajları, bekleme
+  olmadan akar; fare/odakla ve durdurma düğmesiyle durur. "Hareketi azalt" açıkken de oynar
+  (`globals.css` içinde bilerek muaf; karşılama ekranıyla aynı karar).
+- Rakam bandı değerleri `src/lib/site.ts` içindeki `stats`.
+- Görseli olmayan ürünler `ProductVisual` içinde kategoriye göre renkli "kapak" gösterir (baş harf, ikon).
+  Renkler `lib/category-icons.ts` içindeki `categoryTones`; yeni ana kategoriye buraya da ekleyin.
+- Arama kutusu `SearchBox`, önerileri `/api/arama-oneri` verir (`getSearchSuggestions`, dakikalık önbellek;
+  eşleşme kuralı `listProducts` ile aynı tutulmalı).
+
+## Deneme sınırı
+
+Giriş (müşteri ve yönetici), kayıt ve iletişim formu `src/lib/rate-limit.ts` ile sınırlıdır; sayaçlar
+`RateLimit` tablosunda durur, sınır değerleri `LIMITS` içindedir. Giriş: e-posta başına 15 dakikada 8,
+IP başına 30 deneme (başarılı girişte e-posta sayacı sıfırlanır). Yeni bir form action'ı yazarken
+pahalı işten (parola özeti, kayıt) önce `checkLimits` çağırın.
+
 ## Yapı
 
 ```
 prisma/schema.prisma      veri modeli
 prisma/seed.ts            örnek katalog (gerçek ürün değil)
 src/app/(store)/          vitrin sayfaları (header + footer'lı)
-src/actions/              server action'lar (sepet, iletişim formu)
-src/components/           arayüz bileşenleri
+src/app/yonetim/          yönetim paneli
+src/actions/              server action'lar (sepet, sipariş, üyelik, yönetim, iletişim formu)
+src/components/           arayüz bileşenleri (admin/ altında panel bileşenleri)
 src/lib/site.ts           mağaza bilgileri (adres, telefon, saatler, metinler)
-src/lib/catalog.ts        ürün ve kategori sorguları
-src/lib/cart.ts           çerez tabanlı misafir sepeti
-src/lib/auth.ts           oturum okuma (giriş arayüzü gelince kullanılacak)
+src/lib/catalog.ts        ürün ve kategori sorguları (önbellekli)
+src/lib/cart.ts           çerez tabanlı sepet; girişte üyeye bağlanır
+src/lib/auth.ts           oturum (müşteri ve yönetici ortak), requireUser / requireAdmin
+src/lib/orders.ts         sipariş numarası ve misafir sipariş takibi
+src/lib/rate-limit.ts     deneme sınırı
 src/app/globals.css       renk paleti ve ortak sınıflar
 ```
 
@@ -71,16 +101,20 @@ src/app/globals.css       renk paleti ve ortak sınıflar
 | `/urun/[slug]` | Ürün detayı |
 | `/arama?q=` | Arama |
 | `/sepet` | Sepet |
-| `/odeme` | Yer tutucu; ödeme sağlayıcısı bağlanacak |
-| `/giris`, `/kayit` | Yer tutucu; üyelik ertelendi |
+| `/odeme` | Sipariş formu; tek yöntem mağazadan teslim, ödeme mağazada. Üyeliksiz de sipariş verilir |
+| `/siparis/[orderNo]` | Sipariş özeti |
+| `/giris`, `/kayit`, `/hesabim` | Müşteri üyeliği ve sipariş geçmişi |
 | `/hakkimizda`, `/iletisim` | Hazır |
-| `/bilgi/[slug]` | KVKK, gizlilik vb.; metinler yazılacak |
+| `/bilgi/[slug]` | KVKK, gizlilik vb.; metinler yazılacak (şimdilik arama motorlarına kapalı) |
 
 ## Bilinen eksikler
 
-- **Logo:** `src/components/Logo.tsx` içinde logonun yeri kesik çizgili kutuyla ayrıldı; `src/app/icon.svg` (favicon) geçici. Gerçek logo `public/logo.svg` olarak eklenip bu iki yer güncellenecek.
-- **Ürün görselleri:** Görseli olmayan ürünlerde kategori ikonlu yer tutucu çıkar. Görseller `ProductImage` tablosuna eklenir.
-- **Üyelik:** `User`, `Session`, `Address`, `Favorite`, `Review` tabloları ve `lib/auth.ts` hazır; form ve parola doğrulama yok.
-- **Ödeme ve sipariş:** `Order` / `OrderItem` tabloları hazır; ödeme entegrasyonu ve sipariş oluşturma yok.
-- **Yönetim paneli:** Yok. Ürünler şimdilik seed veya `npm run db:studio` ile girilir.
-- **Yasal metinler:** `/bilgi/*` sayfaları boş.
+- **Yasal metinler:** `/bilgi/*` sayfaları boş ("içerik hazırlanıyor"). Hukuki onaylı metin gerekiyor; yazılınca `index` açılmalı.
+- **Ürün görselleri:** Yönetim panelinde görsel yükleme yok (Cloudflare R2 kararlaştırıldı, hesap bilgileri bekleniyor). Görseli olmayan ürünlerde kategori ikonlu yer tutucu çıkar. Şemada `ProductImage` hazır.
+- **Toplu ürün aktarımı:** Dükkânın stok programından (Turna Yazılım, ~10 bin ürün) içe aktarma yok; örnek dışa aktarım bekleniyor. Anahtar alanlar: `barcode`, `sku`. Canlıya çıkmadan önce `db:seed` örnek kataloğu gerçek veriyle değiştirilmeli.
+- **Online ödeme ve kargo:** Yok (iyzico / PayTR seçimi bekliyor). Şimdilik yalnızca mağazadan teslim. Stok sipariş anında düşülür; ödeme gelince onay anına alınmalı (`actions/order.ts`).
+- **E-posta:** Gönderim servisi yok. Sipariş onayı, parola sıfırlama, e-posta doğrulama ve yeni mesaj/sipariş bildirimi bunu bekliyor.
+- **Kullanılmayan tablolar:** `Address`, `Favorite`, `Review`, `Brand` şemada var ama arayüzü yok.
+- **Logo:** `src/components/Logo.tsx` içinde satır içi SVG olarak tabeladan yeniden çizildi; renkler tahmini (`BLUE`, `PINK`, `YELLOW`). Resmî renk kodları gelince yalnızca bu sabitler değişir. `src/app/icon.svg` aynı işaretten.
+- **Veritabanı:** Geliştirme ve canlı için tek Neon veritabanı var. Canlı için ayrı veritabanı açılıp `npm run db:deploy` ve `npm run admin:create` orada çalıştırılmalı.
+- **Test:** Otomatik test yok.

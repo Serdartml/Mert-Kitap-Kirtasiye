@@ -1,4 +1,5 @@
 import "server-only";
+import { io } from "next/cache";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createHash, randomBytes } from "node:crypto";
@@ -22,6 +23,9 @@ export async function getCurrentUser() {
     where: { tokenHash: hashSessionToken(token) },
     include: { user: true },
   });
+  // Süre kontrolü şimdiki zamanı okur. io(), bu değerin önceden hazırlanan kabuğa girmesini engeller
+  // (yoksa Next "new Date()" hatası verir); istek sırasında hemen çözülür.
+  await io();
   if (!session || session.expiresAt < new Date()) return null;
 
   return session.user;

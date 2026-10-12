@@ -253,6 +253,15 @@ model Review {
   @@unique([productId, userId])
 }
 
+// Deneme sınırlama sayaçları (lib/rate-limit.ts). Anahtar özetlenmiş IP / e-posta içerir.
+model RateLimit {
+  key     String   @id
+  count   Int
+  resetAt DateTime
+
+  @@index([resetAt])
+}
+
 model ContactMessage {
   id        String   @id @default(cuid())
   name      String

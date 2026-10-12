@@ -12,6 +12,9 @@ import { kurusToInput } from "@/lib/slug";
 
 export const metadata: Metadata = { title: "Ürünü Düzenle" };
 
+// Oturum arkasındaki yönetim sayfası: Next'in "anında gezinme" denetiminden çıkarıldı (README, Yönetim paneli).
+export const instant = false;
+
 export default async function EditProductPage({ params }: { params: Promise<{ id: string }> }) {
   await requireAdmin();
   const { id } = await params;

@@ -5,6 +5,9 @@ import { formatPrice } from "@/lib/format";
 
 const LOW_STOCK = 5;
 
+// Oturum arkasındaki yönetim sayfası: Next'in "anında gezinme" denetiminden çıkarıldı (README, Yönetim paneli).
+export const instant = false;
+
 export default async function AdminDashboardPage() {
   await requireAdmin();
 

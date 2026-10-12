@@ -37,6 +37,14 @@ export const site = {
   },
 } as const;
 
+// Ana sayfadaki rakam bandı. Değerler mağaza sahibinin beyanıdır; değişirse buradan güncellenir.
+export const stats = [
+  { value: "20+", label: "yıllık tecrübe" },
+  { value: "10.000+", label: "çeşit ürün" },
+  { value: "7/7", label: "gün açık" },
+  { value: site.address.district, label: "mağazamız" },
+] as const;
+
 // Hazır mesajlı WhatsApp bağlantısı; numara tanımlı değilse null.
 export function whatsappHref(text: string): string | null {
   if (!site.whatsapp) return null;

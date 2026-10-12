@@ -480,11 +480,42 @@ html[data-welcome="play"] .welcome-surface {
 }
 
 /*
+  Ana sayfadaki kayan vitrin (Marquee.tsx). Şerit iki özdeş kopyadan oluşur ve %50 kayınca başa sarar.
+  Kenarlar solarak girer çıkar. Fare üstündeyken, klavye odağındayken ve durdurma düğmesiyle durur.
+*/
+.marquee-viewport {
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 5%, #000 95%, transparent);
+  mask-image: linear-gradient(to right, transparent, #000 5%, #000 95%, transparent);
+}
+
+.marquee-track {
+  animation: marquee-scroll var(--marquee-duration, 40s) linear infinite;
+}
+
+@keyframes marquee-scroll {
+  to {
+    translate: -50% 0;
+  }
+}
+
+.marquee-track[data-paused="true"],
+.marquee:focus-within .marquee-track {
+  animation-play-state: paused;
+}
+
+@media (hover: hover) {
+  .marquee:hover .marquee-track {
+    animation-play-state: paused;
+  }
+}
+
+/*
   Karşılama ekranı bu kuralın dışında tutulur: mağaza sahibinin isteğiyle "hareketi azalt" açık
   telefonlarda da (pil tasarrufu bu ayarı açabiliyor) tam haliyle oynar. 2,4 sn sürer, dokununca kapanır.
+  Kayan vitrin (.marquee-track) de aynı nedenle dışarıda; durdurma düğmesi ve hover/odak duraklatması var.
 */
 @media (prefers-reduced-motion: reduce) {
-  *:not(.welcome, .welcome *),
+  *:not(.welcome, .welcome *, .marquee-track),
   ::before,
   ::after {
     animation-duration: 0.01ms !important;

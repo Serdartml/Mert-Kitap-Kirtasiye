@@ -17,6 +17,9 @@ interface PageProps {
   searchParams: Promise<{ durum?: string }>;
 }
 
+// Oturum arkasındaki yönetim sayfası: Next'in "anında gezinme" denetiminden çıkarıldı (README, Yönetim paneli).
+export const instant = false;
+
 export default async function AdminOrderPage({ params, searchParams }: PageProps) {
   await requireAdmin();
   const [{ id }, { durum }] = await Promise.all([params, searchParams]);

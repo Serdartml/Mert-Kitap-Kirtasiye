@@ -8,6 +8,8 @@ import { db } from "@/lib/db";
 
 export const metadata: Metadata = { title: "Mesajlar" };
 
+export const instant = false;
+
 export default async function AdminMessagesPage({ searchParams }: { searchParams: Promise<{ durum?: string }> }) {
   await requireAdmin();
   const { durum } = await searchParams;

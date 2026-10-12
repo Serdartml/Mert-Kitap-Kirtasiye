@@ -1,6 +1,8 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import { PanelSkeleton } from "@/components/Skeletons";
 import { infoPages } from "@/lib/site";
 
 interface PageProps {
@@ -18,7 +20,16 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   return page ? { title: page.title, robots: { index: false } } : {};
 }
 
-export default async function InfoPage({ params }: PageProps) {
+// params adres verisidir; ortak kabuğa girmesin diye okunması <Suspense> içindeki bileşene bırakıldı.
+export default function InfoPage({ params }: PageProps) {
+  return (
+    <Suspense fallback={<PanelSkeleton />}>
+      <InfoContent params={params} />
+    </Suspense>
+  );
+}
+
+async function InfoContent({ params }: PageProps) {
   const { slug } = await params;
   const page = infoPages.find((p) => p.slug === slug);
   if (!page) notFound();

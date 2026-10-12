@@ -56,6 +56,9 @@ function CategoryRow({ category, childCount, totalProducts, nested = false }: Ro
   );
 }
 
+// Oturum arkasındaki yönetim sayfası: Next'in "anında gezinme" denetiminden çıkarıldı (README, Yönetim paneli).
+export const instant = false;
+
 export default async function AdminCategoriesPage({ searchParams }: { searchParams: Promise<{ durum?: string }> }) {
   await requireAdmin();
   const { durum } = await searchParams;

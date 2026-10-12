@@ -17,6 +17,9 @@ const filters: { key: string; label: string; statuses?: OrderStatus[] }[] = [
   { key: "hepsi", label: "Hepsi" },
 ];
 
+// Oturum arkasındaki yönetim sayfası: Next'in "anında gezinme" denetiminden çıkarıldı (README, Yönetim paneli).
+export const instant = false;
+
 export default async function AdminOrdersPage({ searchParams }: { searchParams: Promise<{ filtre?: string }> }) {
   await requireAdmin();
   const { filtre } = await searchParams;

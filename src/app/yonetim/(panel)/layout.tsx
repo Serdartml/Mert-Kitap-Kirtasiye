@@ -14,6 +14,10 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
+// Panel oturum arkasında: kabuk da (oturum kontrolü, kullanıcı e-postası) istek anında çalışır. Sayfalar gibi
+// kabuk da Next'in "anında gezinme" denetiminden çıkarıldı (README, Yönetim paneli).
+export const instant = false;
+
 // Yönetim sayfaları oturum çerezini ve önbelleksiz veriyi okur; hepsi bu <Suspense> içinde istek anında çalışır.
 export default function PanelLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (

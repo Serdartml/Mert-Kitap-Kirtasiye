@@ -126,6 +126,64 @@ export async function listProducts({ categoryIds, query, inStockOnly, sort = "on
   return { items, total, pageCount: Math.max(1, Math.ceil(total / PAGE_SIZE)) };
 }
 
+export interface SearchSuggestions {
+  categories: { slug: string; name: string; parentName: string | null }[];
+  products: { slug: string; name: string; priceKurus: number; categoryName: string; rootSlug: string }[];
+  // Aramayla eşleşen toplam ürün (listede yalnızca ilk birkaçı gösterilir).
+  total: number;
+}
+
+// Arama kutusundaki otomatik tamamlama. Eşleşme kuralı listProducts ile aynı olmalı ki öneri sayısı ile
+// sonuç sayfası tutarlı kalsın. Sorgu metni anahtar olduğundan aynı yazım dakikalık önbellekten gelir.
+export async function getSearchSuggestions(query: string): Promise<SearchSuggestions> {
+  "use cache";
+  cacheLife("minutes");
+  cacheTag(CATALOG_TAG);
+
+  const where: Prisma.ProductWhereInput = {
+    isActive: true,
+    OR: [
+      { name: { contains: query, mode: "insensitive" } },
+      { description: { contains: query, mode: "insensitive" } },
+      { sku: { contains: query, mode: "insensitive" } },
+      { barcode: query },
+    ],
+  };
+
+  const [categories, products, total] = await Promise.all([
+    db.category.findMany({
+      where: { name: { contains: query, mode: "insensitive" } },
+      include: { parent: { select: { name: true } } },
+      orderBy: { sortOrder: "asc" },
+      take: 3,
+    }),
+    db.product.findMany({
+      where,
+      select: {
+        slug: true,
+        name: true,
+        priceKurus: true,
+        category: { select: { slug: true, name: true, parent: { select: { slug: true } } } },
+      },
+      orderBy: [{ isFeatured: "desc" }, { name: "asc" }],
+      take: 6,
+    }),
+    db.product.count({ where }),
+  ]);
+
+  return {
+    categories: categories.map((c) => ({ slug: c.slug, name: c.name, parentName: c.parent?.name ?? null })),
+    products: products.map((p) => ({
+      slug: p.slug,
+      name: p.name,
+      priceKurus: p.priceKurus,
+      categoryName: p.category.name,
+      rootSlug: p.category.parent?.slug ?? p.category.slug,
+    })),
+    total,
+  };
+}
+
 export async function getFeaturedProducts(take = 8) {
   "use cache";
   cacheLife("minutes");

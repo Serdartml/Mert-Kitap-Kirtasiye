@@ -5,6 +5,9 @@ import { requireAdmin } from "@/lib/auth";
 
 export const metadata: Metadata = { title: "Yeni Ürün" };
 
+// Oturum arkasındaki yönetim sayfası: Next'in "anında gezinme" denetiminden çıkarıldı (README, Yönetim paneli).
+export const instant = false;
+
 export default async function NewProductPage() {
   await requireAdmin();
   const categories = await getCategoryOptions();

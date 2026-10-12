@@ -2,6 +2,7 @@
 
 import { z } from "zod";
 import { db } from "@/lib/db";
+import { checkLimits, clientIp, LIMITS } from "@/lib/rate-limit";
 
 const contactSchema = z.object({
   name: z.string().trim().min(2, "Adınızı yazın.").max(100),
@@ -24,6 +25,9 @@ export async function sendContactMessage(_prev: ContactFormState, formData: Form
   if (!parsed.success) {
     return { ok: false, message: parsed.error.issues[0]?.message ?? "Formu kontrol edin." };
   }
+
+  const blocked = await checkLimits([{ key: `contact-ip:${await clientIp()}`, limit: LIMITS.contactIp }]);
+  if (blocked) return { ok: false, message: blocked };
 
   await db.contactMessage.create({ data: parsed.data });
   return { ok: true, message: "Mesajınız bize ulaştı. En kısa sürede dönüş yapacağız." };

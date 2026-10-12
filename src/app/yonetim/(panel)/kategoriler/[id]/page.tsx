@@ -7,6 +7,9 @@ import { db } from "@/lib/db";
 export const metadata: Metadata = { title: "Kategori" };
 
 // "yeni" de bu sayfadan geçer: /yonetim/kategoriler/yeni boş formu açar.
+// Oturum arkasındaki yönetim sayfası: Next'in "anında gezinme" denetiminden çıkarıldı (README, Yönetim paneli).
+export const instant = false;
+
 export default async function CategoryFormPage({ params }: { params: Promise<{ id: string }> }) {
   await requireAdmin();
   const { id } = await params;
