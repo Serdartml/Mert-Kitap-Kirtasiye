@@ -62,9 +62,10 @@ export default function CartToast() {
           hideLater(1200);
         }
       }}
-      // Mobilde yapışan satın alma çubuğunun (ürün sayfası) üstünde kalır; masaüstünde sağ altta durur.
-      // Konum düz bir sınıfla (bottom-24) verilir; özel değerli, hesaplamalı bir sınıf gerekmiyor.
-      className="toast-in fixed inset-x-3 bottom-24 z-[60] mx-auto flex max-w-md items-center gap-3 rounded-xl bg-ink px-4 py-3 text-white shadow-xl md:inset-x-auto md:bottom-6 md:right-6 md:mx-0"
+      // Mobilde yapışan satın alma çubuğunun (ürün sayfası) üstünde kalır ve sağda "yukarı çık" düğmesine yer bırakır;
+      // masaüstünde sağ altta, düğmenin üstünde durur. Konum düz sınıflarla verilir; özel değerli, hesaplamalı bir
+      // sınıf gerekmiyor.
+      className="toast-in fixed bottom-24 left-3 right-[4.5rem] z-[60] flex max-w-md items-center gap-3 rounded-xl bg-ink px-4 py-3 text-white shadow-xl md:bottom-24 md:left-auto md:right-6"
     >
       <span className="grid size-7 shrink-0 place-items-center rounded-full bg-brand-500 text-ink">
         <Check size={16} strokeWidth={3} aria-hidden />

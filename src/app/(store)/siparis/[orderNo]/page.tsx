@@ -91,6 +91,11 @@ async function OrderContent({ params }: PageProps) {
       {!user && (
         <p className="mt-6 rounded-xl bg-neutral-100 p-4 text-sm">
           Bu sayfaya yalnızca siparişi verdiğiniz tarayıcıdan ulaşabilirsiniz; sipariş numaranızı not edin.
+          Numarayla durumu her yerden{" "}
+          <Link href="/siparis-takip" className="font-bold underline underline-offset-2">
+            sipariş takibi
+          </Link>{" "}
+          sayfasından da görebilirsiniz.
         </p>
       )}
 

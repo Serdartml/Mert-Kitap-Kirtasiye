@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Caveat, Manrope } from "next/font/google";
+import { isIndexable } from "@/lib/indexing";
 import { COLOR_SCHEME_META_ID, themeInitScript } from "@/lib/theme";
 import { site } from "@/lib/site";
 import "./globals.css";
@@ -30,6 +31,8 @@ export const metadata: Metadata = {
     locale: "tr_TR",
     siteName: site.name,
   },
+  // Deneme yayınında arama motorlarına kapalı (SITE_INDEXABLE=1 ile açılır; lib/indexing.ts).
+  ...(isIndexable() ? {} : { robots: { index: false, follow: false } }),
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

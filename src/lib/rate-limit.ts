@@ -19,6 +19,10 @@ export const LIMITS = {
   loginIp: { max: 30, windowSeconds: 15 * 60 },
   registerIp: { max: 10, windowSeconds: 60 * 60 },
   contactIp: { max: 5, windowSeconds: 60 * 60 },
+  // Sipariş takibi (üyeliksiz): numara denemeyle bulunmasın diye IP başına.
+  orderTrackIp: { max: 20, windowSeconds: 15 * 60 },
+  // Parola değiştirme: oturumu ele geçiren birinin mevcut parolayı denemesini kısıtlar.
+  passwordChange: { max: 5, windowSeconds: 15 * 60 },
 } satisfies Record<string, Limit>;
 
 // Sayacı atomik artırır (tek SQL), pencere dolmuşsa yeniden başlatır. İzin verildi mi ve kaç saniye

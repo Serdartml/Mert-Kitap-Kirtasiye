@@ -1,8 +1,9 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { LogOut } from "lucide-react";
-import { logout } from "@/actions/account";
+import { RotateCcw } from "lucide-react";
+import { reorder } from "@/actions/profile";
+import AccountFrame from "@/components/AccountFrame";
 import EmptyState from "@/components/EmptyState";
 import { OrderStatusBadge } from "@/components/OrderParts";
 import { PanelSkeleton } from "@/components/Skeletons";
@@ -16,17 +17,22 @@ export const metadata: Metadata = {
   robots: { index: false },
 };
 
-export default function AccountPage() {
+interface PageProps {
+  searchParams: Promise<{ tekrar?: string }>;
+}
+
+export default function AccountPage(props: PageProps) {
   return (
     <Suspense fallback={<PanelSkeleton />}>
-      <AccountContent />
+      <AccountContent {...props} />
     </Suspense>
   );
 }
 
 // Oturum çerezden okunur; hiç önbelleğe alınmaz.
-async function AccountContent() {
+async function AccountContent({ searchParams }: PageProps) {
   const user = await requireUser("/hesabim");
+  const { tekrar } = await searchParams;
 
   const orders = await db.order.findMany({
     where: { userId: user.id },
@@ -36,30 +42,14 @@ async function AccountContent() {
   });
 
   return (
-    <div className="container-page max-w-3xl py-6 md:py-10">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="min-w-0">
-          <h1 className="text-2xl font-extrabold md:text-3xl">
-            <span className="marker">Hesabım</span>
-          </h1>
-          <p className="mt-2 text-sm">
-            {user.name && <span className="font-bold">{user.name} · </span>}
-            <span className="break-all text-neutral-600">{user.email}</span>
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {user.role === "ADMIN" && (
-            <Link href="/yonetim" className="btn btn-outline py-2.5">Yönetim Paneli</Link>
-          )}
-          <form action={logout}>
-            <button type="submit" className="btn btn-outline py-2.5">
-              <LogOut size={16} aria-hidden /> Çıkış Yap
-            </button>
-          </form>
-        </div>
-      </div>
+    <AccountFrame user={user} active="siparisler">
+      {tekrar === "stok-yok" && (
+        <p role="alert" className="mb-4 rounded-xl border-2 border-brand-500 bg-brand-50 p-4 text-sm font-semibold">
+          Bu siparişteki ürünler şu an stokta olmadığı ya da satıştan kalktığı için sepete eklenemedi.
+        </p>
+      )}
 
-      <h2 className="mb-3 mt-8 text-lg font-extrabold">Siparişlerim</h2>
+      <h2 className="mb-3 text-lg font-extrabold">Siparişlerim</h2>
       {orders.length === 0 ? (
         <EmptyState
           title="Henüz siparişiniz yok"
@@ -71,8 +61,8 @@ async function AccountContent() {
           {orders.map((order) => {
             const count = order.items.reduce((sum, item) => sum + item.quantity, 0);
             return (
-              <li key={order.id}>
-                <Link href={`/siparis/${order.orderNo}`} className="block rounded-xl border border-neutral-200 bg-raised p-4 hover:border-fg">
+              <li key={order.id} className="overflow-hidden rounded-xl border border-neutral-200 bg-raised">
+                <Link href={`/siparis/${order.orderNo}`} className="block p-4 hover:bg-neutral-50">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <p className="font-extrabold">{order.orderNo}</p>
                     <OrderStatusBadge status={order.status} />
@@ -84,11 +74,17 @@ async function AccountContent() {
                     <span className="font-extrabold">{formatPrice(order.totalKurus)}</span>
                   </p>
                 </Link>
+                {/* Linkin dışında: düğmeyi bağlantının içine koymak geçersiz olurdu. */}
+                <form action={reorder.bind(null, order.id)} className="flex justify-end border-t border-neutral-200 p-2.5">
+                  <button type="submit" className="btn btn-outline min-h-11 py-2">
+                    <RotateCcw size={16} aria-hidden /> Tekrar sipariş ver
+                  </button>
+                </form>
               </li>
             );
           })}
         </ul>
       )}
-    </div>
+    </AccountFrame>
   );
 }

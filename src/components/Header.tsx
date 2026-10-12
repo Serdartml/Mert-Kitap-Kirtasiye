@@ -32,6 +32,8 @@ export default async function Header() {
             </a>
           </div>
           <nav className="flex items-center gap-4 text-neutral-300">
+            {/* Mobilde yer dar: sipariş takibi orada menüde ve ana sayfada. */}
+            <Link href="/siparis-takip" className="hidden hover:text-brand-500 sm:inline">Sipariş Takibi</Link>
             <Link href="/hakkimizda" className="hover:text-brand-500">Hakkımızda</Link>
             <Link href="/iletisim" className="hover:text-brand-500">İletişim</Link>
           </nav>

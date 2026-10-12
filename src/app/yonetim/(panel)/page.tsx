@@ -1,4 +1,6 @@
 import Link from "next/link";
+import DailyBars from "@/components/admin/DailyBars";
+import { getDailyOrderStats, getTopSoldProducts } from "@/lib/admin-data";
 import { requireAdmin } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { formatPrice } from "@/lib/format";
@@ -28,6 +30,13 @@ export default async function AdminDashboardPage() {
     db.contactMessage.findMany({ orderBy: { createdAt: "desc" }, take: 3 }),
   ]);
 
+  const [daily, topProducts] = await Promise.all([getDailyOrderStats(14), getTopSoldProducts(30)]);
+  const totalOrders = daily.reduce((sum, day) => sum + day.orders, 0);
+  const totalRevenue = daily.reduce((sum, day) => sum + day.revenueKurus, 0);
+  const maxOrders = Math.max(...daily.map((day) => day.orders), 0);
+  const maxRevenue = Math.max(...daily.map((day) => day.revenueKurus), 0);
+  const topMax = Math.max(...topProducts.map((product) => product.quantity), 1);
+
   const cards = [
     { label: "Açık sipariş", value: openOrders, note: "teslim bekleyen", href: "/yonetim/siparisler" },
     { label: "Ürün", value: total, note: `${active} yayında`, href: "/yonetim/urunler" },
@@ -55,7 +64,61 @@ export default async function AdminDashboardPage() {
         ))}
       </ul>
 
+      {/* Son 14 gün: iptal ve iadeler hariç. İki ölçü iki ayrı grafikte (tek eksen). */}
       <div className="mt-8 grid gap-6 xl:grid-cols-2">
+        <DailyBars
+          title="Günlük sipariş sayısı"
+          subtitle={`Son 14 günde ${totalOrders} sipariş (iptaller hariç)`}
+          data={daily.map((day) => ({
+            label: day.label,
+            fullLabel: day.fullLabel,
+            value: day.orders,
+            valueLabel: `${day.orders} sipariş`,
+          }))}
+          maxLabel={String(maxOrders)}
+          emptyText="Son 14 günde sipariş yok."
+        />
+        <DailyBars
+          title="Günlük ciro"
+          subtitle={`Son 14 günde ${formatPrice(totalRevenue)} (KDV dahil, iptaller hariç)`}
+          data={daily.map((day) => ({
+            label: day.label,
+            fullLabel: day.fullLabel,
+            value: day.revenueKurus,
+            valueLabel: formatPrice(day.revenueKurus),
+          }))}
+          maxLabel={formatPrice(maxRevenue).replace(",00", "")}
+          emptyText="Son 14 günde ciro yok."
+        />
+
+        <section className="rounded-xl border border-neutral-200 bg-raised p-5 xl:col-span-2">
+          <h2 className="text-lg font-extrabold">En çok satanlar</h2>
+          <p className="text-sm text-neutral-600">Son 30 günde, satılan adede göre (iptaller hariç)</p>
+          {topProducts.length === 0 ? (
+            <p className="mt-3 text-sm text-neutral-500">Son 30 günde satış yok.</p>
+          ) : (
+            <ol className="mt-3 space-y-3 text-sm">
+              {topProducts.map((product, index) => (
+                <li key={product.name}>
+                  <div className="flex items-baseline justify-between gap-3">
+                    <span className="min-w-0 truncate font-semibold">
+                      <span className="mr-2 tabular-nums text-neutral-500">{index + 1}.</span>
+                      {product.name}
+                    </span>
+                    <span className="shrink-0 font-extrabold tabular-nums">{product.quantity} adet</span>
+                  </div>
+                  {/* İnce çubuk: en çok satana göre oran; uç yuvarlak, sayı metin renginde. */}
+                  <div aria-hidden className="mt-1.5 h-1.5 rounded-full bg-neutral-100">
+                    <div className="h-full rounded-full bg-fg/80" style={{ width: `${(product.quantity / topMax) * 100}%` }} />
+                  </div>
+                </li>
+              ))}
+            </ol>
+          )}
+        </section>
+      </div>
+
+      <div className="mt-6 grid gap-6 xl:grid-cols-2">
         <section className="rounded-xl border border-neutral-200 bg-raised p-5">
           <h2 className="text-lg font-extrabold">Stoğu biten ve azalanlar</h2>
           {lowStockItems.length === 0 ? (

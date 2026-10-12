@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { MapPin, MessageCircle, Phone } from "lucide-react";
 import AddToCartButton from "@/components/AddToCartButton";
 import { LOW_STOCK_THRESHOLD } from "@/components/ProductCard";
+import ProductFavorite, { ProductFavoriteFallback } from "@/components/ProductFavorite";
 import ProductTabs, { type TabItem } from "@/components/ProductTabs";
 import StickyBuyBar from "@/components/StickyBuyBar";
 import Breadcrumbs, { type Crumb } from "@/components/Breadcrumbs";
@@ -182,7 +183,12 @@ async function ProductContent({ slug }: { slug: string }) {
 
         <div>
           {product.brand && <p className="text-sm font-bold text-neutral-500">{product.brand.name}</p>}
-          <h1 className="text-2xl font-extrabold leading-tight md:text-3xl">{product.name}</h1>
+          <div className="flex items-start justify-between gap-3">
+            <h1 className="min-w-0 text-2xl font-extrabold leading-tight md:text-3xl">{product.name}</h1>
+            <Suspense fallback={<ProductFavoriteFallback />}>
+              <ProductFavorite productId={product.id} slug={product.slug} />
+            </Suspense>
+          </div>
           <p className="mt-1 text-xs text-neutral-500">Stok kodu: {product.sku}</p>
 
           <div className={`mt-5 flex flex-wrap items-center ${discount ? "gap-x-6 gap-y-3 pl-2" : "gap-3"}`}>

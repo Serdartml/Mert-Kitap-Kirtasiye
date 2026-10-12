@@ -78,7 +78,7 @@ export default function OpenStatus({ className = "" }: { className?: string }) {
 
   const dot = status.open ? (status.soon ? "bg-orange-500" : "bg-green-500") : "bg-red-500";
   return (
-    <p role="status" className={`inline-flex items-center gap-2 rounded-full bg-ink px-3 py-1.5 text-sm font-extrabold text-white ${className}`}>
+    <p role="status" className={`inline-flex items-center gap-2 rounded-full bg-ink px-3 py-1.5 text-sm font-extrabold text-white ring-1 ring-white/20 ${className}`}>
       <span aria-hidden className="relative grid size-2.5 place-items-center">
         {status.open && <span className={`absolute inline-flex size-full animate-ping rounded-full opacity-60 ${dot}`} />}
         <span className={`relative size-2.5 rounded-full ${dot}`} />

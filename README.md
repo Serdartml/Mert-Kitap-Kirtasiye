@@ -79,6 +79,47 @@ okumaları (`new Date()`, `Math.random()`) için render sırasında `await io()`
 - Mağaza bandı: canlı açık/kapalı durumu (`OpenStatus`, `site.hours` içindeki `dayNumbers/open/close`ten
   hesaplanır) ve yırtık kâğıt kenarlar (`SectionEdge`).
 - Mobilde yatay kayan ürün şeridi: `ProductGrid` içinde `scrollOnMobile`.
+- Okula dönüş listeleri (`/okul-listeleri`, `/okul-listeleri/[slug]`): satırlar `src/lib/school-lists.ts` içinde
+  (kategori + isteğe bağlı anahtar kelime + önerilen adet); ürünler katalogdan stoktakilerden seçtirilir
+  (`getSchoolListOptions`), seçilenler `addManyToCart` ile tek seferde sepete eklenir. Listeler örnektir.
+- "Nasıl sipariş verilir" şeridi (`HowItWorks`) ve altbilgideki teslimat bilgisi gerçek sipariş akışını anlatır
+  (mağazadan teslim, ödeme mağazada); kargo / online ödeme gelince ikisi de güncellenmeli.
+- `ScrollTop`: sayfa üstünde okuma ilerleme çubuğu ve "yukarı çık" düğmesi. `template.tsx`: sayfa geçişlerinde
+  kısa çapraz solma (View Transitions; "hareketi azalt"ta kapanır).
+
+## Sipariş takibi (üyeliksiz)
+
+`/siparis-takip` (üst şerit, mobil menü, altbilgi ve ana sayfadaki şeritten): sipariş numarasıyla yalnızca DURUM görülür
+(`lib/order-tracking.ts`). Kişisel bilgi ve ürünler gösterilmez; onlar için siparişi veren tarayıcı ya da üye oturumu
+gerekir (`getOrderForViewer`). Numara tahmin edilemez (tarih + 6 rastgele karakter) ve sorgu IP başına 15 dakikada 20 ile
+sınırlıdır. Numara küçük harf, boşluk ya da tiresiz yazılabilir.
+
+## Deneme yayını (Vercel)
+
+Vercel Hobby planı ticari kullanıma kapalıdır ("ürün satışını duyurmak" ve "ödeme istemek" ticari sayılır); gerçek müşteriyle
+satışa çıkarken Pro gerekir. Hobby yalnızca **özel deneme** içindir: gerçek müşteri ve reklam yok, arama motorlarına kapalı,
+mümkünse Vercel Authentication açık (Project Settings > Deployment Protection). Kurulum:
+
+1. Vercel'de GitHub deposunu içe aktarın (framework Next.js, kök dizin). Tek proje hem mağazayı hem `/yonetim`'i yayınlar.
+2. Ortam değişkenleri (Production ve Preview): `DATABASE_URL` (havuzlu), `DATABASE_URL_UNPOOLED`, `NEXT_PUBLIC_SITE_URL`
+   (yayın adresi; değişince yeniden yayınlanmalı). `SITE_INDEXABLE` deneme yayınında TANIMLANMAZ: robots.txt her şeyi yasaklar,
+   sitemap boş olur, sayfalara `noindex` eklenir (`lib/indexing.ts`).
+3. Veritabanı: deneme için AYRI bir Neon veritabanı ya da branch kullanın (geliştirme verisiyle karışmasın). Migration yayın
+   sırasında çalışmaz: `DATABASE_URL_UNPOOLED` o veritabanına ayarlıyken yerelde `npm run db:deploy`, sonra `npm run admin:create -- eposta`
+   (ve istenirse `npm run db:seed`) çalıştırın.
+4. `vercel.json` bölgeyi `fra1` yapar (Neon eu-central-1 ile aynı bölge).
+5. Gerçek yayında: Pro plana geçin, özel alan adı bağlayın, `NEXT_PUBLIC_SITE_URL` ve `SITE_INDEXABLE=1` verin, canlı için
+   ayrı veritabanında yönetici hesabını yeniden oluşturun.
+
+## Hesabım
+
+`/hesabim` dört bölümdür (`AccountFrame`): Siparişlerim ("Tekrar sipariş ver" eski siparişin ürünlerini sepete
+ekler; stokta olmayanlar atlanır), Favorilerim (ürün sayfasındaki kalp), Adreslerim (en fazla 10; kargo açılınca
+sipariş sırasında kullanılacak) ve Profil (ad, telefon, parola; parola değişince diğer cihazlardaki oturumlar kapanır,
+deneme sayısı sınırlıdır). İşlemler `src/actions/profile.ts` içinde; her action oturumu kendisi doğrular.
+
+Yönetim paneli özetinde son 14 günün sipariş sayısı ve ciro grafiği ile son 30 günün en çok satanları vardır
+(`DailyBars`, `getDailyOrderStats`, `getTopSoldProducts`); iptal ve iade edilen siparişler sayılmaz.
 
 ## Deneme sınırı
 

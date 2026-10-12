@@ -98,6 +98,8 @@ export default function MobileMenu({ categories }: { categories: MenuCategory[] 
             </nav>
 
             <div className="space-y-1 border-t border-neutral-200 p-4 text-sm font-semibold">
+              <Link href="/okul-listeleri" onClick={close} className="block py-2">Okula Dönüş Listeleri</Link>
+              <Link href="/siparis-takip" onClick={close} className="block py-2">Sipariş Takibi</Link>
               <Link href="/hakkimizda" onClick={close} className="block py-2">Hakkımızda</Link>
               <Link href="/iletisim" onClick={close} className="block py-2">İletişim</Link>
               <a href={site.phoneHref} className="btn btn-dark mt-2 w-full">

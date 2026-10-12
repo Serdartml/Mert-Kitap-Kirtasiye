@@ -130,6 +130,16 @@
 @layer base {
   html {
     scroll-behavior: smooth;
+    /* Marka ayrıntıları: onay kutusu ve seçim çubukları sarı, kaydırma çubuğu sakin gri, dokunuş sarı parlar. */
+    accent-color: var(--color-brand-500);
+    scrollbar-color: var(--color-neutral-400) transparent;
+    -webkit-tap-highlight-color: rgb(255 200 0 / 0.28);
+  }
+
+  /* Seçili yazı fosforlu kalemle çizilmiş gibi sarı. */
+  ::selection {
+    background: var(--color-brand-300);
+    color: var(--color-ink);
   }
 
   body {
@@ -477,6 +487,40 @@ html[data-welcome="play"] .welcome-surface {
 ::view-transition-new(root) {
   animation: none;
   mix-blend-mode: normal;
+}
+
+/*
+  Sayfa geçişi (app/(store)/template.tsx): eski sayfa hızla solar, yenisi hemen ardından belirir.
+  Geçiş sürerken tıklamalar canlı sayfaya geçsin diye katman olayları yakalamaz.
+*/
+::view-transition {
+  pointer-events: none;
+}
+
+::view-transition-old(.page-out) {
+  animation: page-fade 120ms ease-in both reverse;
+}
+
+::view-transition-new(.page-in) {
+  animation: page-fade 220ms ease-out 90ms both;
+}
+
+@keyframes page-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(*),
+  ::view-transition-new(*),
+  ::view-transition-group(*) {
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
+  }
 }
 
 /* Sepete ekleme bildirimi (CartToast) ve sepet ikonunun sallanması. */

@@ -237,6 +237,39 @@ export async function getComplementaryProducts(productId: string, categoryId: st
   return [...first, ...filler];
 }
 
+export interface SchoolListOption {
+  id: string;
+  name: string;
+  priceKurus: number;
+  stock: number;
+}
+
+// Okula dönüş listesindeki bir satır için seçenekler: kategoride (alt kategorileriyle) ve varsa ürün adında
+// anahtar kelime geçen, stoktaki ürünler. Öne çıkanlar başta.
+export async function getSchoolListOptions(categorySlug: string, keyword?: string, take = 8): Promise<SchoolListOption[]> {
+  "use cache";
+  cacheLife("minutes");
+  cacheTag(CATALOG_TAG);
+
+  const category = await db.category.findUnique({
+    where: { slug: categorySlug },
+    select: { id: true, children: { select: { id: true } } },
+  });
+  if (!category) return [];
+
+  return db.product.findMany({
+    where: {
+      isActive: true,
+      stock: { gt: 0 },
+      categoryId: { in: [category.id, ...category.children.map((child) => child.id)] },
+      ...(keyword ? { name: { contains: keyword, mode: "insensitive" as const } } : {}),
+    },
+    select: { id: true, name: true, priceKurus: true, stock: true },
+    orderBy: [{ isFeatured: "desc" }, { name: "asc" }],
+    take,
+  });
+}
+
 export interface SearchSuggestions {
   categories: { slug: string; name: string; parentName: string | null }[];
   products: { slug: string; name: string; priceKurus: number; categoryName: string; rootSlug: string }[];
