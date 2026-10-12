@@ -50,10 +50,11 @@ export default function ProductVisual({ name, rootCategorySlug, image, sizes = "
           aria-label={`${name} için görsel henüz eklenmedi`}
         >
           <Icon aria-hidden className="absolute right-[7cqw] top-[7cqw] size-[24cqw] rotate-6 opacity-60" strokeWidth={1.5} />
-          <span aria-hidden className="absolute inset-0 grid place-items-center pb-[6cqw] text-[58cqw] font-extrabold leading-none">
+          {/* Alt kenara rozetler biner (ProductCard); harf ve not onların üstünde kalacak kadar yukarıda durur. */}
+          <span aria-hidden className="absolute inset-0 grid place-items-center pb-[11cqw] text-[52cqw] font-extrabold leading-none">
             {initial}
           </span>
-          <span aria-hidden className="absolute inset-x-0 bottom-[5cqw] hidden text-center font-hand text-[9cqw] leading-none opacity-70 @min-[8rem]:block">
+          <span aria-hidden className="absolute inset-x-0 bottom-[10cqw] hidden text-center font-hand text-[9cqw] leading-none opacity-70 @min-[8rem]:block">
             görsel yakında
           </span>
         </div>

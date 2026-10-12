@@ -11,6 +11,18 @@ interface AddToCartButtonProps {
   stock: number;
   // "full": ürün sayfasındaki adet seçicili büyük sürüm; "compact": ürün kartındaki tek buton.
   variant?: "compact" | "full";
+  // Bildirimde ("Sepete eklendi: ...") gösterilen ürün adı.
+  name?: string;
+  // Başarılı eklemeden bir süre sonra çağrılır (hızlı bakış penceresi bununla kapanır).
+  onAdded?: () => void;
+}
+
+// Sepete eklenince pencereye yayınlanan olay: CartToast bildirimi gösterir ve sepet ikonu sallanır.
+export const CART_ADDED_EVENT = "cart:added";
+export interface CartAddedDetail {
+  name?: string;
+  message: string;
+  adjusted: boolean;
 }
 
 // Mobilde iki sütunlu kartlara sığması için dar iç boşluk ve küçük yazı.
@@ -19,7 +31,7 @@ const compactClasses = "gap-1.5 whitespace-nowrap px-2 py-2.5 text-xs sm:gap-2 s
 // Butonun "Eklendi" durumunda kaldığı süre.
 const ADDED_MS = 2000;
 
-export default function AddToCartButton({ productId, stock, variant = "compact" }: AddToCartButtonProps) {
+export default function AddToCartButton({ productId, stock, variant = "compact", name, onAdded }: AddToCartButtonProps) {
   const [quantity, setQuantity] = useState(1);
   const [feedback, setFeedback] = useState<CartActionResult | null>(null);
   const [added, setAdded] = useState(false);
@@ -47,6 +59,12 @@ export default function AddToCartButton({ productId, stock, variant = "compact" 
         setAdded(true);
         clearTimeout(addedTimer.current);
         addedTimer.current = setTimeout(() => setAdded(false), ADDED_MS);
+        window.dispatchEvent(
+          new CustomEvent<CartAddedDetail>(CART_ADDED_EVENT, {
+            detail: { name, message: result.message, adjusted: Boolean(result.adjusted) },
+          }),
+        );
+        if (onAdded) setTimeout(onAdded, 1100);
       }
     });
   };

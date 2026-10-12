@@ -8,13 +8,16 @@ interface StickyBuyBarProps {
   stock: number;
   name: string;
   price: string;
+  // Fiyatın yanındaki stok özeti ("Stokta var", "Son 3 adet") ve stok azsa uyarı rengi.
+  stockLabel: string;
+  stockLow?: boolean;
   // Asıl "Sepete Ekle" alanının id'si; o alan ekrandayken çubuk gizlenir.
   targetId: string;
 }
 
 // Mobilde ürün sayfasının altına sabitlenen satın alma çubuğu. Asıl buton ekrandayken ve sayfanın
 // sonuna (bu bileşenin konduğu yere) gelindiğinde gizlenir; böylece footer'ın üstüne binmez.
-export default function StickyBuyBar({ productId, stock, name, price, targetId }: StickyBuyBarProps) {
+export default function StickyBuyBar({ productId, stock, name, price, stockLabel, stockLow, targetId }: StickyBuyBarProps) {
   const end = useRef<HTMLDivElement>(null);
   const [targetInView, setTargetInView] = useState(true);
   const [pastEnd, setPastEnd] = useState(false);
@@ -52,10 +55,13 @@ export default function StickyBuyBar({ productId, stock, name, price, targetId }
       >
         <div className="min-w-0 flex-1">
           <p className="truncate text-xs font-semibold text-neutral-500">{name}</p>
-          <p className="text-base font-extrabold leading-tight">{price}</p>
+          <p className="flex items-baseline gap-2 leading-tight">
+            <span className="text-base font-extrabold">{price}</span>
+            <span className={`truncate text-xs font-bold ${stockLow ? "text-red-700 dark:text-red-400" : "text-green-700 dark:text-green-400"}`}>{stockLabel}</span>
+          </p>
         </div>
         <div className="w-36 shrink-0">
-          <AddToCartButton productId={productId} stock={stock} />
+          <AddToCartButton productId={productId} stock={stock} name={name} />
         </div>
       </div>
     </>

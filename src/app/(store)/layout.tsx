@@ -1,5 +1,7 @@
+import CartToast from "@/components/CartToast";
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
+import QuickViewHost from "@/components/QuickViewHost";
 import Welcome from "@/components/Welcome";
 
 export default function StoreLayout({ children }: Readonly<{ children: React.ReactNode }>) {
@@ -9,6 +11,9 @@ export default function StoreLayout({ children }: Readonly<{ children: React.Rea
       <Header />
       <main className="flex-1">{children}</main>
       <Footer />
+      {/* Sayfa genelinde tek bir hızlı bakış penceresi ve sepet bildirimi. */}
+      <QuickViewHost />
+      <CartToast />
     </div>
   );
 }

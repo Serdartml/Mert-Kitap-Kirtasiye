@@ -31,6 +31,12 @@ export function parsePage(value: string | undefined): number {
   return Number.isFinite(page) && page > 0 ? page : 1;
 }
 
+// Adresteki marka listesi (?marka=a&marka=b): yalnızca güvenli adres karakterleri, en fazla 20 marka.
+export function parseBrands(value: string | string[] | undefined): string[] {
+  const list = Array.isArray(value) ? value : value ? [value] : [];
+  return [...new Set(list.filter((slug) => /^[a-z0-9-]{1,80}$/.test(slug)))].slice(0, 20);
+}
+
 const orderBy: Record<SortKey, Prisma.ProductOrderByWithRelationInput[]> = {
   onerilen: [{ isFeatured: "desc" }, { createdAt: "desc" }],
   yeni: [{ createdAt: "desc" }],
@@ -87,11 +93,25 @@ interface ListParams {
   categoryIds?: string[];
   query?: string;
   inStockOnly?: boolean;
+  // Marka adresleri (slug); boşsa marka filtresi yok.
+  brandSlugs?: string[];
+  // Kuruş cinsinden fiyat aralığı (KDV dahil, ürün fiyatıyla aynı birim).
+  minPriceKurus?: number;
+  maxPriceKurus?: number;
   sort?: SortKey;
   page?: number;
 }
 
-export async function listProducts({ categoryIds, query, inStockOnly, sort = "onerilen", page = 1 }: ListParams) {
+export async function listProducts({
+  categoryIds,
+  query,
+  inStockOnly,
+  brandSlugs,
+  minPriceKurus,
+  maxPriceKurus,
+  sort = "onerilen",
+  page = 1,
+}: ListParams) {
   "use cache";
   cacheLife("minutes");
   cacheTag(CATALOG_TAG);
@@ -100,6 +120,10 @@ export async function listProducts({ categoryIds, query, inStockOnly, sort = "on
     isActive: true,
     ...(categoryIds ? { categoryId: { in: categoryIds } } : {}),
     ...(inStockOnly ? { stock: { gt: 0 } } : {}),
+    ...(brandSlugs && brandSlugs.length > 0 ? { brand: { slug: { in: brandSlugs } } } : {}),
+    ...(minPriceKurus !== undefined || maxPriceKurus !== undefined
+      ? { priceKurus: { ...(minPriceKurus !== undefined ? { gte: minPriceKurus } : {}), ...(maxPriceKurus !== undefined ? { lte: maxPriceKurus } : {}) } }
+      : {}),
     ...(query
       ? {
           OR: [
@@ -124,6 +148,93 @@ export async function listProducts({ categoryIds, query, inStockOnly, sort = "on
   ]);
 
   return { items, total, pageCount: Math.max(1, Math.ceil(total / PAGE_SIZE)) };
+}
+
+// Filtre çekmecesindeki seçenekler: kategorideki markalar ve en düşük / en yüksek fiyat (kuruş).
+export async function getFilterOptions(categoryIds: string[]) {
+  "use cache";
+  cacheLife("minutes");
+  cacheTag(CATALOG_TAG);
+
+  const where: Prisma.ProductWhereInput = { isActive: true, categoryId: { in: categoryIds } };
+  const [brands, range] = await Promise.all([
+    db.brand.findMany({
+      where: { products: { some: where } },
+      select: { slug: true, name: true },
+      orderBy: { name: "asc" },
+    }),
+    db.product.aggregate({ where, _min: { priceKurus: true }, _max: { priceKurus: true } }),
+  ]);
+  return { brands, minPriceKurus: range._min.priceKurus, maxPriceKurus: range._max.priceKurus };
+}
+
+// "Yeni" rozeti için kesit: bu zamandan (ms) sonra eklenen ürün yenidir; rozet gösterilmemeliyse null.
+// Toplu içe aktarmada (stok programından 10 bin ürün) hepsi aynı gün eklenir ve hepsine "Yeni" demek
+// anlamsızdır; son 14 günde eklenenler katalogun beşte birinden ya da 30 üründen fazlaysa rozet kapanır.
+// Zaman okuması önbellek içinde olduğundan sayfaların sabit kabuğuna girebilir.
+const NEW_PRODUCT_DAYS = 14;
+
+export async function getNewProductCutoff(): Promise<number | null> {
+  "use cache";
+  cacheLife("minutes");
+  cacheTag(CATALOG_TAG);
+
+  const cutoff = Date.now() - NEW_PRODUCT_DAYS * 24 * 60 * 60 * 1000;
+  const [recent, total] = await Promise.all([
+    db.product.count({ where: { isActive: true, createdAt: { gt: new Date(cutoff) } } }),
+    db.product.count({ where: { isActive: true } }),
+  ]);
+  return recent > 30 || recent * 5 > total ? null : cutoff;
+}
+
+// Ürün sayfasındaki "Yanına yakışanlar": önce aynı siparişlerde birlikte alınanlar, sonra aynı ana
+// kategorinin diğer alt kategorilerinden öne çıkanlar (kalemin yanına defter gibi). Stokta olanlar gelir.
+export async function getComplementaryProducts(productId: string, categoryId: string, rootId: string, take = 4) {
+  "use cache";
+  cacheLife("minutes");
+  cacheTag(CATALOG_TAG);
+
+  const together = await db.orderItem.groupBy({
+    by: ["productId"],
+    where: {
+      productId: { not: null },
+      order: {
+        status: { notIn: ["CANCELLED", "REFUNDED"] },
+        items: { some: { productId } },
+      },
+    },
+    _sum: { quantity: true },
+    orderBy: { _sum: { quantity: "desc" } },
+    take: take + 1,
+  });
+  const togetherIds = together.map((row) => row.productId).filter((id): id is string => id !== null && id !== productId);
+
+  const first = togetherIds.length
+    ? await db.product.findMany({
+        where: { id: { in: togetherIds }, isActive: true, stock: { gt: 0 } },
+        include: productCardInclude,
+        take,
+      })
+    : [];
+  // Birlikte alınma sırasını koru.
+  first.sort((a, b) => togetherIds.indexOf(a.id) - togetherIds.indexOf(b.id));
+
+  const missing = take - first.length;
+  if (missing <= 0) return first;
+
+  const filler = await db.product.findMany({
+    where: {
+      isActive: true,
+      stock: { gt: 0 },
+      id: { notIn: [productId, ...first.map((p) => p.id)] },
+      categoryId: { not: categoryId },
+      category: { OR: [{ id: rootId }, { parentId: rootId }] },
+    },
+    include: productCardInclude,
+    orderBy: [{ isFeatured: "desc" }, { createdAt: "desc" }],
+    take: missing,
+  });
+  return [...first, ...filler];
 }
 
 export interface SearchSuggestions {

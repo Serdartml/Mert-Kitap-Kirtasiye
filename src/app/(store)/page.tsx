@@ -1,14 +1,29 @@
 import Link from "next/link";
-import { ArrowRight, MapPin, Phone } from "lucide-react";
+import { ArrowRight, MapPin, MessageCircle, Phone } from "lucide-react";
 import HeroShowcase from "@/components/HeroShowcase";
+import OpenStatus from "@/components/OpenStatus";
 import ProductGrid from "@/components/ProductGrid";
 import Scribble from "@/components/Scribble";
+import SectionEdge from "@/components/SectionEdge";
 import ShowcaseMarquee from "@/components/ShowcaseMarquee";
 import { getDiscountedProducts, getFeaturedProducts, getNavCategories, getNewestProducts, type ProductCardData } from "@/lib/catalog";
-import { site, stats } from "@/lib/site";
+import { site, stats, whatsappHref } from "@/lib/site";
 
 // note: başlığın yanına el yazısıyla düşülen kısa not; ok başlığı gösterir.
-function ProductSection({ title, href, note, products }: { title: string; href?: string; note?: string; products: ProductCardData[] }) {
+// scroll: mobilde ürünler tek satırda yana kayar (sayfa kısalır); masaüstünde ızgara olarak kalır.
+function ProductSection({
+  title,
+  href,
+  note,
+  products,
+  scroll = false,
+}: {
+  title: string;
+  href?: string;
+  note?: string;
+  products: ProductCardData[];
+  scroll?: boolean;
+}) {
   if (products.length === 0) return null;
 
   return (
@@ -29,7 +44,7 @@ function ProductSection({ title, href, note, products }: { title: string; href?:
           </Link>
         )}
       </div>
-      <ProductGrid products={products} />
+      <ProductGrid products={products} scrollOnMobile={scroll} />
     </section>
   );
 }
@@ -41,6 +56,8 @@ export default async function HomePage() {
     getDiscountedProducts(4),
     getNewestProducts(8),
   ]);
+
+  const whatsappLink = whatsappHref("Merhaba, bilgi almak istiyorum.");
 
   return (
     <>
@@ -64,9 +81,11 @@ export default async function HomePage() {
 
       <ProductSection title="Öne Çıkanlar" products={featured} />
 
-      {/* Kampanya bandı */}
+      {/* Kampanya bandı: kenarları yırtık kâğıt gibi dişli */}
       {discounted.length > 0 && (
-        <section className="mt-8 bg-ink py-7 md:mt-12 md:py-10">
+        <section className="relative mt-10 bg-ink py-7 md:mt-16 md:py-10">
+          <SectionEdge position="top" colorClass="text-ink" />
+          <SectionEdge position="bottom" colorClass="text-ink" />
           <div className="container-page">
             <h2 className="mb-4 text-xl font-extrabold text-white md:mb-5 md:text-2xl">
               <span className="relative text-brand-500">
@@ -80,14 +99,17 @@ export default async function HomePage() {
         </section>
       )}
 
-      <ProductSection title="Yeni Gelenler" note="taze geldi!" products={newest} />
+      <ProductSection title="Yeni Gelenler" note="taze geldi!" products={newest} scroll />
 
-      {/* Mağaza */}
-      <section className="container-page mt-8 md:mt-12">
-        <div className="theme-fixed pattern-dots flex flex-col gap-5 rounded-2xl bg-brand-500 p-5 sm:p-7 md:flex-row md:items-center md:justify-between md:p-10">
+      {/* Mağaza: tam genişlik sarı bant, yırtık kâğıt kenarlı; canlı açık/kapalı durumu ve büyük iletişim düğmeleri */}
+      <section className="theme-fixed pattern-dots relative mt-14 bg-brand-500 py-8 sm:py-10 md:mt-20 md:py-12">
+        <SectionEdge position="top" colorClass="text-brand-500" />
+        <SectionEdge position="bottom" colorClass="text-brand-500" />
+        <div className="container-page flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
           <div className="min-w-0">
-            <h2 className="text-xl font-extrabold sm:text-2xl md:text-3xl">Mağazamıza bekleriz</h2>
-            <p className="mt-2 flex items-start gap-2 text-sm font-medium sm:text-base">
+            <h2 className="text-2xl font-extrabold md:text-3xl">Mağazamıza bekleriz</h2>
+            <OpenStatus className="mt-3" />
+            <p className="mt-3 flex items-start gap-2 text-sm font-medium sm:text-base">
               <MapPin size={20} className="mt-0.5 shrink-0" /> {site.address.full}
             </p>
             <ul className="mt-2 text-sm font-medium text-ink/80 sm:flex sm:gap-4">
@@ -98,13 +120,24 @@ export default async function HomePage() {
               ))}
             </ul>
           </div>
-          <div className="grid gap-2.5 sm:flex sm:flex-wrap sm:gap-3">
-            <a href={site.mapsUrl} target="_blank" rel="noopener noreferrer" className="btn btn-dark">
-              Yol Tarifi Al
+          {/* Mobilde tam genişlik, parmakla rahat basılan yüksek düğmeler. */}
+          <div className="grid gap-2.5 sm:grid-cols-3 md:flex md:flex-wrap md:gap-3">
+            <a href={site.mapsUrl} target="_blank" rel="noopener noreferrer" className="btn btn-dark min-h-12 text-base md:min-h-0 md:text-sm">
+              <MapPin size={18} /> Yol Tarifi Al
             </a>
-            <a href={site.phoneHref} className="btn border border-ink/30 hover:border-ink">
-              <Phone size={16} /> {site.phone}
+            <a href={site.phoneHref} className="btn min-h-12 border border-ink/30 text-base hover:border-ink md:min-h-0 md:text-sm">
+              <Phone size={18} /> Ara
             </a>
+            {whatsappLink && (
+              <a
+                href={whatsappLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn min-h-12 border border-ink/30 text-base hover:border-ink md:min-h-0 md:text-sm"
+              >
+                <MessageCircle size={18} /> WhatsApp
+              </a>
+            )}
           </div>
         </div>
       </section>

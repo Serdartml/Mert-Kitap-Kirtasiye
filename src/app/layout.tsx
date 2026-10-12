@@ -35,7 +35,9 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     // suppressHydrationWarning: tema betiği, React devreye girmeden önce html'e "dark" sınıfını ekleyebilir.
-    <html lang="tr" className={`${manrope.variable} ${caveat.variable}`} suppressHydrationWarning>
+    // data-scroll-behavior: globals.css html'e yumuşak kaydırma verir; bu öznitelik Next'e sayfa geçişlerinde
+    // onu geçici kapatmasını söyler (yoksa yeni sayfa yumuşak kayarak açılır ve geliştirmede uyarı çıkar).
+    <html lang="tr" className={`${manrope.variable} ${caveat.variable}`} data-scroll-behavior="smooth" suppressHydrationWarning>
       <head>
         <meta id={COLOR_SCHEME_META_ID} name="color-scheme" content="only light" suppressHydrationWarning />
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />

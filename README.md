@@ -66,6 +66,19 @@ okumaları (`new Date()`, `Math.random()`) için render sırasında `await io()`
   Renkler `lib/category-icons.ts` içindeki `categoryTones`; yeni ana kategoriye buraya da ekleyin.
 - Arama kutusu `SearchBox`, önerileri `/api/arama-oneri` verir (`getSearchSuggestions`, dakikalık önbellek;
   eşleşme kuralı `listProducts` ile aynı tutulmalı).
+- Ürün kartı (`ProductCard`): rozetler "Yeni" (son 14 gün; toplu içe aktarmada hepsi yeni olacağından, yeni
+  ürünler katalogun %20'sinden ya da 30'dan fazlaysa kapanır: `getNewProductCutoff`), "Son N adet" (stok 5 ve
+  altı: `LOW_STOCK_THRESHOLD`) ve "Tükendi".
+- Hızlı bakış (`QuickViewArea` + `QuickViewHost`, özet `/api/urun-ozet`): mobilde karta uzun basınca, masaüstünde
+  fareyle 2 sn bekleyince açılır; düğme yoktur. Sürelerin sabitleri `QuickViewArea.tsx` başında.
+- Sepete eklenince `CartToast` bildirimi çıkar ve sepet ikonu sallanır; `AddToCartButton` olayı yayınlar.
+- Kategori sayfasında filtre çekmecesi (`FilterDrawer`): fiyat aralığı ve marka; markalı ürün yoksa yalnızca
+  fiyat gösterilir. Adres parametreleri: `min`, `max`, `marka`.
+- Ürün sayfası: sekmeler (`ProductTabs`), "Yanına yakışanlar" (önce birlikte alınanlar, sonra ana kategorinin
+  diğer alt kategorileri: `getComplementaryProducts`), "WhatsApp'tan sor" düğmesi.
+- Mağaza bandı: canlı açık/kapalı durumu (`OpenStatus`, `site.hours` içindeki `dayNumbers/open/close`ten
+  hesaplanır) ve yırtık kâğıt kenarlar (`SectionEdge`).
+- Mobilde yatay kayan ürün şeridi: `ProductGrid` içinde `scrollOnMobile`.
 
 ## Deneme sınırı
 

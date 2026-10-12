@@ -19,9 +19,11 @@ export const site = {
   },
   mapsUrl:
     "https://www.google.com/maps/dir/?api=1&destination=Erzene+Mah.+Kazim+Karabekir+Cad.+No:31/A+Izmir",
+  // days/time görüntü içindir. dayNumbers (0 = Pazar ... 6 = Cumartesi), open ve close ("SS:DD") "şu an
+  // açık mı" hesabında kullanılır (components/OpenStatus); bu üçü görüntü metniyle birlikte güncellenmeli.
   hours: [
-    { days: "Pazartesi - Cumartesi", time: "09:00 - 21:00" },
-    { days: "Pazar", time: "10:00 - 20:00" },
+    { days: "Pazartesi - Cumartesi", time: "09:00 - 21:00", dayNumbers: [1, 2, 3, 4, 5, 6], open: "09:00", close: "21:00" },
+    { days: "Pazar", time: "10:00 - 20:00", dayNumbers: [0], open: "10:00", close: "20:00" },
   ],
   about: {
     badge: "Hikayemiz",

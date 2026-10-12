@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, LayoutGrid, LibraryBig } from "lucide-react";
+import FilterDrawer from "./FilterDrawer";
 import { sortOptions, type SortKey } from "@/lib/catalog";
 
-interface ListingState {
+export interface ListingState {
   basePath: string;
   query?: string;
   sort: SortKey;
@@ -10,15 +11,28 @@ interface ListingState {
   page: number;
   // Yalnızca raf görünümü olan kategorilerde verilir (kültür kitapları); varsayılanı "raf".
   view?: "raf" | "liste";
+  // Filtre çekmecesi (yalnızca kategori sayfasında): seçili markalar ve fiyat aralığı (kullanıcının yazdığı metin).
+  brands?: string[];
+  min?: string;
+  max?: string;
 }
 
-function buildHref(state: ListingState, overrides: Partial<Pick<ListingState, "sort" | "inStockOnly" | "page" | "view">>) {
+// Çekmecenin sunacağı seçenekler: kategorideki markalar ve fiyat aralığı. Verilmezse çekmece gösterilmez.
+export interface ListingFilters {
+  brands: { slug: string; name: string }[];
+  priceRange: { min: number | null; max: number | null };
+}
+
+function buildHref(state: ListingState, overrides: Partial<Pick<ListingState, "sort" | "inStockOnly" | "page" | "view" | "brands" | "min" | "max">>) {
   const next = { ...state, ...overrides };
   const params = new URLSearchParams();
   if (next.query) params.set("q", next.query);
   if (next.view === "liste") params.set("gorunum", "liste");
   if (next.sort !== "onerilen") params.set("sirala", next.sort);
   if (next.inStockOnly) params.set("stok", "1");
+  for (const brand of next.brands ?? []) params.append("marka", brand);
+  if (next.min) params.set("min", next.min);
+  if (next.max) params.set("max", next.max);
   if (next.page > 1) params.set("sayfa", String(next.page));
   const qs = params.toString();
   return qs ? `${next.basePath}?${qs}` : next.basePath;
@@ -29,14 +43,34 @@ const viewOptions = [
   { key: "liste", label: "Liste", icon: LayoutGrid },
 ] as const;
 
-export function SortBar({ state, total }: { state: ListingState; total: number }) {
+export function SortBar({ state, total, filters }: { state: ListingState; total: number; filters?: ListingFilters }) {
+  // Çekmecede korunacak parametreler: sıralama, görünüm ve stok seçimi filtre gönderilince kaybolmasın.
+  const preserved: Record<string, string> = {};
+  if (state.sort !== "onerilen") preserved.sirala = state.sort;
+  if (state.view === "liste") preserved.gorunum = "liste";
+  if (state.inStockOnly) preserved.stok = "1";
+
   return (
     <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
       <p className="text-sm text-neutral-600 sm:mr-auto">
         <span className="font-bold text-fg">{total}</span> ürün
+        {/* Dokunmatik ekranda ipucu: hızlı bakışa uzun basarak ulaşılır (QuickViewArea). */}
+        <span className="hidden text-xs pointer-coarse:inline"> · hızlı bakış için ürüne uzun basın</span>
       </p>
       {/* Mobilde tek satır, yatay kayar; kenarlara kadar uzasın diye container boşluğu geri alınır. */}
       <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0">
+      {filters && (
+        <FilterDrawer
+          basePath={state.basePath}
+          clearHref={buildHref(state, { brands: [], min: undefined, max: undefined, page: 1 })}
+          preserved={preserved}
+          brands={filters.brands}
+          selectedBrands={state.brands ?? []}
+          min={state.min ?? ""}
+          max={state.max ?? ""}
+          priceRange={filters.priceRange}
+        />
+      )}
       {state.view && (
         <div className="flex shrink-0 overflow-hidden rounded-full border border-neutral-300" role="group" aria-label="Görünüm">
           {viewOptions.map((option) => (

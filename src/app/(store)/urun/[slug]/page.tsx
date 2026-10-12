@@ -1,8 +1,11 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { MapPin, MessageCircle, Phone } from "lucide-react";
 import AddToCartButton from "@/components/AddToCartButton";
+import { LOW_STOCK_THRESHOLD } from "@/components/ProductCard";
+import ProductTabs, { type TabItem } from "@/components/ProductTabs";
 import StickyBuyBar from "@/components/StickyBuyBar";
 import Breadcrumbs, { type Crumb } from "@/components/Breadcrumbs";
 import ColorPalette from "@/components/ColorPalette";
@@ -11,7 +14,7 @@ import { getProductPalette } from "@/lib/colors";
 import ProductGrid from "@/components/ProductGrid";
 import ProductVisual from "@/components/ProductVisual";
 import { ProductDetailSkeleton } from "@/components/Skeletons";
-import { getPrerenderProductSlugs, getProductBySlug, getRelatedProducts } from "@/lib/catalog";
+import { getComplementaryProducts, getPrerenderProductSlugs, getProductBySlug, getRelatedProducts } from "@/lib/catalog";
 import { discountPercent, formatPrice } from "@/lib/format";
 import { site, whatsappHref } from "@/lib/site";
 
@@ -63,9 +66,73 @@ async function ProductContent({ slug }: { slug: string }) {
   const product = await getProductBySlug(slug);
   if (!product || !product.isActive) notFound();
 
-  const related = await getRelatedProducts(product.categoryId, product.id);
+  const rootCategory = product.category.parent ?? product.category;
+  const [related, complementary] = await Promise.all([
+    getRelatedProducts(product.categoryId, product.id),
+    getComplementaryProducts(product.id, product.categoryId, rootCategory.id),
+  ]);
   const discount = discountPercent(product.priceKurus, product.compareAtKurus);
-  const rootSlug = product.category.parent?.slug ?? product.category.slug;
+  const rootSlug = rootCategory.slug;
+  const stockLow = product.stock > 0 && product.stock <= LOW_STOCK_THRESHOLD;
+  const stockLabel = product.stock < 1 ? "Stokta yok" : stockLow ? `Son ${product.stock} adet` : "Stokta var";
+
+  // Sekmeler: içeriği olmayan sekme gösterilmez. Teslimat bilgisi sipariş akışındaki gerçek duruma göredir.
+  const tabs: TabItem[] = [
+    ...(product.description
+      ? [
+          {
+            id: "aciklama",
+            label: "Açıklama",
+            content: <p className="whitespace-pre-line text-sm leading-relaxed text-neutral-700">{product.description}</p>,
+          },
+        ]
+      : []),
+    ...(product.attributes.length > 0
+      ? [
+          {
+            id: "ozellikler",
+            label: "Özellikler",
+            content: (
+              <dl className="divide-y divide-neutral-200 rounded-xl border border-neutral-200 text-sm">
+                {product.attributes.map((attribute) => (
+                  <div key={attribute.id} className="grid grid-cols-[7rem_1fr] gap-4 px-4 py-2.5 sm:grid-cols-[8rem_1fr]">
+                    <dt className="font-bold text-neutral-500">{attribute.name}</dt>
+                    <dd className="font-semibold">{attribute.value}</dd>
+                  </div>
+                ))}
+              </dl>
+            ),
+          },
+        ]
+      : []),
+    {
+      id: "teslimat",
+      label: "Teslimat ve İade",
+      content: (
+        <div className="space-y-3 text-sm leading-relaxed text-neutral-700">
+          <p>
+            Siparişiniz mağazamızdan teslim edilir; ödemeyi ürünü teslim alırken mağazada yaparsınız. Sipariş verdiğiniz ürün sizin için ayrılır.
+          </p>
+          <p>
+            İade ve değişim koşulları için{" "}
+            <Link href="/bilgi/iade-ve-degisim" className="font-bold underline underline-offset-2">
+              İade ve Değişim
+            </Link>{" "}
+            sayfasına bakın.
+          </p>
+          <div className="space-y-2 rounded-xl bg-neutral-100 p-4">
+            <p className="font-extrabold text-fg">Mağaza bilgileri</p>
+            <a href={site.phoneHref} className="flex items-center gap-2 hover:underline">
+              <Phone size={16} aria-hidden /> {site.phone}
+            </a>
+            <a href={site.mapsUrl} target="_blank" rel="noopener noreferrer" className="flex items-start gap-2 hover:underline">
+              <MapPin size={16} aria-hidden className="mt-0.5 shrink-0" /> {site.address.full}
+            </a>
+          </div>
+        </div>
+      ),
+    },
+  ];
   const palette = getProductPalette(product.attributes);
   const whatsapp = whatsappHref(
     `Merhaba, "${product.name}" (stok kodu: ${product.sku}) hakkında bilgi almak istiyorum.\n${site.url}/urun/${product.slug}`,
@@ -132,58 +199,45 @@ async function ProductContent({ slug }: { slug: string }) {
             )}
           </div>
 
-          <p className={`mt-3 text-sm font-bold ${product.stock > 0 ? "text-green-700 dark:text-green-400" : "text-red-700 dark:text-red-400"}`}>
-            {product.stock > 0 ? "Stokta var" : "Stokta yok"}
+          <p className={`mt-3 text-sm font-bold ${product.stock > 0 && !stockLow ? "text-green-700 dark:text-green-400" : "text-red-700 dark:text-red-400"}`}>
+            {stockLabel}
           </p>
 
           {palette && <ColorPalette palette={palette} visualId={VISUAL_ID} />}
 
           <div id={BUY_AREA_ID} className="mt-5 max-w-md">
-            <AddToCartButton productId={product.id} stock={product.stock} variant="full" />
-          </div>
-
-          <div className="mt-6 space-y-2 rounded-xl bg-neutral-100 p-4 text-sm">
-            <p className="font-extrabold">Mağazadan bilgi alın</p>
+            <AddToCartButton productId={product.id} stock={product.stock} variant="full" name={product.name} />
+            {/* Ürün adı ve bağlantısı hazır mesajla gider. */}
             {whatsapp && (
-              <a href={whatsapp} target="_blank" rel="noopener noreferrer" className="btn btn-dark w-full py-2.5">
-                <MessageCircle size={16} /> WhatsApp&apos;tan sor
+              <a
+                href={whatsapp}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-outline mt-2.5 min-h-12 w-full"
+              >
+                <MessageCircle size={18} aria-hidden /> Bu ürünü WhatsApp&apos;tan sor
               </a>
             )}
-            <a href={site.phoneHref} className="flex items-center gap-2 hover:underline">
-              <Phone size={16} /> {site.phone}
-            </a>
-            <a href={site.mapsUrl} target="_blank" rel="noopener noreferrer" className="flex items-start gap-2 hover:underline">
-              <MapPin size={16} className="mt-0.5 shrink-0" /> {site.address.full}
-            </a>
           </div>
 
-          {product.description && (
-            <section className="mt-8">
-              <h2 className="mb-2 text-lg font-extrabold">Ürün Açıklaması</h2>
-              <p className="whitespace-pre-line text-sm leading-relaxed text-neutral-700">{product.description}</p>
-            </section>
-          )}
-
-          {product.attributes.length > 0 && (
-            <section className="mt-8">
-              <h2 className="mb-2 text-lg font-extrabold">Özellikler</h2>
-              <dl className="divide-y divide-neutral-200 rounded-xl border border-neutral-200 text-sm">
-                {product.attributes.map((attribute) => (
-                  <div key={attribute.id} className="grid grid-cols-[8rem_1fr] gap-4 px-4 py-2.5">
-                    <dt className="font-bold text-neutral-500">{attribute.name}</dt>
-                    <dd className="font-semibold">{attribute.value}</dd>
-                  </div>
-                ))}
-              </dl>
-            </section>
-          )}
+          <ProductTabs tabs={tabs} />
         </div>
       </div>
 
       {related.length > 0 && (
         <section className="mt-14">
           <h2 className="mb-5 text-xl font-extrabold"><span className="marker">Benzer Ürünler</span></h2>
-          <ProductGrid products={related} />
+          <ProductGrid products={related} scrollOnMobile />
+        </section>
+      )}
+
+      {complementary.length > 0 && (
+        <section className="mt-12">
+          <h2 className="mb-5 flex items-end text-xl font-extrabold">
+            <span className="marker">Yanına Yakışanlar</span>
+            <span aria-hidden className="ml-3 -rotate-3 font-hand text-2xl font-bold leading-none text-neutral-500">birlikte iyi gider</span>
+          </h2>
+          <ProductGrid products={complementary} scrollOnMobile />
         </section>
       )}
 
@@ -192,6 +246,8 @@ async function ProductContent({ slug }: { slug: string }) {
         stock={product.stock}
         name={product.name}
         price={formatPrice(product.priceKurus)}
+        stockLabel={stockLabel}
+        stockLow={product.stock < 1 || stockLow}
         targetId={BUY_AREA_ID}
       />
     </div>

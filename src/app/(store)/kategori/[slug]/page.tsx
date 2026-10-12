@@ -13,15 +13,32 @@ import {
   countCategoryProducts,
   getAllCategorySlugs,
   getCategoryBySlug,
+  getFilterOptions,
   listProducts,
+  parseBrands,
   parsePage,
   parseSort,
 } from "@/lib/catalog";
 import { categoryIcons, categoryPatterns, fallbackCategoryIcon, fallbackCategoryPattern } from "@/lib/category-icons";
+import { parsePriceToKurus } from "@/lib/slug";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ sirala?: string; sayfa?: string; stok?: string; gorunum?: string }>;
+  searchParams: Promise<{
+    sirala?: string;
+    sayfa?: string;
+    stok?: string;
+    gorunum?: string;
+    marka?: string | string[];
+    min?: string;
+    max?: string;
+  }>;
+}
+
+// Adresteki fiyat metni (örn. "12,50"): yalnızca rakam, nokta, virgül; en fazla 10 karakter. Geçersizse boş.
+function cleanPrice(value: string | undefined): string {
+  const text = (value ?? "").trim();
+  return /^[\d.,]{1,10}$/.test(text) && parsePriceToKurus(text) !== null ? text : "";
 }
 
 // Ürünleri kitap rafı olarak gösterilen ana kategori (BookShelf).
@@ -151,6 +168,12 @@ interface CategoryProductsProps {
 async function CategoryProducts({ slug, rootSlug, categoryIds, searchParams }: CategoryProductsProps) {
   const query = await searchParams;
 
+  const options = await getFilterOptions(categoryIds);
+  // Seçenek yoksa (tek fiyat, marka yok) çekmece gösterilmez.
+  const hasFilters = options.brands.length > 0 || (options.minPriceKurus !== null && options.minPriceKurus !== options.maxPriceKurus);
+  // Adresteki bilinmeyen markalar yok sayılır.
+  const knownBrands = new Set(options.brands.map((brand) => brand.slug));
+
   const state = {
     basePath: `/kategori/${slug}`,
     sort: parseSort(query.sirala),
@@ -158,18 +181,34 @@ async function CategoryProducts({ slug, rootSlug, categoryIds, searchParams }: C
     page: parsePage(query.sayfa),
     // Raf görünümü yalnızca kitap kategorisinde sunulur ve orada varsayılandır.
     view: rootSlug === SHELF_ROOT_SLUG ? (query.gorunum === "liste" ? ("liste" as const) : ("raf" as const)) : undefined,
+    brands: parseBrands(query.marka).filter((brand) => knownBrands.has(brand)),
+    min: cleanPrice(query.min),
+    max: cleanPrice(query.max),
   };
+
+  const minKurus = state.min ? (parsePriceToKurus(state.min) ?? undefined) : undefined;
+  const maxKurus = state.max ? (parsePriceToKurus(state.max) ?? undefined) : undefined;
+  // En düşük, en yüksekten büyük yazıldıysa ikisi yer değiştirir.
+  const [minPriceKurus, maxPriceKurus] =
+    minKurus !== undefined && maxKurus !== undefined && minKurus > maxKurus ? [maxKurus, minKurus] : [minKurus, maxKurus];
 
   const { items, total, pageCount } = await listProducts({
     categoryIds,
     sort: state.sort,
     inStockOnly: state.inStockOnly,
+    brandSlugs: state.brands,
+    minPriceKurus,
+    maxPriceKurus,
     page: state.page,
   });
 
   return (
     <>
-      <SortBar state={state} total={total} />
+      <SortBar
+        state={state}
+        total={total}
+        filters={hasFilters ? { brands: options.brands, priceRange: { min: options.minPriceKurus, max: options.maxPriceKurus } } : undefined}
+      />
       {items.length > 0 ? (
         state.view === "raf" ? (
           <BookShelf products={items} />
