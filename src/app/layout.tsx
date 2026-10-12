@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Caveat, Manrope } from "next/font/google";
 import { isIndexable } from "@/lib/indexing";
-import { COLOR_SCHEME_META_ID, themeInitScript } from "@/lib/theme";
+import { COLOR_SCHEME_META_ID, DARK_SCHEME, themeInitScript } from "@/lib/theme";
 import { site } from "@/lib/site";
 import "./globals.css";
 
@@ -37,12 +37,13 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    // suppressHydrationWarning: tema betiği, React devreye girmeden önce html'e "dark" sınıfını ekleyebilir.
+    // Varsayılan tema koyudur (lib/theme.ts): html "dark" sınıfıyla başlar.
+    // suppressHydrationWarning: tema betiği, kayıtlı tercih "açık" ise React devreye girmeden önce bu sınıfı kaldırır.
     // data-scroll-behavior: globals.css html'e yumuşak kaydırma verir; bu öznitelik Next'e sayfa geçişlerinde
     // onu geçici kapatmasını söyler (yoksa yeni sayfa yumuşak kayarak açılır ve geliştirmede uyarı çıkar).
-    <html lang="tr" className={`${manrope.variable} ${caveat.variable}`} data-scroll-behavior="smooth" suppressHydrationWarning>
+    <html lang="tr" className={`dark ${manrope.variable} ${caveat.variable}`} data-scroll-behavior="smooth" suppressHydrationWarning>
       <head>
-        <meta id={COLOR_SCHEME_META_ID} name="color-scheme" content="only light" suppressHydrationWarning />
+        <meta id={COLOR_SCHEME_META_ID} name="color-scheme" content={DARK_SCHEME} suppressHydrationWarning />
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
       <body className="font-sans antialiased">{children}</body>

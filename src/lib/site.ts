@@ -5,7 +5,8 @@ export const site = {
   tagline: "Kitap, kırtasiye ve hediyelik",
   description:
     "Mert Kitap Kırtasiye'de sanattan eğitime, her adımınızda yaratıcılığınızı ve bilginizi besleyen en kaliteli ürünler sizi bekliyor.",
-  url: process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
+  // "||": değişken tanımlı ama boşsa da yerel adrese düşer (boş metin geçerli bir URL değildir; derleme kırılırdı).
+  url: process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
   phone: "0232 374 25 00",
   phoneHref: "tel:+902323742500",
   // WhatsApp numarası, ülke koduyla ve yalnızca rakam (ör. "905321234567"). Boşken WhatsApp butonları gizlenir.
