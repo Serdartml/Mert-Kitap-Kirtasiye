@@ -1,17 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Check } from "lucide-react";
 import type { ProductPalette } from "@/lib/colors";
 
-// Boya lekesi biçimleri; sırayla kullanılır ki lekeler birbirinin aynısı olmasın.
-const blobs = [
-  "58% 42% 55% 45% / 48% 60% 40% 52%",
-  "45% 55% 40% 60% / 58% 44% 56% 42%",
-  "62% 38% 48% 52% / 42% 56% 44% 58%",
-  "50% 50% 60% 40% / 60% 42% 58% 40%",
-];
+// Seçili rengin üstündeki tik, rengin açık/koyu olmasına göre okunur kalsın.
+function isLight(hex: string): boolean {
+  const value = parseInt(hex.slice(1), 16);
+  const [r, g, b] = [(value >> 16) & 255, (value >> 8) & 255, value & 255];
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.6;
+}
 
-// Ürünün renkleri tıklanabilir boya lekeleri olarak dizilir. Lekeye basınca seçilen renk, ürün
+// Ürünün renkleri tıklanabilir renk kareleri olarak dizilir (görünüm globals.css'te .palette-*). Renge basınca seçilen renk, ürün
 // görselinin kutusuna (visualId) yansır; görünümü globals.css içindeki [data-paint] kuralları belirler.
 // Renk bir sipariş seçeneği değildir (ürünlerde varyant yok), yalnızca gösterimdir.
 export default function ColorPalette({ palette, visualId }: { palette: ProductPalette; visualId: string }) {
@@ -35,29 +35,29 @@ export default function ColorPalette({ palette, visualId }: { palette: ProductPa
       <h2 className="text-sm font-extrabold">
         {palette.kind === "set" ? `Setteki ${palette.colors.length} renk` : "Renkler"}
         <span className="ml-2 font-semibold text-neutral-500" aria-live="polite">
-          {color ? color.name : "Bir lekeye dokunun"}
+          {color ? color.name : "Bir renge dokunun"}
         </span>
       </h2>
-      {/* Lekeler 40px: parmakla rahat basılır. */}
-      <ul className="mt-2 flex flex-wrap gap-1.5">
+      {/* Düğmeler 40px: parmakla rahat basılır. */}
+      <ul className="mt-3 flex flex-wrap gap-1.5">
         {palette.colors.map((item, index) => {
           const active = index === selected;
           return (
-            <li key={item.name}>
+            <li key={item.name} className="palette-item relative">
               <button
                 type="button"
-                title={item.name}
                 aria-label={item.name}
                 aria-pressed={active}
                 onClick={() => setSelected(active ? null : index)}
                 className="grid size-10 place-items-center"
               >
-                <span
-                  className={`block border-2 border-ink transition-[width,height,rotate] duration-200 ${
-                    active ? "size-10 rotate-12" : "size-8 hover:size-9"
-                  }`}
-                  style={{ backgroundColor: item.hex, borderRadius: blobs[index % blobs.length] }}
-                />
+                <span className="palette-swatch" style={{ backgroundColor: item.hex }}>
+                  {active && <Check size={16} strokeWidth={4} aria-hidden style={{ color: isLight(item.hex) ? "#111" : "#fff" }} />}
+                </span>
+                {/* Ad etiketi: yalnızca fareyle / klavye odağıyla görünür (globals.css). */}
+                <span aria-hidden className="palette-tip">
+                  {item.name}
+                </span>
               </button>
             </li>
           );

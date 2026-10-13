@@ -2,6 +2,7 @@ import "server-only";
 import type { Prisma } from "@prisma/client";
 import { cacheLife, cacheTag } from "next/cache";
 import { db } from "./db";
+import { averageRating, reviewerName } from "./reviews";
 
 // 2, 4 ve 5 sütunlu ızgaralarda son satır yarım kalmasın diye 20.
 export const PAGE_SIZE = 20;
@@ -381,6 +382,30 @@ export async function getProductBySlug(slug: string) {
       attributes: { orderBy: { sortOrder: "asc" } },
     },
   });
+}
+
+// Ürün sayfasındaki yorumlar: yalnızca yönetici onaylıları. Yeni yorum onaylanınca CATALOG_TAG yenilenir.
+export async function getProductReviews(productId: string) {
+  "use cache";
+  cacheLife("minutes");
+  cacheTag(CATALOG_TAG);
+
+  const reviews = await db.review.findMany({
+    where: { productId, isApproved: true },
+    orderBy: { createdAt: "desc" },
+    take: 50,
+    select: { id: true, rating: true, comment: true, createdAt: true, user: { select: { name: true } } },
+  });
+  return {
+    reviews: reviews.map((r) => ({
+      id: r.id,
+      rating: r.rating,
+      comment: r.comment,
+      createdAt: r.createdAt.toISOString(),
+      author: reviewerName(r.user.name),
+    })),
+    average: averageRating(reviews.map((r) => r.rating)),
+  };
 }
 
 export async function getRelatedProducts(categoryId: string, excludeId: string, take = 4) {

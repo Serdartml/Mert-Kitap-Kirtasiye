@@ -3,11 +3,14 @@
 import { Prisma } from "@prisma/client";
 import { revalidatePath, updateTag } from "next/cache";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth";
 import { getCartId } from "@/lib/cart";
 import { CATALOG_TAG } from "@/lib/catalog";
 import { db } from "@/lib/db";
+import { adminNotifyAddress, sendMail } from "@/lib/mail";
+import { newOrderAdminMail, orderConfirmationMail } from "@/lib/mail-templates";
 import { PICKUP_PAYMENT } from "@/lib/order-status";
 import { generateOrderNo, rememberGuestOrder } from "@/lib/orders";
 import { site } from "@/lib/site";
@@ -51,7 +54,7 @@ export async function placeOrder(_prev: FormState, formData: FormData): Promise<
   const user = await getCurrentUser();
   const { fullName, email, phone, note } = parsed.data;
 
-  let order: { id: string; orderNo: string };
+  let order: Prisma.OrderGetPayload<{ include: { items: true } }>;
   try {
     order = await db.$transaction(async (tx) => {
       const cart = await tx.cart.findUnique({
@@ -100,7 +103,7 @@ export async function placeOrder(_prev: FormState, formData: FormData): Promise<
             })),
           },
         },
-        select: { id: true, orderNo: true },
+        include: { items: true },
       });
 
       await tx.cartItem.deleteMany({ where: { cartId } });
@@ -119,5 +122,12 @@ export async function placeOrder(_prev: FormState, formData: FormData): Promise<
   // Stok değişti: katalog önbelleği ve sepet rozeti yenilensin.
   updateTag(CATALOG_TAG);
   revalidatePath("/", "layout");
+  // Müşteriye onay, mağazaya bildirim. Gönderim yanıtı geciktirmez ve hatası siparişi etkilemez.
+  after(async () => {
+    await Promise.all([
+      sendMail(orderConfirmationMail(order)),
+      sendMail(newOrderAdminMail(adminNotifyAddress(), order)),
+    ]);
+  });
   redirect(`/siparis/${order.orderNo}`);
 }

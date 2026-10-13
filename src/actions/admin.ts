@@ -3,10 +3,13 @@
 import { Prisma, type OrderStatus } from "@prisma/client";
 import { updateTag } from "next/cache";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/auth";
 import { CATALOG_TAG } from "@/lib/catalog";
 import { db } from "@/lib/db";
+import { sendMail } from "@/lib/mail";
+import { orderStatusMail } from "@/lib/mail-templates";
 import { closedStatuses, nextStatuses } from "@/lib/order-status";
 import { parsePriceToKurus, slugify } from "@/lib/slug";
 
@@ -87,9 +90,15 @@ export async function saveProduct(_prev: FormState, formData: FormData): Promise
   }
   const attributeRows = attributes.filter((attribute) => attribute !== null);
 
+  const brandId = text(formData, "brandId") || null;
+  if (brandId && !(await db.brand.findUnique({ where: { id: brandId }, select: { id: true } }))) {
+    return { error: "Marka bulunamadı." };
+  }
+
   const { barcode, description, ...rest } = parsed.data;
   const data = {
     ...rest,
+    brandId,
     barcode: barcode || null,
     description: description || null,
     priceKurus,
@@ -206,6 +215,60 @@ export async function deleteCategory(id: string): Promise<void> {
   redirect("/yonetim/kategoriler?durum=silindi");
 }
 
+// ---------- Markalar ----------
+
+const brandSchema = z.object({
+  name: z.string().min(2, "Marka adı en az 2 karakter olmalı.").max(80),
+  slug: z.string().regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, "Adres yalnızca küçük harf, rakam ve tire içerebilir.").max(80),
+});
+
+export async function saveBrand(_prev: FormState, formData: FormData): Promise<FormState> {
+  await requireAdmin();
+
+  const id = text(formData, "id");
+  const name = text(formData, "name");
+  const parsed = brandSchema.safeParse({ name, slug: text(formData, "slug") || slugify(name) });
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Formu kontrol edin." };
+
+  try {
+    if (id) await db.brand.update({ where: { id }, data: parsed.data });
+    else await db.brand.create({ data: parsed.data });
+  } catch (error) {
+    const message = uniqueError(error, { slug: "adres" });
+    if (message) return { error: message };
+    throw error;
+  }
+
+  updateTag(CATALOG_TAG);
+  redirect("/yonetim/markalar?durum=kaydedildi");
+}
+
+export async function deleteBrand(id: string): Promise<void> {
+  await requireAdmin();
+  // Ürünü olan marka silinmez; önce ürünlerin markası değiştirilmeli.
+  if ((await db.product.count({ where: { brandId: id } })) > 0) redirect("/yonetim/markalar?durum=markadolu");
+
+  await db.brand.delete({ where: { id } });
+  updateTag(CATALOG_TAG);
+  redirect("/yonetim/markalar?durum=silindi");
+}
+
+// ---------- Yorumlar ----------
+
+export async function setReviewApproved(id: string, isApproved: boolean): Promise<void> {
+  await requireAdmin();
+  await db.review.update({ where: { id }, data: { isApproved } });
+  updateTag(CATALOG_TAG);
+  redirect(`/yonetim/yorumlar?durum=${isApproved ? "yayinlandi" : "kaydedildi"}`);
+}
+
+export async function deleteReview(id: string): Promise<void> {
+  await requireAdmin();
+  await db.review.delete({ where: { id } });
+  updateTag(CATALOG_TAG);
+  redirect("/yonetim/yorumlar?durum=silindi");
+}
+
 // ---------- Siparişler ----------
 
 // Durumu ilerletir ya da siparişi iptal eder. İptalde ayrılan stok ürünlere geri verilir.
@@ -219,9 +282,11 @@ export async function setOrderStatus(id: string, status: OrderStatus): Promise<v
   const allowed = status === "CANCELLED" ? !closedStatuses.includes(order.status) && order.status !== "DELIVERED" : nextStatuses[order.status].includes(status);
   if (!allowed) redirect(`/yonetim/siparisler/${id}?durum=gecersiz`);
 
+  let changed = false;
   await db.$transaction(async (tx) => {
     const updated = await tx.order.updateMany({ where: { id, status: order.status }, data: { status } });
-    if (updated.count !== 1 || status !== "CANCELLED") return;
+    changed = updated.count === 1;
+    if (!changed || status !== "CANCELLED") return;
     for (const item of order.items) {
       // Ürün sonradan silinmişse (productId boş) geri verilecek stok kaydı yoktur.
       if (item.productId) {
@@ -231,6 +296,11 @@ export async function setOrderStatus(id: string, status: OrderStatus): Promise<v
   });
 
   if (status === "CANCELLED") updateTag(CATALOG_TAG);
+  // Müşteriye durum bildirimi (hazırlanıyor / teslime hazır / iptal). Gönderim yanıtı geciktirmez.
+  if (changed && status !== "DELIVERED") {
+    const mail = orderStatusMail({ ...order, status }, status);
+    after(() => sendMail(mail));
+  }
   redirect(`/yonetim/siparisler/${id}?durum=kaydedildi`);
 }
 

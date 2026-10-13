@@ -6,6 +6,6 @@ export const metadata: Metadata = {
   robots: { index: false },
 };
 
-export default function LoginPage({ searchParams }: { searchParams: Promise<{ sonra?: string }> }) {
+export default function LoginPage({ searchParams }: { searchParams: Promise<{ sonra?: string; sifre?: string }> }) {
   return <AuthCard mode="login" searchParams={searchParams} />;
 }

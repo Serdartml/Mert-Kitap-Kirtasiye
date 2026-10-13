@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { login, register } from "@/actions/account";
 import { useServerForm } from "@/components/admin/useServerForm";
 
@@ -34,6 +35,13 @@ export default function AuthForm({ mode, next }: { mode: "login" | "register"; n
         />
         {isRegister && <span className="mt-1 block text-xs font-normal text-neutral-500">En az 8 karakter.</span>}
       </label>
+      {!isRegister && (
+        <p className="-mt-2 text-right text-sm">
+          <Link href="/sifremi-unuttum" className="font-semibold text-neutral-600 underline underline-offset-2">
+            Parolamı unuttum
+          </Link>
+        </p>
+      )}
       {state.error && (
         <p role="alert" className="text-sm font-semibold text-red-700 dark:text-red-400">
           {state.error}

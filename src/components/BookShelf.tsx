@@ -1,6 +1,6 @@
-"use client";
+﻿"use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import Link from "next/link";
 import { X } from "lucide-react";
 import AddToCartButton from "./AddToCartButton";
@@ -9,7 +9,7 @@ import type { ProductCardData } from "@/lib/catalog";
 import { formatPrice } from "@/lib/format";
 
 // Kitap rafı görünümü: ürünler rafta sırt sırta durur.
-//  - Fareyle üstüne gelince kitap öne eğilir ve üstünde kapağı (görsel, ad, fiyat) açılır.
+//  - Fareyle üstüne gelince sırt genişler (akordeon): dik yazı yatay döner ve ad + fiyat görünür; üstünde kapak görseli açılır.
 //  - Dokunmatik ekranda ilk dokunuş kitabı seçer ve altta bir kart açar; karttan ürüne gidilir.
 // Sırt rengi ve ölçüleri ürün kimliğinden türetilir: aynı kitap her seferinde aynı görünür.
 
@@ -30,14 +30,44 @@ function hash(text: string) {
   return value;
 }
 
+// Açık sırtın genişliği ul'deki --open-w değişkenindedir (mobilde 6 rem, sm ve üstünde 7,5 rem).
+// Üstüne gelinen (ya da dokunulan) kitabın arkasındaki, aynı satırdaki kitapları genişleme farkı kadar sağa
+// kaydırır. Satırlar offsetTop ile ayırt edilir; kayma translate ile yapıldığından yerleşim (ve satır sarma) değişmez.
+function shiftNext(book: HTMLElement) {
+  const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
+  const openRem = parseFloat(getComputedStyle(book.parentElement!).getPropertyValue("--open-w"));
+  const grow = Math.max(0, openRem * rem - book.offsetWidth);
+  for (let next = book.nextElementSibling; next instanceof HTMLElement && next.offsetTop === book.offsetTop; next = next.nextElementSibling) {
+    next.style.translate = `${grow}px 0`;
+  }
+}
+
+function resetShift(book: HTMLElement) {
+  for (const sibling of book.parentElement?.children ?? []) (sibling as HTMLElement).style.translate = "";
+}
+
 export default function BookShelf({ products }: { products: ProductCardData[] }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selected = products.find((product) => product.id === selectedId) ?? null;
+  const shelf = useRef<HTMLUListElement>(null);
+
+  // Dokunmatik ekran: seçilen kitap fareyle üstüne gelinmiş gibi açılır; seçim değişince / kapanınca komşular geri döner.
+  useEffect(() => {
+    const list = shelf.current;
+    if (!list) return;
+    for (const child of list.children) (child as HTMLElement).style.translate = "";
+    const book = selectedId ? list.querySelector<HTMLElement>(`[data-book="${selectedId}"]`) : null;
+    if (book) shiftNext(book);
+  }, [selectedId]);
 
   return (
     <>
       {/* theme-fixed: sırt renkleri her temada aynı kalır. Satır yüksekliği ve raf tahtası globals.css'te. */}
-      <ul className="bookshelf theme-fixed flex flex-wrap items-end gap-x-1 px-3 sm:gap-x-1.5 sm:px-10 lg:px-16">
+      {/* Sağdaki dolgu (pr), en büyük genişleme farkından (açık genişlik - en dar kitap) büyüktür: satır sonundaki kitaplar kayınca buraya taşar, taşma olmaz. */}
+      <ul
+        ref={shelf}
+        className="bookshelf theme-fixed flex flex-wrap items-end gap-x-1 px-3 pr-[3.75rem] [--open-w:6rem] sm:gap-x-1.5 sm:px-10 sm:pr-[7.5rem] sm:[--open-w:7.5rem] lg:px-16 lg:pr-36"
+      >
         {products.map((product) => {
           const seed = hash(product.id);
           const tone = tones[seed % tones.length];
@@ -45,7 +75,20 @@ export default function BookShelf({ products }: { products: ProductCardData[] })
           const active = product.id === selectedId;
           return (
             // pb: raf tahtasının kalınlığı; kitap tahtanın üstüne oturur.
-            <li key={product.id} className="group relative flex h-[var(--shelf-row)] items-end pb-[10px]">
+            // Akordeon: üstüne gelen kitabın sırtı sağa doğru genişler (Link, li'ye göre mutlak konumlu), aynı
+            // satırdaki sonraki kitaplar da genişleme farkı kadar yana kayar (shiftNext). li'nin kendi genişliği
+            // değişmez: yoksa satır yeniden sarılır ve son kitap alt satıra zıplardı. Kayan kitaplar ul'nin
+            // sağ dolgusuna (aşağıda) taşar.
+            <li
+              key={product.id}
+              data-book={product.id}
+              className="group relative flex h-[var(--shelf-row)] w-[var(--book-w)] items-end pb-[10px] transition-[translate] duration-300 ease-out motion-reduce:transition-none"
+              style={{ "--book-w": `${2.5 + (seed % 4) * 0.3}rem` } as CSSProperties}
+              onPointerEnter={(event) => event.pointerType === "mouse" && shiftNext(event.currentTarget)}
+              onPointerLeave={(event) => event.pointerType === "mouse" && resetShift(event.currentTarget)}
+              onFocus={(event) => event.target.matches(":focus-visible") && shiftNext(event.currentTarget)}
+              onBlur={(event) => !active && resetShift(event.currentTarget)}
+            >
               <Link
                 href={`/urun/${product.slug}`}
                 aria-label={`${product.name}, ${formatPrice(product.priceKurus)}`}
@@ -56,24 +99,36 @@ export default function BookShelf({ products }: { products: ProductCardData[] })
                     setSelectedId(product.id);
                   }
                 }}
-                className={`flex origin-bottom flex-col items-center justify-between rounded-t-sm border-2 border-b-0 border-ink py-2 transition-transform dark:border-[#8a8a8a] duration-200 group-hover:-translate-y-3 group-hover:-rotate-3 focus-visible:-translate-y-3 focus-visible:-rotate-3 ${
+                className={`absolute bottom-[10px] left-0 block w-full origin-bottom overflow-hidden rounded-t-sm border-2 border-b-0 border-ink py-2 transition-[width,translate,rotate] duration-300 ease-out motion-reduce:transition-none dark:border-[#8a8a8a] group-hover:-translate-y-3 group-hover:w-[var(--open-w)] focus-visible:-translate-y-3 focus-visible:w-[var(--open-w)] ${
                   tone.spine
-                } ${active ? "-translate-y-3 -rotate-3" : ""}`}
-                style={{ height: `${9 + (seed % 5) * 0.75}rem`, width: `${2.5 + (seed % 4) * 0.3}rem` }}
+                } ${active ? "-translate-y-3 !w-[var(--open-w)]" : ""}`}
+                style={{ height: `${9 + (seed % 5) * 0.75}rem` }}
               >
-                <span aria-hidden className={`h-1 w-3/5 rounded-full ${tone.band}`} />
-                {/* Dikey yazıda line-clamp bazı tarayıcılarda (iOS) yazıyı tümden gizleyebildiği için üç noktayla kesilir. */}
-                <span className="max-h-[78%] rotate-180 overflow-hidden text-ellipsis whitespace-nowrap px-0.5 text-[11px] font-extrabold leading-tight [writing-mode:vertical-rl] sm:text-xs">
-                  {product.name}
+                <span className={`flex h-full flex-col items-center justify-between transition-opacity duration-150 group-hover:opacity-0 group-has-[:focus-visible]:opacity-0 ${active ? "opacity-0" : ""}`}>
+                  <span aria-hidden className={`h-1 w-3/5 rounded-full ${tone.band}`} />
+                  {/* Dikey yazıda line-clamp bazı tarayıcılarda (iOS) yazıyı tümden gizleyebildiği için üç noktayla kesilir. */}
+                  <span className="max-h-[78%] rotate-180 overflow-hidden text-ellipsis whitespace-nowrap px-0.5 text-[11px] font-extrabold leading-tight [writing-mode:vertical-rl] sm:text-xs">
+                    {product.name}
+                  </span>
+                  <span aria-hidden className={`h-1 w-3/5 rounded-full ${tone.band}`} />
                 </span>
-                <span aria-hidden className={`h-1 w-3/5 rounded-full ${tone.band}`} />
+                {/* Açık yüz (yalnızca fareyle / odakla): dik yazı yatay döner. Ekran okuyucu bağlantı adını zaten okur. */}
+                <span
+                  aria-hidden
+                  className={`pointer-events-none absolute left-0 top-1/2 flex w-[var(--open-w)] -translate-y-1/2 flex-col items-center gap-1.5 px-2 text-center transition-[rotate,opacity] sm:px-2.5 duration-300 ease-out motion-reduce:transition-none group-hover:rotate-0 group-hover:opacity-100 group-has-[:focus-visible]:rotate-0 group-has-[:focus-visible]:opacity-100 ${
+                    active ? "rotate-0 opacity-100" : "-rotate-90 opacity-0"
+                  }`}
+                >
+                  <span className={`h-1 w-8 rounded-full ${tone.band}`} />
+                  <span className="line-clamp-4 text-xs font-extrabold uppercase leading-snug tracking-wide">{product.name}</span>
+                  <span className="text-sm font-extrabold">{formatPrice(product.priceKurus)}</span>
+                </span>
               </Link>
 
               {/* Kapak: yalnızca fareyle (ya da klavye odağıyla) açılır. */}
-              <div className="pointer-events-none invisible absolute bottom-[calc(100%-2.5rem)] left-1/2 z-20 hidden w-44 -translate-x-1/2 translate-y-2 rounded-xl border-2 border-ink bg-white p-2 opacity-0 shadow-xl transition duration-200 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 md:block">
-                <ProductVisual name={product.name} rootCategorySlug={rootSlug} image={product.images[0]} sizes="176px" />
-                <p className="mt-2 line-clamp-2 text-xs font-bold leading-4">{product.name}</p>
-                <p className="mt-1 text-sm font-extrabold">{formatPrice(product.priceKurus)}</p>
+              <div className="pointer-events-none invisible absolute bottom-[calc(100%-2.5rem)] left-[calc(50%+2.2rem)] z-20 hidden w-36 -translate-x-1/2 translate-y-2 rounded-xl border-2 border-ink bg-white p-2 opacity-0 shadow-xl transition duration-200 group-has-[:focus-visible]:visible group-has-[:focus-visible]:translate-y-0 group-has-[:focus-visible]:opacity-100 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 md:block">
+                {/* Ad ve fiyat açılan sırtta yazar; kapakta yalnızca görsel kalır (tekrar olmasın). */}
+                <ProductVisual name={product.name} rootCategorySlug={rootSlug} image={product.images[0]} sizes="144px" />
               </div>
             </li>
           );
@@ -113,3 +168,7 @@ export default function BookShelf({ products }: { products: ProductCardData[] })
     </>
   );
 }
+
+
+
+

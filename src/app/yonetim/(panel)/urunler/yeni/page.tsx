@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import ProductForm from "@/components/admin/ProductForm";
 import { getCategoryOptions } from "@/lib/admin-data";
 import { requireAdmin } from "@/lib/auth";
+import { db } from "@/lib/db";
 
 export const metadata: Metadata = { title: "Yeni Ürün" };
 
@@ -10,7 +11,10 @@ export const instant = false;
 
 export default async function NewProductPage() {
   await requireAdmin();
-  const categories = await getCategoryOptions();
+  const [categories, brands] = await Promise.all([
+    getCategoryOptions(),
+    db.brand.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }),
+  ]);
 
   return (
     <>
@@ -19,7 +23,9 @@ export default async function NewProductPage() {
       </h1>
       <ProductForm
         categories={categories}
+        brands={brands}
         values={{
+          brandId: "",
           name: "",
           slug: "",
           sku: "",

@@ -15,6 +15,7 @@ export interface ProductFormValues {
   compareAt: string;
   stock: number;
   categoryId: string;
+  brandId: string;
   description: string;
   attributes: string;
   isActive: boolean;
@@ -30,7 +31,15 @@ export interface CategoryOption {
 const label = "block text-sm font-bold";
 const hint = "mt-1 block text-xs font-normal text-neutral-500";
 
-export default function ProductForm({ values, categories }: { values: ProductFormValues; categories: CategoryOption[] }) {
+export default function ProductForm({
+  values,
+  categories,
+  brands,
+}: {
+  values: ProductFormValues;
+  categories: CategoryOption[];
+  brands: { id: string; name: string }[];
+}) {
   const { state, pending, onSubmit } = useServerForm(saveProduct);
 
   return (
@@ -63,6 +72,20 @@ export default function ProductForm({ values, categories }: { values: ProductFor
               </optgroup>
             ))}
           </select>
+        </label>
+        <label className={label}>
+          Marka
+          <select name="brandId" defaultValue={values.brandId} className="field mt-1.5 font-normal">
+            <option value="">Markasız</option>
+            {brands.map((brand) => (
+              <option key={brand.id} value={brand.id}>
+                {brand.name}
+              </option>
+            ))}
+          </select>
+          <span className={hint}>
+            Markalar <Link href="/yonetim/markalar" className="underline">Markalar</Link> sayfasında yönetilir; kategori sayfasındaki marka filtresi bunu kullanır.
+          </span>
         </label>
         <label className={label}>
           Açıklama

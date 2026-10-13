@@ -15,7 +15,15 @@ import { getProductPalette } from "@/lib/colors";
 import ProductGrid from "@/components/ProductGrid";
 import ProductVisual from "@/components/ProductVisual";
 import { ProductDetailSkeleton } from "@/components/Skeletons";
-import { getComplementaryProducts, getPrerenderProductSlugs, getProductBySlug, getRelatedProducts } from "@/lib/catalog";
+import ProductReviews from "@/components/ProductReviews";
+import StarRating from "@/components/StarRating";
+import {
+  getComplementaryProducts,
+  getPrerenderProductSlugs,
+  getProductBySlug,
+  getProductReviews,
+  getRelatedProducts,
+} from "@/lib/catalog";
 import { discountPercent, formatPrice } from "@/lib/format";
 import { site, whatsappHref } from "@/lib/site";
 
@@ -68,9 +76,10 @@ async function ProductContent({ slug }: { slug: string }) {
   if (!product || !product.isActive) notFound();
 
   const rootCategory = product.category.parent ?? product.category;
-  const [related, complementary] = await Promise.all([
+  const [related, complementary, { reviews, average }] = await Promise.all([
     getRelatedProducts(product.categoryId, product.id),
     getComplementaryProducts(product.id, product.categoryId, rootCategory.id),
+    getProductReviews(product.id),
   ]);
   const discount = discountPercent(product.priceKurus, product.compareAtKurus);
   const rootSlug = rootCategory.slug;
@@ -106,6 +115,11 @@ async function ProductContent({ slug }: { slug: string }) {
           },
         ]
       : []),
+    {
+      id: "yorumlar",
+      label: reviews.length > 0 ? `Yorumlar (${reviews.length})` : "Yorumlar",
+      content: <ProductReviews productId={product.id} slug={product.slug} reviews={reviews} average={average} />,
+    },
     {
       id: "teslimat",
       label: "Teslimat ve İade",
@@ -154,6 +168,8 @@ async function ProductContent({ slug }: { slug: string }) {
     description: product.description ?? undefined,
     sku: product.sku,
     brand: product.brand ? { "@type": "Brand", name: product.brand.name } : undefined,
+    aggregateRating:
+      average !== null ? { "@type": "AggregateRating", ratingValue: average, reviewCount: reviews.length } : undefined,
     offers: {
       "@type": "Offer",
       url: `${site.url}/urun/${product.slug}`,
@@ -171,7 +187,8 @@ async function ProductContent({ slug }: { slug: string }) {
       />
       <Breadcrumbs items={crumbs} />
 
-      <div className="grid gap-8 md:grid-cols-2 lg:gap-12">
+      {/* minmax(0,1fr): tek sütunlu mobilde sütun, içindeki kayan sekme şeridinin (nowrap) genişliğine kadar şişip sayfayı taşırmasın. */}
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-8 md:grid-cols-2 lg:gap-12">
         <ProductVisual
           id={VISUAL_ID}
           name={product.name}
@@ -189,6 +206,13 @@ async function ProductContent({ slug }: { slug: string }) {
               <ProductFavorite productId={product.id} slug={product.slug} />
             </Suspense>
           </div>
+          {average !== null && (
+            <p className="mt-2 flex items-center gap-2 text-sm">
+              <StarRating value={average} />
+              <span className="font-bold">{String(average).replace(".", ",")}</span>
+              <span className="text-neutral-500">({reviews.length} yorum)</span>
+            </p>
+          )}
           <p className="mt-1 text-xs text-neutral-500">Stok kodu: {product.sku}</p>
 
           <div className={`mt-5 flex flex-wrap items-center ${discount ? "gap-x-6 gap-y-3 pl-2" : "gap-3"}`}>

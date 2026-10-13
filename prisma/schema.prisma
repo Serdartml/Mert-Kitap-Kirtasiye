@@ -38,6 +38,7 @@ model User {
   updatedAt       DateTime  @updatedAt
 
   sessions  Session[]
+  resets    PasswordReset[]
   addresses Address[]
   cart      Cart?
   orders    Order[]
@@ -52,6 +53,19 @@ model Session {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   expiresAt DateTime
   createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+// Parola sıfırlama bağlantıları. Veritabanında yalnızca token özeti durur; tek kullanımlık ve kısa ömürlü.
+model PasswordReset {
+  id        String    @id @default(cuid())
+  tokenHash String    @unique
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
 
   @@index([userId])
 }

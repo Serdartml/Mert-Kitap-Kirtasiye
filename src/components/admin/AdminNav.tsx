@@ -2,13 +2,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ClipboardList, FolderTree, LayoutDashboard, Mail, Package, Users } from "lucide-react";
+import { ClipboardList, FolderTree, LayoutDashboard, Mail, MessageSquareText, Package, Tag, Users } from "lucide-react";
 
 const links = [
   { href: "/yonetim", label: "Özet", icon: LayoutDashboard, exact: true },
   { href: "/yonetim/siparisler", label: "Siparişler", icon: ClipboardList },
   { href: "/yonetim/urunler", label: "Ürünler", icon: Package },
   { href: "/yonetim/kategoriler", label: "Kategoriler", icon: FolderTree },
+  { href: "/yonetim/markalar", label: "Markalar", icon: Tag },
+  { href: "/yonetim/yorumlar", label: "Yorumlar", icon: MessageSquareText },
   { href: "/yonetim/musteriler", label: "Müşteriler", icon: Users },
   { href: "/yonetim/mesajlar", label: "Mesajlar", icon: Mail },
 ];
@@ -18,8 +20,8 @@ export default function AdminNav() {
 
   return (
     <nav aria-label="Yönetim menüsü">
-      {/* Mobilde altı bölüm de kaydırmadan görünür: eşit sütunlar, ikon üstte ad altta. */}
-      <ul className="grid grid-cols-6 gap-1 md:flex md:flex-col">
+      {/* Mobilde sekiz bölüm de kaydırmadan görünür: iki satır, eşit sütunlar, ikon üstte ad altta. */}
+      <ul className="grid grid-cols-4 gap-1 md:flex md:flex-col">
         {links.map((link) => {
           const active = link.exact ? pathname === link.href : pathname.startsWith(link.href);
           return (

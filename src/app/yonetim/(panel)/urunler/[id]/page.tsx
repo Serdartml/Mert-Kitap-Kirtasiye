@@ -19,9 +19,10 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
   await requireAdmin();
   const { id } = await params;
 
-  const [product, categories] = await Promise.all([
+  const [product, categories, brands] = await Promise.all([
     db.product.findUnique({ where: { id }, include: { attributes: { orderBy: { sortOrder: "asc" } } } }),
     getCategoryOptions(),
+    db.brand.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }),
   ]);
   if (!product) notFound();
 
@@ -50,7 +51,9 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
 
       <ProductForm
         categories={categories}
+        brands={brands}
         values={{
+          brandId: product.brandId ?? "",
           id: product.id,
           name: product.name,
           slug: product.slug,

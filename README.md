@@ -165,12 +165,12 @@ src/app/globals.css       renk paleti ve ortak sınıflar
 
 ## Bilinen eksikler
 
-- **Yasal metinler:** `/bilgi/*` sayfaları boş ("içerik hazırlanıyor"). Hukuki onaylı metin gerekiyor; yazılınca `index` açılmalı.
+- **Yasal metinler:** `/bilgi/*` taslakları `src/lib/legal-content.ts` içinde yazıldı (mağazadan teslim, ödeme mağazada akışına göre). Hukuki onay gelene kadar `legalReviewed = false`: sayfada "taslak" uyarısı var ve `noindex`. Onaydan sonra `legalOwner` (unvan, vergi dairesi/no, MERSİS) doldurulup `legalReviewed = true` yapılmalı. Online ödeme/kargo gelince sözleşme ve iade metinleri güncellenmeli.
 - **Ürün görselleri:** Yönetim panelinde görsel yükleme yok (Cloudflare R2 kararlaştırıldı, hesap bilgileri bekleniyor). Görseli olmayan ürünlerde kategori ikonlu yer tutucu çıkar. Şemada `ProductImage` hazır.
 - **Toplu ürün aktarımı:** Dükkânın stok programından (Turna Yazılım, ~10 bin ürün) içe aktarma yok; örnek dışa aktarım bekleniyor. Anahtar alanlar: `barcode`, `sku`. Canlıya çıkmadan önce `db:seed` örnek kataloğu gerçek veriyle değiştirilmeli.
 - **Online ödeme ve kargo:** Yok (iyzico / PayTR seçimi bekliyor). Şimdilik yalnızca mağazadan teslim. Stok sipariş anında düşülür; ödeme gelince onay anına alınmalı (`actions/order.ts`).
-- **E-posta:** Gönderim servisi yok. Sipariş onayı, parola sıfırlama, e-posta doğrulama ve yeni mesaj/sipariş bildirimi bunu bekliyor.
-- **Kullanılmayan tablolar:** `Address`, `Favorite`, `Review`, `Brand` şemada var ama arayüzü yok.
+- **E-posta:** `lib/mail.ts` (Resend) ve `lib/mail-templates.ts` hazır: sipariş onayı, durum değişikliği (müşteriye), yeni sipariş / yeni mesaj (mağazaya) ve parola sıfırlama (`/sifremi-unuttum`). `RESEND_API_KEY` yokken gönderilmez, konsola yazılır. Gerçek gönderim için Resend hesabı + doğrulanmış alan adı gerekir (`.env.example`). E-posta doğrulama (kayıtta) henüz yok.
+- **Yorumlar ve markalar:** Hazır. Üyeler ürün sayfasındaki "Yorumlar" sekmesinden puan + yorum yazar (üye başına ürün başına tek yorum, saatte 5 sınırı); yorum `/yonetim/yorumlar`dan onaylanana kadar görünmez, ortalama puan ürün sayfasında ve JSON-LD'de çıkar. Markalar `/yonetim/markalar`da yönetilir, ürün formundan seçilir (kategori sayfasındaki marka filtresi bunu kullanır). Ürün kartlarında puan yok. Yorumu yalnızca satın alanlarla sınırlamak istenirse `actions/reviews.ts` içinde sipariş kontrolü eklenmeli.
 - **Logo:** `src/components/Logo.tsx` içinde satır içi SVG olarak tabeladan yeniden çizildi; renkler tahmini (`BLUE`, `PINK`, `YELLOW`). Resmî renk kodları gelince yalnızca bu sabitler değişir. `src/app/icon.svg` aynı işaretten.
 - **Veritabanı:** Geliştirme ve canlı için tek Neon veritabanı var. Canlı için ayrı veritabanı açılıp `npm run db:deploy` ve `npm run admin:create` orada çalıştırılmalı.
-- **Test:** Otomatik test yok.
+- **Test:** `npm test` (Vitest, `tests/`): slug/fiyat, parola, sipariş numarası ve durumları, e-posta, yasal metinler, toplu sepet ekleme. Testler veritabanına bağlanmaz (db `vi.mock` ile değiştirilir); sipariş/stok işlemleri ve sayfalar için uçtan uca test yok.

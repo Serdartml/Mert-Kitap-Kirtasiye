@@ -23,6 +23,13 @@ export const LIMITS = {
   orderTrackIp: { max: 20, windowSeconds: 15 * 60 },
   // Parola değiştirme: oturumu ele geçiren birinin mevcut parolayı denemesini kısıtlar.
   passwordChange: { max: 5, windowSeconds: 15 * 60 },
+  // Ürün yorumu gönderme (üye başına): yorum seliyle moderasyon yorulmasın.
+  reviewUser: { max: 5, windowSeconds: 60 * 60 },
+  // Parola sıfırlama isteği: e-posta kutusu doldurulmasın, gönderim kotası harcanmasın.
+  resetRequestEmail: { max: 3, windowSeconds: 60 * 60 },
+  resetRequestIp: { max: 10, windowSeconds: 60 * 60 },
+  // Sıfırlama bağlantısını kullanma denemeleri (token tahmini).
+  resetUseIp: { max: 20, windowSeconds: 15 * 60 },
 } satisfies Record<string, Limit>;
 
 // Sayacı atomik artırır (tek SQL), pencere dolmuşsa yeniden başlatır. İzin verildi mi ve kaç saniye

@@ -1,7 +1,10 @@
 "use server";
 
+import { after } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
+import { adminNotifyAddress, sendMail } from "@/lib/mail";
+import { newContactAdminMail } from "@/lib/mail-templates";
 import { checkLimits, clientIp, LIMITS } from "@/lib/rate-limit";
 
 const contactSchema = z.object({
@@ -30,5 +33,7 @@ export async function sendContactMessage(_prev: ContactFormState, formData: Form
   if (blocked) return { ok: false, message: blocked };
 
   await db.contactMessage.create({ data: parsed.data });
+  const mail = newContactAdminMail(adminNotifyAddress(), parsed.data);
+  after(() => sendMail(mail));
   return { ok: true, message: "Mesajınız bize ulaştı. En kısa sürede dönüş yapacağız." };
 }
