@@ -2,6 +2,7 @@ import "server-only";
 import type { Prisma } from "@prisma/client";
 import { cacheLife, cacheTag } from "next/cache";
 import { db } from "./db";
+import { interleaveBy } from "./interleave";
 import { averageRating, reviewerName } from "./reviews";
 
 // 2, 4 ve 5 sütunlu ızgaralarda son satır yarım kalmasın diye 20.
@@ -368,17 +369,20 @@ export async function getFeaturedByRoot(take = 8) {
   return groups.filter((group) => group.products.length > 0);
 }
 
-export async function getDiscountedProducts(take = 4) {
+// Tüm indirimli ürünler (en fazla `take`), ana kategorilere göre karışık sırada: aynı kategorinin ürünleri arka arkaya
+// gelmez (lib/interleave). Kategori içinde en son güncellenen önce gelir.
+export async function getDiscountedProducts(take = 80) {
   "use cache";
   cacheLife("minutes");
   cacheTag(CATALOG_TAG);
 
-  return db.product.findMany({
+  const products = await db.product.findMany({
     where: { isActive: true, compareAtKurus: { not: null } },
     include: productCardInclude,
     orderBy: { updatedAt: "desc" },
     take,
   });
+  return interleaveBy(products, (product) => product.category.parent?.slug ?? product.category.slug);
 }
 
 export async function getNewestProducts(take = 8) {

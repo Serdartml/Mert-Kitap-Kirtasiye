@@ -97,7 +97,9 @@ export default function LiveShowcase({ tabs, defaultTabId }: { tabs: ShowcaseTab
     const id = setInterval(() => {
       const root = section.current;
       // Fare ya da klavye odağı vitrindeyken beklenir (durum yerine anlık DOM sorgusu: olay kaçsa da doğru çalışır).
-      if (document.hidden || !root || root.matches(":hover") || root.querySelector(":focus-visible")) return;
+      // :hover yalnızca gerçek fare olan cihazlarda sayılır: dokunmatik ekranda en son dokunulan yerde "takılı" kalır ve vitrini sonsuza dek durdururdu.
+      const mouseHover = window.matchMedia("(hover: hover)").matches && root?.matches(":hover");
+      if (document.hidden || document.querySelector("[role=dialog][aria-label=Menü]") || !root || mouseHover || root.querySelector(":focus-visible")) return;
       advance(1);
     }, SLIDE_MS + HOLD_MS);
     return () => clearInterval(id);
@@ -168,7 +170,6 @@ export default function LiveShowcase({ tabs, defaultTabId }: { tabs: ShowcaseTab
   return (
     <section
       ref={section}
-      data-snap="vitrin"
       aria-labelledby="vitrin-baslik"
       aria-roledescription="carousel"
       onTouchStart={() => setTouching(true)}

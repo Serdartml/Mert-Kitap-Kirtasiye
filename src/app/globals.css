@@ -1150,3 +1150,24 @@ html[data-welcome="play"] .welcome-surface {
     animation-delay: var(--book-delay, 0s);
   }
 }
+
+/*
+  Menü (hamburger) ikonu: üç çizgi alt alta dalga gibi kayıp yerine oturur (soldan sağa, sırayla). Dokunmada
+  (IconMotion .icon-play) ve fare üstünde bir kez oynar; menü paneli aynı anda soldan açılır (MobileMenu).
+*/
+.icon-menu svg path {
+  transform-box: fill-box;
+  transform-origin: left center;
+}
+
+@keyframes icon-menu-line {
+  0%, 100% { scale: 1 1; translate: 0 0; }
+  35% { scale: 0.45 1; translate: -2px 0; }
+  70% { scale: 1.12 1; translate: 1px 0; }
+}
+
+.icon-menu.icon-play svg path {
+  animation: icon-menu-line 0.55s ease-in-out;
+}
+.icon-menu.icon-play svg path:nth-child(2) { animation-delay: 0.07s; }
+.icon-menu.icon-play svg path:nth-child(3) { animation-delay: 0.14s; }

@@ -66,9 +66,7 @@ okumaları (`new Date()`, `Math.random()`) için render sırasında `await io()`
   odağı, dokunma, ekran dışı, sekme arka planda, "Durdur" düğmesi ve "hareketi azalt" durumunda kendiliğinden kayma durur. Eski 4 sahneli çizimli vitrin
   (`HeroShowcase`, `HeroArt`) kaldırıldı; git geçmişinde.
 - Ana sayfa bölüm sırası: vitrin, kategori şeridi, rakam bandı, ürünler (indirimli, yeni gelenler), okula dönüş listeleri, nasıl sipariş verilir, sipariş takip,
-  mağaza bandı, footer. Masaüstünde fare tekeriyle duraklı kaydırma (`HomeSnapScroll`): vitrin ortada → ürünler başı → (ürünlerde normal kaydırma) → ürünler sonu
-  → mağaza bandı → footer; tek tekerlek hareketi bir durak. Duraklar `page.tsx`'teki `data-snap` işaretlerinden ölçülür (`vitrin`, `serbest-son`, `alt-blok`);
-  bölümleri taşırken bu işaretleri de taşıyın. Dokunmatik/dar ekran, açık pencere ve kendi kayan alanı olan öğelerde devre dışıdır.
+  mağaza bandı, footer. Sayfa normal kaydırılır (fare tekeri duraklı kaydırma denendi ve güvenilir çalışmadığı için kaldırıldı).
 - Kategori renkleri: her ana kategorinin bir rengi vardır (kırtasiye limon, sanatsal pembe, hazırlık kitapları mavi, kültür kitapları turuncu, hediyelik mor, elektronik nane). Kategori ve ürün sayfaları, vitrin bandı ve kayan kategori kartları `data-cat=<ana kategori adresi>` ile işaretlenir; `globals.css` içindeki "Kategori renkleri" bölümü marka sarısı ölçeğini (`--color-brand-*`) o renge çevirir, `bg-brand-500` / `btn-primary` / `CategoryArt` kendiliğinden uyar. Yeni ana kategori için o bölüme blok, `category-icons.ts`'e kapak rengi eklenir; bilinmeyen kategori limonda kalır.
 - Kayan şerit (`ShowcaseMarquee` + `Marquee`): üç sıra; üst ve alt soldan sağa, orta sağdan sola kayar. Dokunulan / fare üstündeki / odaktaki satır durur, bırakılınca devam eder, diğer satırlar kayar. Kategori kartları kendi kategori renginde ve üç görünümdedir (dolu, siyah, açık).
 - Rakam bandı değerleri `src/lib/site.ts` içindeki `stats`.

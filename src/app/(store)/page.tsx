@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { ArrowRight, MapPin, MessageCircle, PackageSearch, Phone } from "lucide-react";
-import HomeSnapScroll from "@/components/HomeSnapScroll";
 import LiveShowcase, { type ShowcaseTab } from "@/components/LiveShowcase";
 import HowItWorks from "@/components/HowItWorks";
 import OrderTrackBox from "@/components/OrderTrackBox";
@@ -63,7 +62,7 @@ export default async function HomePage() {
   const [categories, featuredGroups, discounted, newest] = await Promise.all([
     getNavCategories(),
     getFeaturedByRoot(8),
-    getDiscountedProducts(4),
+    getDiscountedProducts(),
     getNewestProducts(8),
   ]);
   // Vitrin kategori kategori öne çıkanlarla çalışır (açılışta Kırtasiye); hiç öne çıkan ürün yoksa gösterilmez.
@@ -77,8 +76,6 @@ export default async function HomePage() {
 
   return (
     <>
-      <HomeSnapScroll />
-
       {showcaseTabs.length > 0 && <LiveShowcase tabs={showcaseTabs} defaultTabId="kirtasiye" />}
 
       {/* Sürekli kayan vitrin: kategoriler ve mağaza mesajları */}
@@ -119,7 +116,9 @@ export default async function HomePage() {
                 <Scribble variant="underline" className="scribble-scroll absolute -bottom-2 left-0 h-2.5 w-full" />
               </span>{" "}
               ürünler
+              <span className="ml-2 align-middle font-hand text-xl font-bold text-white/60 md:text-2xl">{discounted.length} ürün</span>
             </h2>
+            {/* Tüm indirimli ürünler, kategoriler karışık sırada. */}
             <ProductGrid products={discounted} />
           </div>
         </section>
@@ -147,7 +146,7 @@ export default async function HomePage() {
       <HowItWorks />
 
       {/* Sipariş takibi: üyeliksiz verilen siparişin numarasıyla durumu görülür */}
-      <section data-snap="serbest-son" className="container-page mt-6 md:mt-8" aria-labelledby="siparis-takip">
+      <section className="container-page mt-6 md:mt-8" aria-labelledby="siparis-takip">
         <div className="flex flex-col gap-4 rounded-2xl border-2 border-ink bg-raised p-4 sm:p-6 md:flex-row md:items-center md:justify-between md:gap-8 dark:border-neutral-300">
           <div className="min-w-0">
             <h2 id="siparis-takip" className="flex items-center gap-2 text-lg font-extrabold md:text-xl">
@@ -164,7 +163,7 @@ export default async function HomePage() {
       </section>
 
       {/* Mağaza: tam genişlik sarı bant, yırtık kâğıt kenarlı; canlı açık/kapalı durumu ve büyük iletişim düğmeleri */}
-      <section data-snap="alt-blok" className="theme-fixed pattern-dots relative mt-14 bg-brand-500 py-8 sm:py-10 md:mt-20 md:py-12">
+      <section className="theme-fixed pattern-dots relative mt-14 bg-brand-500 py-8 sm:py-10 md:mt-20 md:py-12">
         <SectionEdge position="top" colorClass="text-brand-500" />
         <SectionEdge position="bottom" colorClass="text-brand-500" />
         <div className="container-page flex flex-col gap-6 md:flex-row md:items-center md:justify-between">

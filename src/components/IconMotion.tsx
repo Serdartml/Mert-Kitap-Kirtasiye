@@ -9,7 +9,7 @@ import { useRouter } from "next/navigation";
 // Dokunmatik ekranda "Giriş Yap" ve "Sepetim" bağlantılarına dokununca sayfa hemen açılmaz: önce ikonun animasyonu
 // oynar, bu sırada hedef sayfa arka planda yüklenmeye başlar (prefetch) ve animasyon bitince açılır. Fare ve klavye
 // (ve "hareketi azalt") için gezinme eskisi gibi anidir. Tema düğmesi gezinmez; dokununca hem animasyon oynar hem tema değişir.
-const ICONS = ".icon-user, .icon-cart, .icon-theme, .logo-link";
+const ICONS = ".icon-user, .icon-cart, .icon-theme, .icon-menu, .logo-link";
 const NAVIGATE_AFTER = ".icon-user, .icon-cart";
 const PLAY_MS = 850;
 const LOGO_PLAY_MS = 1600;
