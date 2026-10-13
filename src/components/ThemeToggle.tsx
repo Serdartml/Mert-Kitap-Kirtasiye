@@ -8,6 +8,7 @@ import { COLOR_SCHEME_META_ID, DARK_SCHEME, LIGHT_SCHEME, THEME_STORAGE_KEY } fr
 // Eski sitedeki AnimatedThemeToggler ile aynı düğme ve aynı mekanik: yeni tema, düğmenin
 // merkezinden büyüyen bir daire olarak açılır (View Transition API). Tek fark, seçimin saklanması.
 // İkonlar React durumuyla değil CSS ile değişir; böylece sunucu çıktısıyla uyuşmazlık olmaz.
+// icon-theme: ikona özel hareket (globals.css, "Başlık ikonları"): güneş döner ve ışıldar, ay beşik gibi sallanır.
 // "header": eski sitedeki görünüm (masaüstünde dolu kare, mobilde yalın ikon).
 // "onDark": siyah zemin üstünde (yönetim paneli kenar çubuğu) görünür kalan sürüm.
 const variants = {
@@ -75,7 +76,7 @@ export default function ThemeToggle({ duration = 500, variant = "header" }: { du
       type="button"
       ref={buttonRef}
       onClick={toggleTheme}
-      className={`relative inline-flex size-10 shrink-0 touch-manipulation items-center justify-center transition-all active:scale-95 ${variants[variant]}`}
+      className={`icon-theme relative inline-flex size-10 shrink-0 touch-manipulation items-center justify-center transition-all active:scale-95 ${variants[variant]}`}
     >
       <Sun className="hidden size-5 shrink-0 dark:block" />
       <Moon className="size-5 shrink-0 dark:hidden" />

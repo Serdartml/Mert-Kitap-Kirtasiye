@@ -1,4 +1,4 @@
-import Link from "next/link";
+import LogoLink from "./LogoLink";
 import { site } from "@/lib/site";
 
 // Mağaza logosu: tabeladaki logonun fotoğrafından yeniden çizildi (satır içi SVG).
@@ -45,14 +45,18 @@ function Book({ y, color, spineLeft, from, to, tailTo }: BookProps) {
   const lineStart = spineLeft ? spine + 24 : from + 10;
   const lineEnd = spineLeft ? to - 10 : spine - 24;
 
+  // logo-book / logo-page / logo-tip: üstüne gelince kitap açılıp kapanır (globals.css). Kapalı uç (sırt) kitabın
+  // dönme noktasıdır: soldaysa left, sağdaysa right.
   return (
-    <g>
+    <g className={`logo-book ${spineLeft ? "logo-book-left" : "logo-book-right"}`}>
       <path d={cover} fill="none" stroke={color} strokeWidth={STROKE} />
       {/* Kalem ucu: açık renkli ahşap ve kapak renginde uç */}
-      <path d={`M${open} ${y}l${dir * 15} ${STROKE / 2}l${-dir * 15} ${STROKE / 2}z`} fill="#f4ecd6" />
-      <path d={`M${open + dir * 9} ${y + 3.2}l${dir * 6} ${4.8}l${-dir * 6} ${4.8}z`} fill={color} />
-      {[15, 25, 35].map((offset) => (
-        <path key={offset} d={`M${lineStart} ${top + offset}H${lineEnd}`} stroke={PAGE} strokeWidth="4" />
+      <g className="logo-tip" style={{ "--dir": dir } as React.CSSProperties}>
+        <path d={`M${open} ${y}l${dir * 15} ${STROKE / 2}l${-dir * 15} ${STROKE / 2}z`} fill="#f4ecd6" />
+        <path d={`M${open + dir * 9} ${y + 3.2}l${dir * 6} ${4.8}l${-dir * 6} ${4.8}z`} fill={color} />
+      </g>
+      {[15, 25, 35].map((offset, index) => (
+        <path key={offset} className="logo-page" style={{ "--page": index } as React.CSSProperties} d={`M${lineStart} ${top + offset}H${lineEnd}`} stroke={PAGE} strokeWidth="4" />
       ))}
     </g>
   );
@@ -77,9 +81,10 @@ interface LogoProps {
 
 export default function Logo({ className = "h-[26px] min-[360px]:h-[34px] min-[400px]:h-9 md:h-10", href = "/" }: LogoProps) {
   return (
-    <Link href={href} aria-label={`${site.name} ana sayfa`} className="inline-flex shrink-0 rounded-lg bg-ink px-2 py-1.5 md:px-3 md:py-2">
+    // logo-link: üstüne gelince kitaplar açılıp kapanır (globals.css, "Logo animasyonu"); dokunmada IconMotion tetikler.
+    <LogoLink href={href} label={`${site.name} ana sayfa`} className="logo-link inline-flex shrink-0 rounded-lg bg-ink px-2 py-1.5 md:px-3 md:py-2">
       <LogoArt className={className} />
-    </Link>
+    </LogoLink>
   );
 }
 

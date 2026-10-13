@@ -130,6 +130,22 @@ export default function LiveShowcase({ tabs, defaultTabId }: { tabs: ShowcaseTab
     el.scrollBy({ left: direction * el.clientWidth * 0.6, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
   };
 
+  // Logoya basılınca (LogoLink) vitrin açılış hâline döner: varsayılan kategori seçilir, şeritler başa sarılır.
+  useEffect(() => {
+    const reset = () => {
+      if (animation.current) cancelAnimationFrame(animation.current);
+      const initial = Math.max(0, tabs.findIndex((tab) => tab.id === defaultTabId));
+      for (const strip of strips.current) {
+        if (!strip) continue;
+        strip.style.scrollSnapType = "";
+        strip.scrollLeft = 0;
+      }
+      setActive(initial);
+    };
+    window.addEventListener("home:reset", reset);
+    return () => window.removeEventListener("home:reset", reset);
+  }, [tabs, defaultTabId]);
+
   const select = (index: number) => {
     if (index === active) return;
     if (animation.current) cancelAnimationFrame(animation.current);

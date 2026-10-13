@@ -2,7 +2,8 @@ import Link from "next/link";
 import { User, UserCheck } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth";
 
-const linkClass = "flex items-center gap-2 rounded-lg p-2 text-sm font-bold hover:bg-neutral-100 md:px-3 md:py-2";
+// icon-user: ikona özel hareket (globals.css, "Başlık ikonları"; dokunmada IconMotion tetikler).
+const linkClass = "icon-user flex items-center gap-2 rounded-lg p-2 text-sm font-bold transition-colors hover:bg-brand-500 hover:text-ink focus-visible:bg-brand-500 focus-visible:text-ink active:bg-brand-500 active:text-ink md:px-3 md:py-2";
 
 // Oturum yokken (ve oturum okunurken) görünen bağlantı.
 export function GuestAccountLink() {

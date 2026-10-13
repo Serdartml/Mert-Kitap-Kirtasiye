@@ -65,7 +65,9 @@ export default function MobileMenu({ categories }: { categories: MenuCategory[] 
               </button>
             </div>
 
-            <nav aria-label="Kategoriler" className="flex-1 overflow-y-auto overscroll-contain">
+            {/* Kategoriler ve alt bağlantılar tek kayan alandadır: bir kategori açılınca alttaki bağlantılar da aşağı kayar. */}
+            <div className="flex-1 overflow-y-auto overscroll-contain">
+            <nav aria-label="Kategoriler">
               <ul className="divide-y divide-neutral-200">
                 {categories.map((category) => (
                   // data-cat: kategori renginde sol şerit, renkli ikon ve açık hâlde açık ton zemin (globals.css, "Kategori renkleri").
@@ -98,7 +100,7 @@ export default function MobileMenu({ categories }: { categories: MenuCategory[] 
               </ul>
             </nav>
 
-            <div className="space-y-1 border-t border-neutral-200 p-4 text-sm font-semibold">
+            <div className="space-y-1 border-t border-neutral-200 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] text-sm font-semibold">
               <Link href="/okul-listeleri" onClick={close} className="block py-2">Okula Dönüş Listeleri</Link>
               <Link href="/siparis-takip" onClick={close} className="block py-2">Sipariş Takibi</Link>
               <Link href="/hakkimizda" onClick={close} className="block py-2">Hakkımızda</Link>
@@ -106,6 +108,7 @@ export default function MobileMenu({ categories }: { categories: MenuCategory[] 
               <a href={site.phoneHref} className="btn btn-dark mt-2 w-full">
                 <Phone size={16} /> {site.phone}
               </a>
+            </div>
             </div>
           </div>
         </div>

@@ -2,6 +2,8 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { Clock, MapPin, Phone, ShoppingCart } from "lucide-react";
 import AccountLink, { GuestAccountLink } from "./AccountLink";
+import IconMotion from "./IconMotion";
+import LogoRoutePlay from "./LogoRoutePlay";
 import CartBadge from "./CartBadge";
 import CategoryArt from "./CategoryArt";
 import Logo from "./Logo";
@@ -48,6 +50,10 @@ export default async function Header() {
       <header className="bg-raised md:sticky md:top-0 md:z-40">
         {/* Menü (mobil), logo, arama, hesap ve sepet */}
         <div className="container-page flex h-14 items-center gap-2 md:h-20 md:gap-8">
+          <IconMotion />
+          <Suspense fallback={null}>
+            <LogoRoutePlay />
+          </Suspense>
           <MobileMenu categories={categories} />
           <Logo />
           <SearchBox className="hidden flex-1 md:block" />
@@ -57,7 +63,7 @@ export default async function Header() {
             </Suspense>
             <Link
               href="/sepet"
-              className="flex items-center gap-2 rounded-lg p-2 text-sm font-bold hover:bg-neutral-100 md:px-3 md:py-2"
+              className="icon-cart flex items-center gap-2 rounded-lg p-2 text-sm font-bold transition-colors hover:bg-brand-500 hover:text-ink focus-visible:bg-brand-500 focus-visible:text-ink active:bg-brand-500 active:text-ink md:px-3 md:py-2"
             >
               {/* data-cart-target: sepete eklenen ürünün uçtuğu nokta (lib/fly-to-cart). */}
               <span data-cart-target className="relative">
@@ -98,7 +104,7 @@ export default async function Header() {
               <li key={category.id} data-cat={category.slug} className="group relative">
                 <Link
                   href={`/kategori/${category.slug}`}
-                  className="flex items-center gap-2 rounded-t-lg border-b-4 border-transparent px-3 py-2 text-sm font-bold transition-colors group-focus-within:border-brand-500 group-hover:border-brand-500 group-hover:bg-brand-50 lg:px-4"
+                  className="flex items-center gap-2 rounded-t-lg border-b-4 border-transparent px-3 py-2 text-sm font-bold transition-colors group-has-[:focus-visible]:border-brand-500 group-hover:border-brand-500 group-hover:bg-brand-50 lg:px-4"
                 >
                   <span className="grid size-6 shrink-0 place-items-center rounded-md bg-brand-500 text-ink">
                     <Icon size={14} aria-hidden />
@@ -107,7 +113,7 @@ export default async function Header() {
                 </Link>
                 {category.children.length > 0 && (
                   <div
-                    className={`invisible absolute top-full z-50 flex w-80 overflow-hidden rounded-b-xl border border-t-0 border-neutral-200 bg-raised opacity-0 shadow-lg transition-opacity group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100 ${
+                    className={`invisible absolute top-full z-50 flex w-80 overflow-hidden rounded-b-xl border border-t-0 border-neutral-200 bg-raised opacity-0 shadow-lg transition-opacity group-has-[:focus-visible]:visible group-has-[:focus-visible]:opacity-100 group-hover:visible group-hover:opacity-100 ${
                       alignRight ? "right-0" : "left-0"
                     }`}
                   >

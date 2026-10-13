@@ -126,18 +126,22 @@ export default async function AdminDashboardPage() {
           ) : (
             <ul className="mt-3 divide-y divide-neutral-200 text-sm">
               {lowStockItems.map((item) => (
-                <li key={item.id} className="flex items-center gap-3">
-                  <Link href={`/yonetim/urunler/${item.id}`} className="min-w-0 flex-1 truncate py-2.5 font-semibold hover:underline">
+                // Mobilde iki satır: ürün adı tam genişlikte (sarılır), altında fiyat solda, stok rozeti sağda.
+                // sm ve üstünde tek satır: ad kısalır, fiyat ve rozet yanında.
+                <li key={item.id} className="flex flex-wrap items-center gap-x-3 py-2.5 sm:flex-nowrap sm:py-0">
+                  <Link href={`/yonetim/urunler/${item.id}`} className="min-w-0 basis-full break-words font-semibold hover:underline sm:flex-1 sm:basis-auto sm:truncate sm:py-2.5">
                     {item.name}
                   </Link>
-                  <span className="shrink-0 text-xs text-neutral-500">{formatPrice(item.priceKurus)}</span>
-                  <span
-                    className={`w-16 shrink-0 rounded-full px-2 py-0.5 text-center text-xs font-bold ${
-                      item.stock === 0 ? "bg-ink text-white" : "bg-brand-500 text-ink"
-                    }`}
-                  >
-                    {item.stock === 0 ? "Bitti" : `${item.stock} adet`}
-                  </span>
+                  <div className="mt-1 flex w-full items-center justify-between gap-3 sm:mt-0 sm:w-auto sm:justify-end">
+                    <span className="shrink-0 text-xs text-neutral-500">{formatPrice(item.priceKurus)}</span>
+                    <span
+                      className={`w-16 shrink-0 rounded-full px-2 py-0.5 text-center text-xs font-bold ${
+                        item.stock === 0 ? "bg-ink text-white" : "bg-brand-500 text-ink"
+                      }`}
+                    >
+                      {item.stock === 0 ? "Bitti" : `${item.stock} adet`}
+                    </span>
+                  </div>
                 </li>
               ))}
             </ul>
