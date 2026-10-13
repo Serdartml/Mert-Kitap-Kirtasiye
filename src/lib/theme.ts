@@ -8,7 +8,7 @@ export const COLOR_SCHEME_META_ID = "color-scheme-meta";
 export const LIGHT_SCHEME = "only light";
 export const DARK_SCHEME = "dark";
 
-// VARSAYILAN TEMA KOYUDUR: sunucu çıktısı <html class="dark"> ve color-scheme "dark" ile başlar (app/layout.tsx),
-// böylece hiçbir ilk boyamada beyaz parlama olmaz ve betik gecikse bile sayfa koyu açılır. Ziyaretçi düğmeyle
-// "açık" temayı seçip kaydettiyse (localStorage "light") bu betik sayfa boyanmadan önce koyuyu kaldırır.
-export const themeInitScript = `try{if(localStorage.getItem("${THEME_STORAGE_KEY}")==="light"){document.documentElement.classList.remove("dark");var m=document.getElementById("${COLOR_SCHEME_META_ID}");if(m)m.setAttribute("content","${LIGHT_SCHEME}")}}catch(e){}`;
+// VARSAYILAN TEMA AÇIKTIR: sunucu çıktısı sınıfsız <html> ve color-scheme "only light" ile başlar (app/layout.tsx),
+// betik gecikse bile sayfa açık açılır. Ziyaretçi düğmeyle "koyu" temayı seçip kaydettiyse (localStorage "dark") bu
+// betik sayfa boyanmadan önce <html>'e "dark" sınıfını ekler ve color-scheme etiketini koyuya çevirir.
+export const themeInitScript = `try{if(localStorage.getItem("${THEME_STORAGE_KEY}")==="dark"){document.documentElement.classList.add("dark");var m=document.getElementById("${COLOR_SCHEME_META_ID}");if(m)m.setAttribute("content","${DARK_SCHEME}")}}catch(e){}`;

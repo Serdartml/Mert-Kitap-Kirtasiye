@@ -15,7 +15,8 @@ export interface MarqueeRowData {
 // kayar; başı ve sonu birbirine eklenir, bekleme yoktur. İkinci kopya yalnızca görüntü içindir (inert: odaklanmaz,
 // ekran okuyucuya okunmaz). Her satırın yönü kendine aittir. Dokunulan / üstüne gelinen satır durur, parmak ya da fare
 // çekilince devam eder; diğer satırlar kaymaya devam eder. Klavye odağındaki satır da durur. Ayrıca tümünü durduran
-// bir düğme vardır.
+// bir düğme vardır. Koyu temada şeridin zemini tam siyah değil gridir (#3a3a3a): kartların siyah çerçeve ve gölgeleri açık
+// temadakiyle aynı kalır ve zeminde görünür.
 function Row({ row, allPaused }: { row: MarqueeRowData; allPaused: boolean }) {
   // Dokunmatik / kalem: parmak basılıyken durur. Fare üstüne gelmesi CSS ile (.marquee-row:hover) durdurulur.
   const [held, setHeld] = useState(false);
@@ -49,7 +50,7 @@ export default function Marquee({ rows, label }: { rows: MarqueeRowData[]; label
   const [paused, setPaused] = useState(false);
 
   return (
-    <section aria-label={label} className="marquee relative mt-3 md:mt-4">
+    <section aria-label={label} className="marquee relative mt-3 md:mt-4 dark:border-y dark:border-white/10 dark:bg-[#3a3a3a]">
       {rows.map((row, index) => (
         <Row key={index} row={row} allPaused={paused} />
       ))}

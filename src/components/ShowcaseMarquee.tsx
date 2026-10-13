@@ -9,7 +9,7 @@ type NavCategories = Awaited<ReturnType<typeof getNavCategories>>;
 
 // Kategori kartları kendi kategorilerinin renginde (data-cat, globals.css "Kategori renkleri") ve üç görünümde döner:
 // dolu, siyah ve açık. Hepsi kalın çerçeveli ve sert gölgelidir: sade değil, "kendinden emin" durur. Çerçeve ve gölge
-// siyahtır (siyah kartta kategori rengi); koyu temada siyah gölge zeminde kaybolur ama renkli yüzey yeter.
+// siyahtır (siyah kartta kategori rengi); her iki temada aynıdır. Koyu temada gölgeler görünsün diye şeridin zemini tam siyah değil gri yapılır (Marquee.tsx).
 const tones = [
   { card: "border-ink bg-brand-500 text-ink shadow-[4px_4px_0_0_#111]", icon: "bg-ink text-brand-500", sub: "text-ink/70" },
   { card: "border-brand-500 bg-ink text-white shadow-[4px_4px_0_0_var(--color-brand-500)]", icon: "bg-brand-500 text-ink", sub: "text-white/70" },

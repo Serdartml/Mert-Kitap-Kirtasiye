@@ -88,8 +88,8 @@ okumaları (`new Date()`, `Math.random()`) için render sırasında `await io()`
   diğer alt kategorileri: `getComplementaryProducts`), "WhatsApp'tan sor" düğmesi.
 - Mağaza bandı: canlı açık/kapalı durumu (`OpenStatus`, `site.hours` içindeki `dayNumbers/open/close`ten
   hesaplanır) ve yırtık kâğıt kenarlar (`SectionEdge`).
-- Varsayılan tema KOYUDUR (`lib/theme.ts`, `app/layout.tsx`): html `dark` sınıfıyla başlar; ziyaretçi düğmeyle "açık"
-  seçip kaydettiyse (localStorage `theme=light`) açık açılır. Varsayılanı değiştirmek için bu iki dosyaya bakın.
+- Varsayılan tema AÇIKTIR (`lib/theme.ts`, `app/layout.tsx`): html sınıfsız başlar; ziyaretçi düğmeyle "koyu"
+  seçip kaydettiyse (localStorage `theme=dark`) koyu açılır. Varsayılanı değiştirmek için bu iki dosyaya bakın.
 - Mobilde yatay kayan ürün şeridi: `ProductGrid` içinde `scrollOnMobile`.
 - Okula dönüş listeleri (`/okul-listeleri`, `/okul-listeleri/[slug]`): satırlar `src/lib/school-lists.ts` içinde
   (kategori + isteğe bağlı anahtar kelime + önerilen adet); ürünler katalogdan stoktakilerden seçtirilir
