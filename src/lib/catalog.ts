@@ -342,6 +342,32 @@ export async function getFeaturedProducts(take = 8) {
   });
 }
 
+// Vitrin için: her ana kategorinin (alt kategorileriyle) öne çıkan ürünleri. Öne çıkanı olmayan kategori listede yer almaz.
+export async function getFeaturedByRoot(take = 8) {
+  "use cache";
+  cacheLife("minutes");
+  cacheTag(CATALOG_TAG);
+
+  const roots = await db.category.findMany({
+    where: { parentId: null },
+    orderBy: { sortOrder: "asc" },
+    include: { children: { select: { id: true } } },
+  });
+  const groups = await Promise.all(
+    roots.map(async (root) => ({
+      slug: root.slug,
+      name: root.name,
+      products: await db.product.findMany({
+        where: { isActive: true, isFeatured: true, categoryId: { in: [root.id, ...root.children.map((child) => child.id)] } },
+        include: productCardInclude,
+        orderBy: { createdAt: "desc" },
+        take,
+      }),
+    })),
+  );
+  return groups.filter((group) => group.products.length > 0);
+}
+
 export async function getDiscountedProducts(take = 4) {
   "use cache";
   cacheLife("minutes");

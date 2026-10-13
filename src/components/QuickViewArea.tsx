@@ -5,24 +5,25 @@ import { useEffect, useRef, type ReactNode } from "react";
 // Hızlı bakışı açan olay: QuickViewHost dinler.
 export const QUICK_VIEW_EVENT = "quickview:open";
 
-// Dokunmatik ekranda bu kadar basılı tutunca, fare ile bu kadar üstünde durunca pencere açılır.
+// Dokunmatik ekranda bu kadar basılı tutunca, fare ile bu kadar (1 sn) üstünde durunca pencere açılır.
 // Uzun basma tarayıcının bağlantı menüsü eşiğinden (~500 ms) kısa tutulur; menü olayı gelirse o da
 // aynı hızlı bakışı açar (aşağıda onContextMenu), yani iki yoldan biri mutlaka çalışır.
 const LONG_PRESS_MS = 400;
-const HOVER_MS = 2000;
+const HOVER_MS = 1000;
 // Parmak bu kadar kayarsa uzun basma iptal olur (kaydırma ya da yatay şerit).
 const MOVE_TOLERANCE_PX = 10;
 
 // Ürün kartının dış kabuğu (<article>). Kartın içeriği sunucuda çizilir, buraya children olarak gelir.
 //  - Mobil: karta uzun basınca hızlı bakış açılır; uzun basmanın ardından gelen tıklama (ürün sayfasına
 //    gitme) ve tarayıcının bağlantı menüsü engellenir.
-//  - Masaüstü: fare kartın üstünde 2 saniyeden uzun kalırsa açılır. Fare ayrılınca, tıklayınca ya da sayfa
+//  - Masaüstü: fare kartın üstünde 1 saniyeden uzun kalırsa açılır. Fare ayrılınca, tıklayınca ya da sayfa
 //    kayınca sayaç sıfırlanır; kartların altından geçip giden fare pencere açmaz.
 export default function QuickViewArea({ slug, className, children }: { slug: string; className?: string; children: ReactNode }) {
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const origin = useRef<{ x: number; y: number } | null>(null);
   const suppressClick = useRef(false);
   const lastPointerType = useRef<string>("");
+  const card = useRef<HTMLElement>(null);
 
   const cancel = () => {
     clearTimeout(timer.current);
@@ -40,7 +41,8 @@ export default function QuickViewArea({ slug, className, children }: { slug: str
 
   const open = () => {
     cancel();
-    window.dispatchEvent(new CustomEvent(QUICK_VIEW_EVENT, { detail: { slug } }));
+    // element: balon bu kartın yanında, karttan büyüyerek açılır (QuickViewHost).
+    window.dispatchEvent(new CustomEvent(QUICK_VIEW_EVENT, { detail: { slug, element: card.current } }));
   };
 
   useEffect(() => {
@@ -57,6 +59,7 @@ export default function QuickViewArea({ slug, className, children }: { slug: str
 
   return (
     <article
+      ref={card}
       className={`${className ?? ""} pointer-coarse:select-none pointer-coarse:[-webkit-touch-callout:none]`}
       onPointerEnter={(event) => {
         if (event.pointerType !== "mouse") return;

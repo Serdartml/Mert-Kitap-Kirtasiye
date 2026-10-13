@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Clock, Mail, MapPin, MessageCircle, PackageCheck, Phone, ShieldCheck, Store, Wallet } from "lucide-react";
 import Logo from "./Logo";
 import OpenStatus from "./OpenStatus";
+import PatternStrip from "./PatternStrip";
 import { infoPages, site, whatsappHref } from "@/lib/site";
 import { getNavCategories } from "@/lib/catalog";
 
@@ -17,7 +18,8 @@ export default async function Footer() {
 
   return (
     <footer className="theme-fixed mt-16 bg-ink text-neutral-300">
-      {/* Sarı cetvel şeridi */}
+      {/* Süs şeridi sayfa ile altbilgi arasındaki ayraçtır; altında sarı cetvel şeridi */}
+      <PatternStrip className="-mt-px" />
       <div aria-hidden className="ruler h-4 bg-brand-500" />
       <div className="container-page grid gap-10 py-12 sm:grid-cols-2 lg:grid-cols-4">
         <div className="space-y-4">

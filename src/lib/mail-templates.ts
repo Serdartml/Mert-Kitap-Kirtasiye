@@ -14,7 +14,7 @@ const esc = (value: string) =>
 function layout(title: string, bodyHtml: string): string {
   return `<!doctype html><html lang="tr"><body style="margin:0;background:#f5f5f4;font-family:Arial,Helvetica,sans-serif;color:#1c1917">
 <div style="max-width:560px;margin:0 auto;padding:24px 16px">
-<div style="background:#ffc800;padding:16px 20px;border-radius:12px 12px 0 0;font-size:18px;font-weight:bold">${esc(site.name)}</div>
+<div style="background:#e9e61c;padding:16px 20px;border-radius:12px 12px 0 0;font-size:18px;font-weight:bold">${esc(site.name)}</div>
 <div style="background:#ffffff;padding:24px 20px;border-radius:0 0 12px 12px;line-height:1.55;font-size:15px">
 <h1 style="margin:0 0 16px;font-size:20px">${esc(title)}</h1>
 ${bodyHtml}
@@ -24,7 +24,7 @@ ${bodyHtml}
 }
 
 function button(href: string, label: string): string {
-  return `<p style="margin:20px 0"><a href="${esc(href)}" style="background:#1c1917;color:#ffc800;text-decoration:none;padding:12px 20px;border-radius:8px;font-weight:bold;display:inline-block">${esc(label)}</a></p>`;
+  return `<p style="margin:20px 0"><a href="${esc(href)}" style="background:#1c1917;color:#e9e61c;text-decoration:none;padding:12px 20px;border-radius:8px;font-weight:bold;display:inline-block">${esc(label)}</a></p>`;
 }
 
 const absolute = (path: string) => `${site.url.replace(/\/$/, "")}${path}`;

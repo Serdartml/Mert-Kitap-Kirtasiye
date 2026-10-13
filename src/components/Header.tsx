@@ -94,12 +94,15 @@ export default async function Header() {
             // Sağdaki kategorilerde açılır kutu ekrandan taşmasın diye sağa hizalanır.
             const alignRight = index >= categories.length - 2;
             return (
-              <li key={category.id} className="group relative">
+              // data-cat: her kategori kendi renginde (globals.css, "Kategori renkleri"): renkli ikon, üstüne gelince alt çizgi ve zemin.
+              <li key={category.id} data-cat={category.slug} className="group relative">
                 <Link
                   href={`/kategori/${category.slug}`}
-                  className="flex items-center gap-2 px-3 py-3 text-sm font-bold lg:px-4"
+                  className="flex items-center gap-2 rounded-t-lg border-b-4 border-transparent px-3 py-2 text-sm font-bold transition-colors group-focus-within:border-brand-500 group-hover:border-brand-500 group-hover:bg-brand-50 lg:px-4"
                 >
-                  <Icon size={16} aria-hidden className="shrink-0" />
+                  <span className="grid size-6 shrink-0 place-items-center rounded-md bg-brand-500 text-ink">
+                    <Icon size={14} aria-hidden />
+                  </span>
                   <span className="marker-hover">{category.name}</span>
                 </Link>
                 {category.children.length > 0 && (

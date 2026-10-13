@@ -15,6 +15,7 @@ import { getProductPalette } from "@/lib/colors";
 import ProductGrid from "@/components/ProductGrid";
 import ProductVisual from "@/components/ProductVisual";
 import { ProductDetailSkeleton } from "@/components/Skeletons";
+import PatternStrip from "@/components/PatternStrip";
 import ProductReviews from "@/components/ProductReviews";
 import StarRating from "@/components/StarRating";
 import {
@@ -180,6 +181,10 @@ async function ProductContent({ slug }: { slug: string }) {
   };
 
   return (
+    // data-cat: sayfa ürünün ana kategorisinin renginde (globals.css, "Kategori renkleri").
+    <div data-cat={rootSlug}>
+    {/* Süs bandı: tam genişlikte ince şerit; yazıların arkasına girmez, içerik altından başlar. */}
+    <PatternStrip />
     <div className="container-page py-6">
       <script
         type="application/ld+json"
@@ -280,6 +285,7 @@ async function ProductContent({ slug }: { slug: string }) {
         stockLow={product.stock < 1 || stockLow}
         targetId={BUY_AREA_ID}
       />
+    </div>
     </div>
   );
 }

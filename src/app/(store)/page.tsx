@@ -1,19 +1,26 @@
 import Link from "next/link";
 import { ArrowRight, MapPin, MessageCircle, PackageSearch, Phone } from "lucide-react";
-import HeroShowcase from "@/components/HeroShowcase";
+import HomeSnapScroll from "@/components/HomeSnapScroll";
+import LiveShowcase, { type ShowcaseTab } from "@/components/LiveShowcase";
 import HowItWorks from "@/components/HowItWorks";
 import OrderTrackBox from "@/components/OrderTrackBox";
 import OpenStatus from "@/components/OpenStatus";
+import PatternStrip from "@/components/PatternStrip";
 import ProductGrid from "@/components/ProductGrid";
 import Scribble from "@/components/Scribble";
+import ShowcaseCard from "@/components/ShowcaseCard";
 import SchoolListCards from "@/components/SchoolListCards";
 import SectionEdge from "@/components/SectionEdge";
 import ShowcaseMarquee from "@/components/ShowcaseMarquee";
-import { getDiscountedProducts, getFeaturedProducts, getNavCategories, getNewestProducts, type ProductCardData } from "@/lib/catalog";
+import { getDiscountedProducts, getFeaturedByRoot, getNavCategories, getNewestProducts, type ProductCardData } from "@/lib/catalog";
 import { site, stats, whatsappHref } from "@/lib/site";
 
 // note: başlığın yanına el yazısıyla düşülen kısa not; ok başlığı gösterir.
 // scroll: mobilde ürünler tek satırda yana kayar (sayfa kısalır); masaüstünde ızgara olarak kalır.
+// Vitrin şeridindeki kartlar (LiveShowcase içinde, şeridin doğrudan çocukları): lüks vitrin kartı, sıra numaralı.
+function ShowcaseCards({ products }: { products: ProductCardData[] }) {
+  return products.map((product, index) => <ShowcaseCard key={product.id} product={product} index={index} />);
+}
 function ProductSection({
   title,
   href,
@@ -53,18 +60,26 @@ function ProductSection({
 }
 
 export default async function HomePage() {
-  const [categories, featured, discounted, newest] = await Promise.all([
+  const [categories, featuredGroups, discounted, newest] = await Promise.all([
     getNavCategories(),
-    getFeaturedProducts(8),
+    getFeaturedByRoot(8),
     getDiscountedProducts(4),
     getNewestProducts(8),
   ]);
+  // Vitrin kategori kategori öne çıkanlarla çalışır (açılışta Kırtasiye); hiç öne çıkan ürün yoksa gösterilmez.
+  const showcaseTabs: ShowcaseTab[] = featuredGroups.map((group) => ({
+    id: group.slug,
+    label: group.name,
+    content: <ShowcaseCards products={group.products} />,
+  }));
 
   const whatsappLink = whatsappHref("Merhaba, bilgi almak istiyorum.");
 
   return (
     <>
-      <HeroShowcase />
+      <HomeSnapScroll />
+
+      {showcaseTabs.length > 0 && <LiveShowcase tabs={showcaseTabs} defaultTabId="kirtasiye" />}
 
       {/* Sürekli kayan vitrin: kategoriler ve mağaza mesajları */}
       <ShowcaseMarquee categories={categories} />
@@ -76,28 +91,21 @@ export default async function HomePage() {
             // Etiket (dt) okuma sırasında önce gelir, görsel olarak rakamın altında durur.
             <div key={stat.label} className="flex min-w-0 flex-col-reverse bg-ink px-4 py-5 text-center sm:py-7">
               <dt className="mt-1.5 font-hand text-xl leading-none text-white/80 sm:mt-2 sm:text-2xl">{stat.label}</dt>
-              <dd className="truncate text-3xl font-extrabold leading-none tracking-tight text-brand-500 sm:text-5xl">{stat.value}</dd>
+              {/* Uzun değerler ("Her gün", "Bornova", "10.000+") küçük yazılır: sığsın, kesilmesin. */}
+              <dd
+                className={`font-extrabold leading-none tracking-tight text-brand-500 ${
+                  stat.value.length > 5 ? "whitespace-nowrap text-2xl sm:text-4xl" : "truncate text-3xl sm:text-5xl"
+                }`}
+              >
+                {stat.value}
+              </dd>
             </div>
           ))}
         </dl>
       </section>
 
-      {/* Okula dönüş listeleri: sınıf seviyesine göre hazır malzeme listeleri */}
-      <section className="container-page mt-10 md:mt-14" aria-labelledby="okul-listeleri">
-        {/* Mobilde başlık tek satır; el yazısı not yalnızca sm ve üstünde (dar ekranda başlığı iki satıra böldüğü için). */}
-        <div className="mb-4 flex items-center justify-between gap-3 md:mb-5">
-          <h2 id="okul-listeleri" className="flex min-w-0 items-end text-lg font-extrabold sm:text-xl md:text-2xl">
-            <span className="marker">Okula dönüş listeleri</span>
-            <span aria-hidden className="ml-3 hidden -rotate-3 font-hand text-2xl font-bold leading-none text-neutral-500 sm:inline">tek tuşla sepete</span>
-          </h2>
-          <Link href="/okul-listeleri" className="flex min-h-11 shrink-0 items-center gap-1 text-sm font-bold hover:underline">
-            Tümü <ArrowRight size={16} />
-          </Link>
-        </div>
-        <SchoolListCards />
-      </section>
-
-      <ProductSection title="Öne Çıkanlar" products={featured} />
+      {/* Süs şeridi: rakam bandı ile kampanya bandı arasında ayraç. */}
+      <PatternStrip className="mt-10 md:mt-14" />
 
       {/* Kampanya bandı: kenarları yırtık kâğıt gibi dişli */}
       {discounted.length > 0 && (
@@ -119,10 +127,27 @@ export default async function HomePage() {
 
       <ProductSection title="Yeni Gelenler" note="taze geldi!" products={newest} scroll />
 
+      <PatternStrip className="mt-10 md:mt-14" />
+
+      {/* Okula dönüş listeleri: sınıf seviyesine göre hazır malzeme listeleri (nasıl sipariş verilir bölümünün hemen üstünde) */}
+      <section className="container-page mt-10 md:mt-14" aria-labelledby="okul-listeleri">
+        {/* Mobilde başlık tek satır; el yazısı not yalnızca sm ve üstünde (dar ekranda başlığı iki satıra böldüğü için). */}
+        <div className="mb-4 flex items-center justify-between gap-3 md:mb-5">
+          <h2 id="okul-listeleri" className="flex min-w-0 items-end text-lg font-extrabold sm:text-xl md:text-2xl">
+            <span className="marker">Okula dönüş listeleri</span>
+            <span aria-hidden className="ml-3 hidden -rotate-3 font-hand text-2xl font-bold leading-none text-neutral-500 sm:inline">tek tuşla sepete</span>
+          </h2>
+          <Link href="/okul-listeleri" className="flex min-h-11 shrink-0 items-center gap-1 text-sm font-bold hover:underline">
+            Tümü <ArrowRight size={16} />
+          </Link>
+        </div>
+        <SchoolListCards />
+      </section>
+
       <HowItWorks />
 
       {/* Sipariş takibi: üyeliksiz verilen siparişin numarasıyla durumu görülür */}
-      <section className="container-page mt-6 md:mt-8" aria-labelledby="siparis-takip">
+      <section data-snap="serbest-son" className="container-page mt-6 md:mt-8" aria-labelledby="siparis-takip">
         <div className="flex flex-col gap-4 rounded-2xl border-2 border-ink bg-raised p-4 sm:p-6 md:flex-row md:items-center md:justify-between md:gap-8 dark:border-neutral-300">
           <div className="min-w-0">
             <h2 id="siparis-takip" className="flex items-center gap-2 text-lg font-extrabold md:text-xl">
@@ -139,7 +164,7 @@ export default async function HomePage() {
       </section>
 
       {/* Mağaza: tam genişlik sarı bant, yırtık kâğıt kenarlı; canlı açık/kapalı durumu ve büyük iletişim düğmeleri */}
-      <section className="theme-fixed pattern-dots relative mt-14 bg-brand-500 py-8 sm:py-10 md:mt-20 md:py-12">
+      <section data-snap="alt-blok" className="theme-fixed pattern-dots relative mt-14 bg-brand-500 py-8 sm:py-10 md:mt-20 md:py-12">
         <SectionEdge position="top" colorClass="text-brand-500" />
         <SectionEdge position="bottom" colorClass="text-brand-500" />
         <div className="container-page flex flex-col gap-6 md:flex-row md:items-center md:justify-between">

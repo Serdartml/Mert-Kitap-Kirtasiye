@@ -96,7 +96,8 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
   const tabs = [{ id: root.id, slug: root.slug, name: "Tümü" }, ...root.children];
 
   return (
-    <div className="container-page py-4 md:py-6">
+    // data-cat: sayfa kategorinin renginde (globals.css, "Kategori renkleri").
+    <div data-cat={root.slug} className="container-page py-4 md:py-6">
       <Breadcrumbs items={crumbs} />
 
       {/* Kategori şeridi: kategoriye özel kâğıt dokusu ve çizim. Sol alt köşe düz; sekmeler oradan sarkar. */}

@@ -16,7 +16,7 @@ interface MenuCategory {
 function CategoryIcon({ slug }: { slug: string }) {
   const Icon = categoryIcons[slug] ?? fallbackCategoryIcon;
   return (
-    <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-brand-500">
+    <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-brand-500 text-ink">
       <Icon size={16} aria-hidden />
     </span>
   );
@@ -68,16 +68,17 @@ export default function MobileMenu({ categories }: { categories: MenuCategory[] 
             <nav aria-label="Kategoriler" className="flex-1 overflow-y-auto overscroll-contain">
               <ul className="divide-y divide-neutral-200">
                 {categories.map((category) => (
-                  <li key={category.id}>
+                  // data-cat: kategori renginde sol şerit, renkli ikon ve açık hâlde açık ton zemin (globals.css, "Kategori renkleri").
+                  <li key={category.id} data-cat={category.slug}>
                     <details className="group">
-                      <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3.5 text-[15px] font-bold [&::-webkit-details-marker]:hidden">
+                      <summary className="flex cursor-pointer list-none items-center justify-between border-l-4 border-brand-500 px-4 py-3.5 text-[15px] font-bold group-open:bg-brand-50 [&::-webkit-details-marker]:hidden">
                         <span className="flex items-center gap-3">
                           <CategoryIcon slug={category.slug} />
                           {category.name}
                         </span>
                         <ChevronDown size={18} className="text-neutral-400 transition-transform group-open:rotate-180" />
                       </summary>
-                      <ul className="bg-surface pb-2">
+                      <ul className="border-l-4 border-brand-500 bg-brand-50 pb-2">
                         <li>
                           <Link href={`/kategori/${category.slug}`} onClick={close} className="block px-6 py-2.5 text-sm font-bold">
                             Tüm {category.name}

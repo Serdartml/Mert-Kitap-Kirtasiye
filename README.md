@@ -8,7 +8,8 @@ Next.js (App Router) + TypeScript + Tailwind CSS v4 + Prisma.
 npm install
 cp .env.example .env      # Windows: copy .env.example .env; sonra Neon adreslerini yazın
 npm run db:deploy         # mevcut migration'ları veritabanına uygular
-npm run db:seed           # ÖRNEK kategori ve ürünleri yükler
+npm run db:seed           # ÖRNEK kategori ve ürünleri yükler (üretilmiş 108 ürün dahil)
+npm run db:seed-more      # yalnızca üretilmiş örnek ürünleri ekler (her ana kategoriye 18; var olana dokunmaz)
 npm run dev               # http://localhost:3000
 ```
 
@@ -58,9 +59,18 @@ okumaları (`new Date()`, `Math.random()`) için render sırasında `await io()`
 
 ## Ana sayfa ve arama
 
-- Üst vitrinin altındaki kayan şerit `ShowcaseMarquee` / `Marquee`: kategoriler ve mağaza mesajları, bekleme
-  olmadan akar; fare/odakla ve durdurma düğmesiyle durur. "Hareketi azalt" açıkken de oynar
-  (`globals.css` içinde bilerek muaf; karşılama ekranıyla aynı karar).
+- Üst vitrin `LiveShowcase` + `ShowcaseCard`: limon sarısı bant, el yazısı "Öne Çıkanlar" başlığı, el yazısı kategori düğmeleri ve koyu,
+  çerçeveli lüks kartlar. Seçili kategorinin öne çıkanları görünür (`getFeaturedByRoot`; açılışta Kültür Kitapları, kart biçiminde; öne çıkanı olmayan
+  kategori gizlenir, hiç öne çıkan yoksa vitrin gizlenir). 768 px ve üstünde üç kart görünür ve üçer üçer kayar; daha dar ekranlarda tek kart görünür
+  ve birer birer kayar. Kayma yumuşaktır (1,1 sn ease-in-out, `SLIDE_MS`), kartlar arası bekleme 2,2 sn (`HOLD_MS`); sona gelince başa sarar. Fare/klavye
+  odağı, dokunma, ekran dışı, sekme arka planda, "Durdur" düğmesi ve "hareketi azalt" durumunda kendiliğinden kayma durur. Eski 4 sahneli çizimli vitrin
+  (`HeroShowcase`, `HeroArt`) kaldırıldı; git geçmişinde.
+- Ana sayfa bölüm sırası: vitrin, kategori şeridi, rakam bandı, ürünler (indirimli, yeni gelenler), okula dönüş listeleri, nasıl sipariş verilir, sipariş takip,
+  mağaza bandı, footer. Masaüstünde fare tekeriyle duraklı kaydırma (`HomeSnapScroll`): vitrin ortada → ürünler başı → (ürünlerde normal kaydırma) → ürünler sonu
+  → mağaza bandı → footer; tek tekerlek hareketi bir durak. Duraklar `page.tsx`'teki `data-snap` işaretlerinden ölçülür (`vitrin`, `serbest-son`, `alt-blok`);
+  bölümleri taşırken bu işaretleri de taşıyın. Dokunmatik/dar ekran, açık pencere ve kendi kayan alanı olan öğelerde devre dışıdır.
+- Kategori renkleri: her ana kategorinin bir rengi vardır (kırtasiye limon, sanatsal pembe, hazırlık kitapları mavi, kültür kitapları turuncu, hediyelik mor, elektronik nane). Kategori ve ürün sayfaları, vitrin bandı ve kayan kategori kartları `data-cat=<ana kategori adresi>` ile işaretlenir; `globals.css` içindeki "Kategori renkleri" bölümü marka sarısı ölçeğini (`--color-brand-*`) o renge çevirir, `bg-brand-500` / `btn-primary` / `CategoryArt` kendiliğinden uyar. Yeni ana kategori için o bölüme blok, `category-icons.ts`'e kapak rengi eklenir; bilinmeyen kategori limonda kalır.
+- Kayan şerit (`ShowcaseMarquee` + `Marquee`): üç sıra; üst ve alt soldan sağa, orta sağdan sola kayar. Dokunulan / fare üstündeki / odaktaki satır durur, bırakılınca devam eder, diğer satırlar kayar. Kategori kartları kendi kategori renginde ve üç görünümdedir (dolu, siyah, açık).
 - Rakam bandı değerleri `src/lib/site.ts` içindeki `stats`.
 - Görseli olmayan ürünler `ProductVisual` içinde kategoriye göre renkli "kapak" gösterir (baş harf, ikon).
   Renkler `lib/category-icons.ts` içindeki `categoryTones`; yeni ana kategoriye buraya da ekleyin.
@@ -69,8 +79,8 @@ okumaları (`new Date()`, `Math.random()`) için render sırasında `await io()`
 - Ürün kartı (`ProductCard`): rozetler "Yeni" (son 14 gün; toplu içe aktarmada hepsi yeni olacağından, yeni
   ürünler katalogun %20'sinden ya da 30'dan fazlaysa kapanır: `getNewProductCutoff`), "Son N adet" (stok 5 ve
   altı: `LOW_STOCK_THRESHOLD`) ve "Tükendi".
-- Hızlı bakış (`QuickViewArea` + `QuickViewHost`, özet `/api/urun-ozet`): mobilde karta uzun basınca, masaüstünde
-  fareyle 2 sn bekleyince açılır; düğme yoktur. Sürelerin sabitleri `QuickViewArea.tsx` başında.
+- Hızlı bakış (`QuickViewArea` + `QuickViewHost`, özet `/api/urun-ozet`): bağımsız pencere değil, kartın yanında karttan büyüyen balon (kartın kopyası bulanık arka planın üstünde kalır; dar ekranda ortada açılır). Mobilde karta uzun basınca, masaüstünde
+  fareyle 1 sn bekleyince açılır; düğme yoktur. Sürelerin sabitleri `QuickViewArea.tsx` başında.
 - Sepete eklenince `CartToast` bildirimi çıkar ve sepet ikonu sallanır; `AddToCartButton` olayı yayınlar.
 - Kategori sayfasında filtre çekmecesi (`FilterDrawer`): fiyat aralığı ve marka; markalı ürün yoksa yalnızca
   fiyat gösterilir. Adres parametreleri: `min`, `max`, `marka`.
@@ -171,6 +181,6 @@ src/app/globals.css       renk paleti ve ortak sınıflar
 - **Online ödeme ve kargo:** Yok (iyzico / PayTR seçimi bekliyor). Şimdilik yalnızca mağazadan teslim. Stok sipariş anında düşülür; ödeme gelince onay anına alınmalı (`actions/order.ts`).
 - **E-posta:** `lib/mail.ts` (Resend) ve `lib/mail-templates.ts` hazır: sipariş onayı, durum değişikliği (müşteriye), yeni sipariş / yeni mesaj (mağazaya) ve parola sıfırlama (`/sifremi-unuttum`). `RESEND_API_KEY` yokken gönderilmez, konsola yazılır. Gerçek gönderim için Resend hesabı + doğrulanmış alan adı gerekir (`.env.example`). E-posta doğrulama (kayıtta) henüz yok.
 - **Yorumlar ve markalar:** Hazır. Üyeler ürün sayfasındaki "Yorumlar" sekmesinden puan + yorum yazar (üye başına ürün başına tek yorum, saatte 5 sınırı); yorum `/yonetim/yorumlar`dan onaylanana kadar görünmez, ortalama puan ürün sayfasında ve JSON-LD'de çıkar. Markalar `/yonetim/markalar`da yönetilir, ürün formundan seçilir (kategori sayfasındaki marka filtresi bunu kullanır). Ürün kartlarında puan yok. Yorumu yalnızca satın alanlarla sınırlamak istenirse `actions/reviews.ts` içinde sipariş kontrolü eklenmeli.
-- **Logo:** `src/components/Logo.tsx` içinde satır içi SVG olarak tabeladan yeniden çizildi; renkler tahmini (`BLUE`, `PINK`, `YELLOW`). Resmî renk kodları gelince yalnızca bu sabitler değişir. `src/app/icon.svg` aynı işaretten.
+- **Logo:** `src/components/Logo.tsx` içinde satır içi SVG olarak tabeladan yeniden çizildi; renkler tahmini (`BLUE`, `PINK`, `YELLOW`). Resmî renk kodları gelince yalnızca bu sabitler değişir. `src/app/icon.svg` aynı işaretten. Sitenin sarısı artık logonun limon sarısıdır (`#e9e61c`, `globals.css` içindeki `--color-brand-*` ölçeği; `Logo.tsx`'teki `YELLOW` ile aynı). Logo sarısı değişirse `--color-brand-*`, `CategoryArt`, e-posta şablonları ve `category-icons.ts` içindeki sabitler de güncellenmeli. Ürün renk paletindeki "Sarı" (`lib/colors.ts`) ürünün gerçek rengidir, marka rengi değildir.
 - **Veritabanı:** Geliştirme ve canlı için tek Neon veritabanı var. Canlı için ayrı veritabanı açılıp `npm run db:deploy` ve `npm run admin:create` orada çalıştırılmalı.
 - **Test:** `npm test` (Vitest, `tests/`): slug/fiyat, parola, sipariş numarası ve durumları, e-posta, yasal metinler, toplu sepet ekleme. Testler veritabanına bağlanmaz (db `vi.mock` ile değiştirilir); sipariş/stok işlemleri ve sayfalar için uçtan uca test yok.

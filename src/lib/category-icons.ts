@@ -15,7 +15,7 @@ export const categoryIcons: Record<string, LucideIcon> = {
 };
 
 // Görseli olmayan ürünün kapak rengi (ProductVisual): zemin ve yazı/ikon rengi. Renkler logodaki
-// mavi, pembe, sarı ve siyahtan türer. Sabit renkler: koyu temada da aynı görünür. Tailwind sınıfları
+// mavi, pembe, sarı ve siyahtan türer; hediyelik (mor) ve elektronik (nane) kategori renkleriyle (globals.css, "Kategori renkleri") uyumludur. Sabit renkler: koyu temada da aynı görünür. Tailwind sınıfları
 // tam yazılmalı (birleştirilerek üretilen sınıf derlenmez).
 export const fallbackCategoryTone = "bg-brand-300 text-ink";
 
@@ -24,8 +24,8 @@ export const categoryTones: Record<string, string> = {
   sanatsal: "bg-[#f7c6dd] text-[#a3235f]",
   "hazirlik-kitaplari": "bg-[#c5e4f7] text-[#1f5f8b]",
   "kultur-kitaplari": "bg-ink text-brand-500",
-  hediyelik: "bg-[#fff3b8] text-[#a68200]",
-  elektronik: "bg-[#e5e5e5] text-ink",
+  hediyelik: "bg-[#e6dbff] text-[#5b3fb0]",
+  elektronik: "bg-[#c9f2ea] text-[#136b5a]",
 };
 
 export const fallbackCategoryPattern = "pattern-dots";

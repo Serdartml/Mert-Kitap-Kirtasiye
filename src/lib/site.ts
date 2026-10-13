@@ -28,10 +28,10 @@ export const site = {
   ],
   about: {
     badge: "Hikayemiz",
-    title: "20 yıldır eğitimde yol arkadaşınızız",
+    title: "30+ yıldır eğitimde yol arkadaşınızız",
     body: "Mert Kitap Kırtasiye ile geleceği birlikte tasarlıyoruz. Kalite ve güveni esas alarak, yaratıcılığınızı besleyen her ürünü özenle seçiyoruz.",
     footer:
-      "20 yıldır eğitimin, sanatın ve hobi dünyasının kalbindeyiz. Mert Kitap Kırtasiye ile yarınları birlikte kuruyoruz.",
+      "30+ yıldır eğitimin, sanatın ve hobi dünyasının kalbindeyiz. Mert Kitap Kırtasiye ile yarınları birlikte kuruyoruz.",
     points: [
       "Güncel eğitim kaynakları ve akademik dünya",
       "Dünyaca ünlü kırtasiye markaları",
@@ -42,9 +42,9 @@ export const site = {
 
 // Ana sayfadaki rakam bandı. Değerler mağaza sahibinin beyanıdır; değişirse buradan güncellenir.
 export const stats = [
-  { value: "20+", label: "yıllık tecrübe" },
+  { value: "30+", label: "yıllık tecrübe" },
   { value: "10.000+", label: "çeşit ürün" },
-  { value: "7/7", label: "gün açık" },
+  { value: "Her gün", label: "mağazamız açık" },
   { value: site.address.district, label: "mağazamız" },
 ] as const;
 

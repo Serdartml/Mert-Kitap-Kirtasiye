@@ -1,6 +1,7 @@
 // Geliştirme için ÖRNEK katalog verisi. Ürünler, fiyatlar ve stoklar gerçek değildir.
 // Slug üzerinden upsert yapar. Listeden çıkarılmış ve içinde ürün kalmamış kategorileri siler.
 import { PrismaClient } from "@prisma/client";
+import { seedGeneratedProducts } from "./sample-products";
 
 const db = new PrismaClient();
 
@@ -167,6 +168,10 @@ async function main() {
       });
     }
   }
+
+  // Üretilmiş örnek ürünler (her ana kategoriye 18'er): var olanların fiyatına/stoğuna dokunmaz.
+  const generated = await seedGeneratedProducts(db);
+  console.log(`Üretilmiş örnek ürünler: ${generated.created} eklendi, ${generated.existing} zaten vardı.`);
 
   // Listede artık olmayan kategorileri temizle; içinde ürün olanlara dokunma. Önce alt, sonra üst kategoriler.
   const stale = { slug: { notIn: [...categoryIds.keys()] }, products: { none: {} } };

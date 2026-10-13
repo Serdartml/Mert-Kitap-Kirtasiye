@@ -42,7 +42,7 @@ async function InfoContent({ params }: PageProps) {
       <Breadcrumbs items={[{ label: page.title }]} />
       <h1 className="text-3xl font-extrabold tracking-tight">{page.title}</h1>
       {!legalReviewed && (
-        <p className="mt-4 rounded-xl bg-amber-100 p-4 text-sm text-amber-900">
+        <p className="mt-4 rounded-xl bg-brand-100 p-4 text-sm text-fg">
           Bu metin taslaktır; hukuki inceleme sonrası kesinleşecektir.
         </p>
       )}

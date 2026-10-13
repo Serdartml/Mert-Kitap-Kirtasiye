@@ -1,11 +1,12 @@
 import type { ReactNode } from "react";
 
-// Kategoriye özel çizimler. HeroArt ile aynı dil: siyah çizgi, beyaz dolgu, sarı zemin için tasarlandı.
+// Kategoriye özel çizimler. Ana sayfa çizimleriyle aynı dil: siyah çizgi, beyaz dolgu, sarı zemin için tasarlandı.
 // Hepsi satır içi SVG'dir; ek dosya isteği veya JavaScript gerektirmez.
 
 const INK = "#111111";
 const PAPER = "#ffffff";
-const YELLOW = "#ffc800";
+// Kategori renginde (data-cat) ya da marka sarısında: sayfanın rengini izler.
+const YELLOW = "var(--color-brand-500)";
 
 const art: Record<string, ReactNode> = {
   // Kurşun kalem, silgi, ataş

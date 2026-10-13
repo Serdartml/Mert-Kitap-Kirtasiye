@@ -4,14 +4,14 @@
 
 /* Marka paleti: sarı, siyah, beyaz. Sarı zemin olarak kullanılır; beyaz üstünde yazı rengi olarak değil. */
 @theme {
-  --color-brand-50: #fffbe6;
-  --color-brand-100: #fff3b8;
-  --color-brand-200: #ffe880;
-  --color-brand-300: #ffdd4d;
-  --color-brand-400: #ffd426;
-  --color-brand-500: #ffc800;
-  --color-brand-600: #e6b400;
-  --color-brand-700: #a68200;
+  --color-brand-50: #fdfde8;
+  --color-brand-100: #fafac0;
+  --color-brand-200: #f5f48a;
+  --color-brand-300: #f0ef5a;
+  --color-brand-400: #ecea38;
+  --color-brand-500: #e9e61c;
+  --color-brand-600: #cfcc0f;
+  --color-brand-700: #7d7b05;
 
   /* ink her temada siyahtır (sarı üstündeki yazı, siyah bölümler). */
   --color-ink: #111111;
@@ -20,7 +20,7 @@
   /* Temaya göre değişen çift: sayfa zemini ve onun üstündeki yazı. */
   --color-surface: #ffffff;
   --color-fg: #111111;
-  --color-marker: #ffdd4d;
+  --color-marker: #f0ef5a;
   /* Sayfanın üstünde duran katmanlar: kartlar, yapışan çubuklar, açılır menü, çekmece.
      Aydınlıkta zeminle aynı (gölgeyle ayrılır), koyuda bir ton açık ki zeminle karışmasın. */
   --color-raised: #ffffff;
@@ -75,7 +75,7 @@
   --color-surface: #0e0e0e;
   --color-raised: #212121;
   --color-fg: #f2f2f2;
-  --color-marker: #6b5600;
+  --color-marker: #5c5b08;
 
   --color-neutral-50: #181818;
   --color-neutral-100: #2a2a2a;
@@ -86,9 +86,9 @@
   --color-neutral-600: #b8b8b8;
   --color-neutral-700: #d4d4d4;
 
-  --color-brand-50: #241f0d;
-  --color-brand-100: #3a3112;
-  --color-brand-200: #4d4116;
+  --color-brand-50: #1e1e0a;
+  --color-brand-100: #33330e;
+  --color-brand-200: #45450f;
 }
 
 /*
@@ -100,7 +100,7 @@
   --color-surface: #ffffff;
   --color-raised: #ffffff;
   --color-fg: #111111;
-  --color-marker: #ffdd4d;
+  --color-marker: #f0ef5a;
 
   --color-neutral-50: #fafafa;
   --color-neutral-100: #f5f5f5;
@@ -111,9 +111,9 @@
   --color-neutral-600: #525252;
   --color-neutral-700: #404040;
 
-  --color-brand-50: #fffbe6;
-  --color-brand-100: #fff3b8;
-  --color-brand-200: #ffe880;
+  --color-brand-50: #fdfde8;
+  --color-brand-100: #fafac0;
+  --color-brand-200: #f5f48a;
 }
 
 @utility container-page {
@@ -133,7 +133,7 @@
     /* Marka ayrıntıları: onay kutusu ve seçim çubukları sarı, kaydırma çubuğu sakin gri, dokunuş sarı parlar. */
     accent-color: var(--color-brand-500);
     scrollbar-color: var(--color-neutral-400) transparent;
-    -webkit-tap-highlight-color: rgb(255 200 0 / 0.28);
+    -webkit-tap-highlight-color: rgb(233 230 28 / 0.32);
   }
 
   /* Seçili yazı fosforlu kalemle çizilmiş gibi sarı. */
@@ -569,6 +569,8 @@ html[data-welcome="play"] .welcome-surface {
 
 .marquee-track {
   animation: marquee-scroll var(--marquee-duration, 40s) linear infinite;
+  /* Satır başına yön: "reverse" soldan sağa, "normal" sağdan sola kayar (Marquee.tsx). */
+  animation-direction: var(--marquee-direction, normal);
 }
 
 @keyframes marquee-scroll {
@@ -577,13 +579,14 @@ html[data-welcome="play"] .welcome-surface {
   }
 }
 
+/* Duraklatma satır başınadır: dokunulan / üstüne gelinen / odaktaki satır durur, diğerleri kayar. */
 .marquee-track[data-paused="true"],
-.marquee:focus-within .marquee-track {
+.marquee-row:focus-within .marquee-track {
   animation-play-state: paused;
 }
 
 @media (hover: hover) {
-  .marquee:hover .marquee-track {
+  .marquee-row:hover .marquee-track {
     animation-play-state: paused;
   }
 }
@@ -658,7 +661,7 @@ html[data-welcome="play"] .welcome-surface {
     padding: 0.3rem 0.6rem;
     border: 3px solid #111;
     border-radius: 6px;
-    background: #fff3b8;
+    background: #fafac0;
     color: #111;
     font-size: 0.8rem;
     font-weight: 800;
@@ -682,4 +685,251 @@ html[data-welcome="play"] .welcome-surface {
   .palette-item:hover + .palette-item + .palette-item .palette-swatch,
   .palette-item:has(+ .palette-item + .palette-item:hover) .palette-swatch { transform: none; }
   .palette-item:hover .palette-tip { animation: none; }
+}
+
+/*
+  Ürün sayfası üst bandı: eş merkezli sarı/siyah yaylar (Uiverse, s3npa1w_5117; renkler marka sarısı ve siyaha çevrildi).
+  Yalnızca süs: ince bir şerit olarak kullanılır. Yazıların arkasına koymak okunurluğu bozuyordu (denendi).
+*/
+.pattern-deco {
+  --s: 200px;
+  --c1: var(--color-brand-500);
+  --c2: #121212;
+  --_g: var(--c2) 4% 14%, var(--c1) 14% 24%, var(--c2) 22% 34%, var(--c1) 34% 44%, var(--c2) 44% 56%,
+    var(--c1) 56% 66%, var(--c2) 66% 76%, var(--c1) 76% 86%, var(--c2) 86% 96%;
+  background:
+    radial-gradient(100% 100% at 100% 0, var(--c1) 4%, var(--_g), #0008 96%, #0000),
+    radial-gradient(100% 100% at 0 100%, #0000, #0008 4%, var(--_g), var(--c1) 96%) var(--c1);
+  background-size: var(--s) var(--s);
+}
+
+@media (max-width: 640px) {
+  .pattern-deco { --s: 130px; }
+}
+
+/*
+  Vitrin kartı (ShowcaseCard): koyu zemin, limon ince çerçeve, sağ üst köşede limon parıltı. Üstüne gelince kalkar ve
+  üstünden bir ışık süzülür. Işık ve kalkma yalnızca fareli cihazlarda ve hareket azaltılmamışken çalışır.
+*/
+.lux-card {
+  background-image: radial-gradient(120% 80% at 100% 0%, color-mix(in srgb, var(--color-brand-500) 20%, transparent), transparent 55%);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--color-brand-500) 38%, transparent),
+    0 14px 30px -14px rgb(0 0 0 / 0.55);
+  transition:
+    transform 400ms ease-out,
+    box-shadow 400ms ease-out;
+}
+
+.lux-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(105deg, transparent 38%, rgb(255 255 255 / 0.16) 50%, transparent 62%);
+  transform: translateX(-120%);
+}
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .lux-card:hover {
+    transform: translateY(-4px);
+    box-shadow:
+      inset 0 0 0 1px color-mix(in srgb, var(--color-brand-500) 75%, transparent),
+      0 22px 38px -14px rgb(0 0 0 / 0.65);
+  }
+  .lux-card:hover::after {
+    transform: translateX(120%);
+    transition: transform 900ms ease-out;
+  }
+}
+
+/*
+  Kategori renkleri. Her ana kategorinin kendi rengi vardır; o kategorinin sayfaları (kategori, ürün) ve vitrindeki
+  kartları data-cat="<ana kategori adresi>" ile işaretlenir ve marka sarısı ölçeği (--color-brand-*) kategori rengine
+  döner. bg-brand-500, btn-primary, marker, desenli şerit gibi her şey kendiliğinden o renge geçer. Yeni ana kategori
+  için buraya bir blok eklenir (Node ile üretildi: 500 ana renk; 50-400 beyazla, 600-700 siyahla karıştırma; koyu temada
+  50-200 zemine yakın koyu tonlar). Bilinmeyen kategori marka sarısında kalır. theme-fixed bölümler açık değerleri korur.
+*/
+
+[data-cat="kirtasiye"] {
+  --color-brand-50: #fcfce4;
+  --color-brand-100: #f9f8bf;
+  --color-brand-200: #f4f392;
+  --color-brand-300: #f0ee65;
+  --color-brand-400: #ecea3c;
+  --color-brand-500: #e9e61c;
+  --color-brand-600: #cdca19;
+  --color-brand-700: #75730e;
+  --color-marker: #f0ee65;
+}
+
+.dark [data-cat="kirtasiye"] {
+  --color-brand-50: #24240f;
+  --color-brand-100: #353511;
+  --color-brand-200: #494812;
+  --color-marker: #5d5c0b;
+}
+
+[data-cat="kirtasiye"] .theme-fixed,
+[data-cat="kirtasiye"].theme-fixed {
+  --color-brand-50: #fcfce4;
+  --color-brand-100: #f9f8bf;
+  --color-brand-200: #f4f392;
+  --color-marker: #f0ee65;
+}
+
+[data-cat="sanatsal"] {
+  --color-brand-50: #fce9f2;
+  --color-brand-100: #f9cbe0;
+  --color-brand-200: #f4a7c9;
+  --color-brand-300: #ef82b3;
+  --color-brand-400: #eb619f;
+  --color-brand-500: #e8478f;
+  --color-brand-600: #cc3e7e;
+  --color-brand-700: #742448;
+  --color-marker: #ef82b3;
+}
+
+.dark [data-cat="sanatsal"] {
+  --color-brand-50: #24141b;
+  --color-brand-100: #351825;
+  --color-brand-200: #491d31;
+  --color-marker: #5d1c39;
+}
+
+[data-cat="sanatsal"] .theme-fixed,
+[data-cat="sanatsal"].theme-fixed {
+  --color-brand-50: #fce9f2;
+  --color-brand-100: #f9cbe0;
+  --color-brand-200: #f4a7c9;
+  --color-marker: #ef82b3;
+}
+
+[data-cat="hazirlik-kitaplari"] {
+  --color-brand-50: #edf6fc;
+  --color-brand-100: #d6eaf8;
+  --color-brand-200: #b8dbf3;
+  --color-brand-300: #9acdee;
+  --color-brand-400: #80bfea;
+  --color-brand-500: #6bb5e6;
+  --color-brand-600: #5e9fca;
+  --color-brand-700: #365b73;
+  --color-marker: #9acdee;
+}
+
+.dark [data-cat="hazirlik-kitaplari"] {
+  --color-brand-50: #171f24;
+  --color-brand-100: #1f2c35;
+  --color-brand-200: #273b48;
+  --color-marker: #2b485c;
+}
+
+[data-cat="hazirlik-kitaplari"] .theme-fixed,
+[data-cat="hazirlik-kitaplari"].theme-fixed {
+  --color-brand-50: #edf6fc;
+  --color-brand-100: #d6eaf8;
+  --color-brand-200: #b8dbf3;
+  --color-marker: #9acdee;
+}
+
+[data-cat="kultur-kitaplari"] {
+  --color-brand-50: #fff3e8;
+  --color-brand-100: #ffe3c8;
+  --color-brand-200: #ffcfa1;
+  --color-brand-300: #ffba7a;
+  --color-brand-400: #ffa857;
+  --color-brand-500: #ff9a3c;
+  --color-brand-600: #e08835;
+  --color-brand-700: #804d1e;
+  --color-marker: #ffba7a;
+}
+
+.dark [data-cat="kultur-kitaplari"] {
+  --color-brand-50: #261c13;
+  --color-brand-100: #392716;
+  --color-brand-200: #4f341a;
+  --color-marker: #663e18;
+}
+
+[data-cat="kultur-kitaplari"] .theme-fixed,
+[data-cat="kultur-kitaplari"].theme-fixed {
+  --color-brand-50: #fff3e8;
+  --color-brand-100: #ffe3c8;
+  --color-brand-200: #ffcfa1;
+  --color-marker: #ffba7a;
+}
+
+[data-cat="hediyelik"] {
+  --color-brand-50: #f6f1ff;
+  --color-brand-100: #e9dfff;
+  --color-brand-200: #dac8ff;
+  --color-brand-300: #cab1ff;
+  --color-brand-400: #bc9cff;
+  --color-brand-500: #b18cff;
+  --color-brand-600: #9c7be0;
+  --color-brand-700: #594680;
+  --color-marker: #cab1ff;
+}
+
+.dark [data-cat="hediyelik"] {
+  --color-brand-50: #1e1b26;
+  --color-brand-100: #2b2539;
+  --color-brand-200: #3a304f;
+  --color-marker: #473866;
+}
+
+[data-cat="hediyelik"] .theme-fixed,
+[data-cat="hediyelik"].theme-fixed {
+  --color-brand-50: #f6f1ff;
+  --color-brand-100: #e9dfff;
+  --color-brand-200: #dac8ff;
+  --color-marker: #cab1ff;
+}
+
+[data-cat="elektronik"] {
+  --color-brand-50: #e8f9f6;
+  --color-brand-100: #c9f2ea;
+  --color-brand-200: #a3e8db;
+  --color-brand-300: #7cdfcd;
+  --color-brand-400: #5ad7bf;
+  --color-brand-500: #3fd0b5;
+  --color-brand-600: #37b79f;
+  --color-brand-700: #20685b;
+  --color-marker: #7cdfcd;
+}
+
+.dark [data-cat="elektronik"] {
+  --color-brand-50: #13211f;
+  --color-brand-100: #17312c;
+  --color-brand-200: #1b423b;
+  --color-marker: #195348;
+}
+
+[data-cat="elektronik"] .theme-fixed,
+[data-cat="elektronik"].theme-fixed {
+  --color-brand-50: #e8f9f6;
+  --color-brand-100: #c9f2ea;
+  --color-brand-200: #a3e8db;
+  --color-marker: #7cdfcd;
+}
+
+/* Kaydırılabilir şeritlerde yönü gösteren oklar (vitrin kategori düğmeleri): iki yana hafifçe gidip gelir. */
+@keyframes nudge-x {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  50% {
+    translate: var(--nudge, 6px) 0;
+  }
+}
+
+.animate-nudge-right {
+  --nudge: 6px;
+  animation: nudge-x 1s ease-in-out infinite;
+}
+
+.animate-nudge-left {
+  --nudge: -6px;
+  animation: nudge-x 1s ease-in-out infinite;
 }

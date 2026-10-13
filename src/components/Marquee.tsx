@@ -1,29 +1,58 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useState, type CSSProperties, type ReactNode } from "react";
 import { Pause, Play } from "lucide-react";
 
-// Sonsuz yatay kayan şerit. İçerik iki kez yazılır ve şerit tam bir kopya kadar (%50) kayar; başı ve sonu
-// birbirine eklenir, bekleme yoktur. İkinci kopya yalnızca görüntü içindir (inert: odaklanmaz, ekran
-// okuyucuya okunmaz). Fare üstündeyken ya da odaktayken durur; dokunmatik ekranda ve klavyede durdurma düğmesi var.
-// duration: bir kopyanın baştan sona kayma süresi (saniye); kartlar çoğaldıkça hız sabit kalsın diye sayfadan gelir.
-export default function Marquee({ children, duration, label }: { children: ReactNode; duration: number; label: string }) {
+export interface MarqueeRowData {
+  items: ReactNode;
+  // "right": içerik soldan sağa kayar, "left": sağdan sola kayar.
+  direction: "left" | "right";
+  // Bir kopyanın baştan sona kayma süresi (saniye); kartlar çoğaldıkça hız sabit kalsın diye sayfadan gelir.
+  duration: number;
+}
+
+// Sonsuz yatay kayan şeritler (üst üste birkaç satır). Her satır içeriği iki kez yazar ve tam bir kopya kadar (%50)
+// kayar; başı ve sonu birbirine eklenir, bekleme yoktur. İkinci kopya yalnızca görüntü içindir (inert: odaklanmaz,
+// ekran okuyucuya okunmaz). Her satırın yönü kendine aittir. Dokunulan / üstüne gelinen satır durur, parmak ya da fare
+// çekilince devam eder; diğer satırlar kaymaya devam eder. Klavye odağındaki satır da durur. Ayrıca tümünü durduran
+// bir düğme vardır.
+function Row({ row, allPaused }: { row: MarqueeRowData; allPaused: boolean }) {
+  // Dokunmatik / kalem: parmak basılıyken durur. Fare üstüne gelmesi CSS ile (.marquee-row:hover) durdurulur.
+  const [held, setHeld] = useState(false);
+  const release = () => setHeld(false);
+
+  return (
+    <div
+      className="marquee-row"
+      onPointerDown={(event) => event.pointerType !== "mouse" && setHeld(true)}
+      onPointerUp={release}
+      onPointerCancel={release}
+      onPointerLeave={release}
+    >
+      <div className="marquee-viewport overflow-hidden px-1 py-3">
+        <div
+          className="marquee-track flex w-max"
+          data-paused={allPaused || held}
+          style={{ "--marquee-duration": `${row.duration}s`, "--marquee-direction": row.direction === "right" ? "reverse" : "normal" } as CSSProperties}
+        >
+          <div className="flex shrink-0 items-center gap-3 pr-3">{row.items}</div>
+          <div aria-hidden inert className="flex shrink-0 items-center gap-3 pr-3">
+            {row.items}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function Marquee({ rows, label }: { rows: MarqueeRowData[]; label: string }) {
   const [paused, setPaused] = useState(false);
 
   return (
     <section aria-label={label} className="marquee relative mt-3 md:mt-4">
-      <div className="marquee-viewport overflow-hidden py-1.5">
-        <div
-          className="marquee-track flex w-max"
-          data-paused={paused}
-          style={{ "--marquee-duration": `${duration}s` } as React.CSSProperties}
-        >
-          <div className="flex shrink-0 items-center gap-3 pr-3">{children}</div>
-          <div aria-hidden inert className="flex shrink-0 items-center gap-3 pr-3">
-            {children}
-          </div>
-        </div>
-      </div>
+      {rows.map((row, index) => (
+        <Row key={index} row={row} allPaused={paused} />
+      ))}
 
       <button
         type="button"
