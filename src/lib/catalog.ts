@@ -4,6 +4,7 @@ import { cacheLife, cacheTag } from "next/cache";
 import { db } from "./db";
 import { interleaveBy } from "./interleave";
 import { averageRating, reviewerName } from "./reviews";
+import { matchesAllTokens, searchProductIds } from "./search";
 
 // 2, 4 ve 5 sütunlu ızgaralarda son satır yarım kalmasın diye 20.
 export const PAGE_SIZE = 20;
@@ -118,25 +119,31 @@ export async function listProducts({
   cacheLife("minutes");
   cacheTag(CATALOG_TAG);
 
+  // Arama (lib/search.ts): eşleşen ürünler alaka sırasıyla gelir; diğer filtreler bunların üstüne biner.
+  const matchedIds = query ? await searchProductIds(query) : undefined;
+
   const where: Prisma.ProductWhereInput = {
     isActive: true,
+    ...(matchedIds ? { id: { in: matchedIds } } : {}),
     ...(categoryIds ? { categoryId: { in: categoryIds } } : {}),
     ...(inStockOnly ? { stock: { gt: 0 } } : {}),
     ...(brandSlugs && brandSlugs.length > 0 ? { brand: { slug: { in: brandSlugs } } } : {}),
     ...(minPriceKurus !== undefined || maxPriceKurus !== undefined
       ? { priceKurus: { ...(minPriceKurus !== undefined ? { gte: minPriceKurus } : {}), ...(maxPriceKurus !== undefined ? { lte: maxPriceKurus } : {}) } }
       : {}),
-    ...(query
-      ? {
-          OR: [
-            { name: { contains: query, mode: "insensitive" } },
-            { description: { contains: query, mode: "insensitive" } },
-            { sku: { contains: query, mode: "insensitive" } },
-            { barcode: query },
-          ],
-        }
-      : {}),
   };
+
+  // "Önerilen" sırasında aramada alaka sırası geçerlidir (filtrelenmiş id'ler alaka sırasına dizilir, sayfa onlardan kesilir).
+  // Fiyat / yenilik sıralamasında kullanıcı sırayı kendisi seçmiştir, normal sorgu çalışır.
+  if (matchedIds && sort === "onerilen") {
+    const rank = new Map(matchedIds.map((id, index) => [id, index]));
+    const matches = await db.product.findMany({ where, select: { id: true } });
+    const ordered = matches.map((match) => match.id).sort((a, b) => (rank.get(a) ?? 0) - (rank.get(b) ?? 0));
+    const pageIds = ordered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+    const rows = pageIds.length ? await db.product.findMany({ where: { id: { in: pageIds } }, include: productCardInclude }) : [];
+    const items = rows.sort((a, b) => pageIds.indexOf(a.id) - pageIds.indexOf(b.id));
+    return { items, total: ordered.length, pageCount: Math.max(1, Math.ceil(ordered.length / PAGE_SIZE)) };
+  }
 
   const [items, total] = await Promise.all([
     db.product.findMany({
@@ -286,39 +293,36 @@ export async function getSearchSuggestions(query: string): Promise<SearchSuggest
   cacheLife("minutes");
   cacheTag(CATALOG_TAG);
 
-  const where: Prisma.ProductWhereInput = {
-    isActive: true,
-    OR: [
-      { name: { contains: query, mode: "insensitive" } },
-      { description: { contains: query, mode: "insensitive" } },
-      { sku: { contains: query, mode: "insensitive" } },
-      { barcode: query },
-    ],
-  };
+  const [navCategories, matchedIds] = await Promise.all([getNavCategories(), searchProductIds(query)]);
 
-  const [categories, products, total] = await Promise.all([
-    db.category.findMany({
-      where: { name: { contains: query, mode: "insensitive" } },
-      include: { parent: { select: { name: true } } },
-      orderBy: { sortOrder: "asc" },
-      take: 3,
-    }),
-    db.product.findMany({
-      where,
-      select: {
-        slug: true,
-        name: true,
-        priceKurus: true,
-        category: { select: { slug: true, name: true, parent: { select: { slug: true } } } },
-      },
-      orderBy: [{ isFeatured: "desc" }, { name: "asc" }],
-      take: 6,
-    }),
-    db.product.count({ where }),
-  ]);
+  // Kategoriler (ana ve alt): ad aramayla eşleşiyorsa, menü sırasıyla ilk üçü.
+  const categories = navCategories
+    .flatMap((root) => [
+      { slug: root.slug, name: root.name, parentName: null as string | null },
+      ...root.children.map((child) => ({ slug: child.slug, name: child.name, parentName: root.name as string | null })),
+    ])
+    .filter((category) => matchesAllTokens(category.name, query))
+    .slice(0, 3);
+
+  // Alaka sırasındaki ilk altı ürün; toplam sayı sonuç sayfasındakiyle (listProducts) aynı eşleşmeden gelir.
+  const topIds = matchedIds.slice(0, 6);
+  const rows = topIds.length
+    ? await db.product.findMany({
+        where: { id: { in: topIds } },
+        select: {
+          id: true,
+          slug: true,
+          name: true,
+          priceKurus: true,
+          category: { select: { slug: true, name: true, parent: { select: { slug: true } } } },
+        },
+      })
+    : [];
+  const products = rows.sort((a, b) => topIds.indexOf(a.id) - topIds.indexOf(b.id));
+  const total = matchedIds.length;
 
   return {
-    categories: categories.map((c) => ({ slug: c.slug, name: c.name, parentName: c.parent?.name ?? null })),
+    categories,
     products: products.map((p) => ({
       slug: p.slug,
       name: p.name,

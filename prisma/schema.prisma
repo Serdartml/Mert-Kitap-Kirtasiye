@@ -144,11 +144,8 @@ model Product {
   @@index([brandId])
   @@index([isActive, isFeatured])
   @@index([isActive, createdAt])
-  // Arama (lib/catalog.ts: contains + insensitive → ILIKE '%...%') için trigram indeksleri.
-  // pg_trgm eklentisi migration'da açılır.
-  @@index([name(ops: raw("gin_trgm_ops"))], type: Gin)
-  @@index([description(ops: raw("gin_trgm_ops"))], type: Gin)
-  @@index([sku(ops: raw("gin_trgm_ops"))], type: Gin)
+  // Arama indeksleri (name / description / sku üzerinde katlanmış ifade, trigram) Prisma şemasında ifade
+  // olarak yazılamadığından yalnızca migration'dadır: arama_katlama_indeksleri. İfade lib/search.ts ile aynı olmalı.
 }
 
 model ProductImage {
