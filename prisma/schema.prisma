@@ -111,13 +111,13 @@ model Brand {
 }
 
 model Product {
-  id          String  @id @default(cuid())
-  slug        String  @unique
-  sku         String  @unique
+  id             String  @id @default(cuid())
+  slug           String  @unique
+  sku            String  @unique
   // Stok programından içe aktarmada ve görsel eşleştirmede anahtar olarak kullanılır.
-  barcode     String? @unique
-  name        String
-  description String?
+  barcode        String? @unique
+  name           String
+  description    String?
   // Fiyatlar kuruş cinsinden tam sayı tutulur (KDV dahil).
   priceKurus     Int
   compareAtKurus Int?
@@ -143,6 +143,12 @@ model Product {
   @@index([categoryId])
   @@index([brandId])
   @@index([isActive, isFeatured])
+  @@index([isActive, createdAt])
+  // Arama (lib/catalog.ts: contains + insensitive → ILIKE '%...%') için trigram indeksleri.
+  // pg_trgm eklentisi migration'da açılır.
+  @@index([name(ops: raw("gin_trgm_ops"))], type: Gin)
+  @@index([description(ops: raw("gin_trgm_ops"))], type: Gin)
+  @@index([sku(ops: raw("gin_trgm_ops"))], type: Gin)
 }
 
 model ProductImage {
@@ -222,16 +228,17 @@ model Order {
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
 
-  @@index([userId])
+  @@index([userId, createdAt])
   @@index([status])
+  @@index([createdAt])
 }
 
 model OrderItem {
-  id        String   @id @default(cuid())
-  orderId   String
-  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  productId String?
-  product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  id             String   @id @default(cuid())
+  orderId        String
+  order          Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId      String?
+  product        Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
   // Ürün sonradan değişse de sipariş kaydı bozulmasın diye kopya alanlar.
   name           String
   sku            String
@@ -251,6 +258,8 @@ model Favorite {
   createdAt DateTime @default(now())
 
   @@id([userId, productId])
+  @@index([userId, createdAt])
+  @@index([productId])
 }
 
 model Review {
@@ -265,6 +274,8 @@ model Review {
   createdAt  DateTime @default(now())
 
   @@unique([productId, userId])
+  @@index([productId, isApproved, createdAt])
+  @@index([isApproved, createdAt])
 }
 
 // Deneme sınırlama sayaçları (lib/rate-limit.ts). Anahtar özetlenmiş IP / e-posta içerir.
