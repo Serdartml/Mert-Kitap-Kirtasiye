@@ -6,16 +6,18 @@ import { io, revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { after } from "next/server";
 import { z } from "zod";
-import { createSession, destroySession, hashSessionToken, safeNextPath } from "@/lib/auth";
+import { createSession, destroySession, getCurrentUser, hashSessionToken, LOGIN_PATH, safeNextPath } from "@/lib/auth";
 import { attachCartToUser, releaseCartCookie } from "@/lib/cart";
 import { db } from "@/lib/db";
+import { issueEmailVerification } from "@/lib/email-verification";
 import { sendMail } from "@/lib/mail";
 import { passwordResetMail } from "@/lib/mail-templates";
 import { DUMMY_HASH, hashPassword, verifyPassword } from "@/lib/password";
 import { checkLimits, clearLimit, clientIp, LIMITS } from "@/lib/rate-limit";
 
 // Müşteri üyeliği: kayıt, giriş, çıkış. Yönetici girişi ayrı (actions/auth.ts); oturum altyapısı ortak.
-// Parola sıfırlama e-posta ile yapılır (aşağıda). E-posta doğrulama henüz yok (ayrı iş).
+// Parola sıfırlama ve e-posta doğrulama e-posta ile yapılır (aşağıda). Doğrulama girişi ya da sipariş vermeyi engellemez:
+// doğrulanmamış üyeye hesap sayfasında hatırlatma gösterilir.
 
 export interface FormState {
   error: string;
@@ -65,6 +67,10 @@ export async function register(_prev: FormState, formData: FormData): Promise<Fo
     }
     throw error;
   }
+
+  // Doğrulama bağlantısı gönderilir; gönderilemese de kayıt tamamdır (hesap sayfasından yeniden istenebilir).
+  const verification = await issueEmailVerification({ id: userId, email, name }).catch(() => null);
+  if (verification) after(() => sendMail(verification));
 
   return signIn(userId, formData.get("sonra"));
 }
@@ -172,6 +178,50 @@ export async function resetPassword(_prev: FormState, formData: FormData): Promi
   await clearLimit(`login-email:${reset.user.email}`);
 
   redirect("/giris?sifre=yenilendi");
+}
+
+// ---------- E-posta doğrulama ----------
+
+// Bağlantı e-postadaki adrese gider ve bir düğmeyle onaylanır: bazı e-posta servisleri bağlantıları kendiliğinden açar,
+// doğrulama yalnızca açılmakla (GET) olsaydı kullanıcı adına yanlışlıkla gerçekleşirdi.
+export async function verifyEmail(_prev: FormState, formData: FormData): Promise<FormState> {
+  const token = text(formData, "token");
+  if (token.length < 10 || token.length > 200) return { error: "Bu bağlantı geçersiz." };
+
+  const blocked = await checkLimits([{ key: `verify-use-ip:${await clientIp()}`, limit: LIMITS.verifyUseIp }]);
+  if (blocked) return { error: blocked };
+
+  const invalid = { error: "Bu bağlantı geçersiz ya da süresi dolmuş. Hesabım sayfasından yeni bir bağlantı isteyin." };
+  const verification = await db.emailVerification.findUnique({ where: { tokenHash: hashSessionToken(token) } });
+  await io();
+  if (!verification || verification.expiresAt < new Date()) return invalid;
+
+  // Tek kullanımlık: koşullu silme iki isteğin aynı bağlantıyla geçmesini engeller.
+  const claimed = await db.emailVerification.deleteMany({ where: { id: verification.id } });
+  if (claimed.count !== 1) return invalid;
+  await db.user.updateMany({ where: { id: verification.userId, emailVerifiedAt: null }, data: { emailVerifiedAt: new Date() } });
+
+  revalidatePath("/hesabim", "layout");
+  // Oturumu açıksa hesabına, değilse girişe döner.
+  redirect((await getCurrentUser()) ? "/hesabim?eposta=dogrulandi" : "/giris?eposta=dogrulandi");
+}
+
+export interface ResendState {
+  error: string;
+  message?: string;
+}
+
+export async function resendVerification(): Promise<ResendState> {
+  const user = await getCurrentUser();
+  if (!user) redirect(`${LOGIN_PATH}?sonra=${encodeURIComponent("/hesabim")}`);
+  if (user.emailVerifiedAt) return { error: "", message: "E-posta adresiniz zaten doğrulanmış." };
+
+  const blocked = await checkLimits([{ key: `verify-resend:${user.id}`, limit: LIMITS.verifyResendUser }]);
+  if (blocked) return { error: blocked };
+
+  const mail = await issueEmailVerification(user);
+  after(() => sendMail(mail));
+  return { error: "", message: `Doğrulama bağlantısı ${user.email} adresine gönderildi. Gelen kutunuzu (ve gereksiz klasörünü) kontrol edin.` };
 }
 
 export async function logout(): Promise<void> {

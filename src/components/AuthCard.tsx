@@ -7,7 +7,7 @@ import { getCurrentUser, safeNextPath } from "@/lib/auth";
 
 interface AuthCardProps {
   mode: "login" | "register";
-  searchParams: Promise<{ sonra?: string; sifre?: string }>;
+  searchParams: Promise<{ sonra?: string; sifre?: string; eposta?: string }>;
 }
 
 const copy = {
@@ -63,7 +63,7 @@ export default function AuthCard({ mode, searchParams }: AuthCardProps) {
 }
 
 async function AuthFormWithNext({ mode, searchParams }: AuthCardProps) {
-  const { sonra, sifre } = await searchParams;
+  const { sonra, sifre, eposta } = await searchParams;
   // Zaten giriş yapmış biri formu görmez.
   if (await getCurrentUser()) redirect(safeNextPath(sonra));
   return (
@@ -71,6 +71,11 @@ async function AuthFormWithNext({ mode, searchParams }: AuthCardProps) {
       {mode === "login" && sifre === "yenilendi" && (
         <p role="status" className="mb-4 rounded-xl bg-green-100 p-3 text-sm font-semibold text-green-800 dark:bg-green-950 dark:text-green-300">
           Parolanız yenilendi. Yeni parolanızla giriş yapabilirsiniz.
+        </p>
+      )}
+      {mode === "login" && eposta === "dogrulandi" && (
+        <p role="status" className="mb-4 rounded-xl bg-green-100 p-3 text-sm font-semibold text-green-800 dark:bg-green-950 dark:text-green-300">
+          E-posta adresiniz doğrulandı. Giriş yapabilirsiniz.
         </p>
       )}
       <AuthForm mode={mode} next={sonra ? safeNextPath(sonra) : undefined} />

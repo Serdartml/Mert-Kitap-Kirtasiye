@@ -46,6 +46,18 @@ npm run admin:create -- ornek@eposta.com
 Parola sorulur (en az 10 karakter). Hesaplar veritabanında durur; her ortam (yerel, canlı) için
 kendi veritabanında ayrıca oluşturulmalıdır.
 
+**Excel'den ürün aktarma** (`/yonetim/urunler/ice-aktar`): stok programından alınan `.xlsx` dosyası yüklenir (`.xls` ve CSV
+desteklenmez), sütunlar başlıklardan otomatik eşlenir (elle değiştirilebilir; Turna'nın gerçek başlıkları örnek dosya
+gelince `lib/product-import.ts` içindeki `ALIASES`'e eklenir), önizleme ne ekleneceğini/güncelleneceğini/atlanacağını
+gösterir, onaylanınca tek işlemde yazılır (hata olursa hiçbir şey değişmez). İki mod: *yalnızca stok ve fiyat* (yeni ürün
+eklenmez; günlük güncelleme için) ve *ürünleri içe aktar* (yeni ürün ekler; ad, kategori, marka, açıklama da güncellenir).
+Eşleştirme stok koduna (`sku`), yoksa barkoda göre yapılır. Görseller, "öne çıkan" işareti ve ürün adresi (slug) korunur.
+"Açık siparişlerin ayırdığı stoğu düş" (varsayılan açık): sipariş verilince stok sitede hemen düşer ama Turna'da ürün
+teslim edilince düşer; açık siparişlerin (`PENDING/PAID/PREPARING/SHIPPED`) adedi yazılan stoktan çıkarılır, yoksa her aktarım
+ayrılmış ürünleri yeniden satışa açardı. Fiyatlar KDV hariçse oran seçilir. Dosya en fazla 4 MB (Vercel istek sınırı 4,5 MB;
+`next.config.ts` içindeki `serverActions.bodySizeLimit`). Mantık `lib/product-import.ts` (saf, testli), veritabanı
+işlemleri `actions/product-import.ts` içindedir; güncellemeler yüzlerce satırlık tek SQL ile yapılır.
+
 Yeni bir yönetim sayfası veya action yazarken ilk satırda `await requireAdmin()` çağırın; layout'taki
 kontrol tek başına yetmez.
 
@@ -131,6 +143,21 @@ deneme sayısı sınırlıdır). İşlemler `src/actions/profile.ts` içinde; he
 Yönetim paneli özetinde son 14 günün sipariş sayısı ve ciro grafiği ile son 30 günün en çok satanları vardır
 (`DailyBars`, `getDailyOrderStats`, `getTopSoldProducts`); iptal ve iade edilen siparişler sayılmaz.
 
+## E-posta doğrulama
+
+Kayıtta doğrulama bağlantısı gönderilir (`lib/email-verification.ts`, 24 saat geçerli, tek kullanımlık; veritabanında yalnızca
+token özeti). Bağlantı `/eposta-dogrula` sayfasını açar ve bir "Doğrula" düğmesiyle onaylanır: e-posta servisleri bağlantıları
+kendiliğinden açabildiği için doğrulama yalnızca GET ile yapılmaz. Doğrulama giriş ya da sipariş vermeyi **engellemez**;
+doğrulanmamış üyeye `/hesabim` sayfalarında hatırlatma ve "yeniden gönder" (saatte 3) çıkar. Kayıt öncesi üyelerin
+`emailVerifiedAt` değeri boştur, onlara da hatırlatma çıkar. Üye e-postasını değiştiremediği için yeniden doğrulama akışı yoktur.
+
+## Günlük temizlik
+
+`vercel.json` her gün 03:00'te (UTC) `/api/cron/temizlik` adresini çağırır (`lib/cleanup.ts`): süresi dolmuş oturumlar, deneme
+sınırı sayaçları, kullanılmış/süresi dolmuş parola sıfırlama ve e-posta doğrulama kayıtları silinir. Uç nokta `CRON_SECRET`
+ortam değişkeni olmadan kapalıdır (401); Vercel'de bu değişkeni uzun rastgele bir değerle tanımlayın, Vercel çağrıya
+`Authorization: Bearer` başlığını kendisi ekler. Yerelde: `curl -H "Authorization: Bearer $CRON_SECRET" localhost:3000/api/cron/temizlik`.
+
 ## Deneme sınırı
 
 Giriş (müşteri ve yönetici), kayıt ve iletişim formu `src/lib/rate-limit.ts` ile sınırlıdır; sayaçlar
@@ -175,9 +202,9 @@ src/app/globals.css       renk paleti ve ortak sınıflar
 
 - **Yasal metinler:** `/bilgi/*` taslakları `src/lib/legal-content.ts` içinde yazıldı (mağazadan teslim, ödeme mağazada akışına göre). Hukuki onay gelene kadar `legalReviewed = false`: sayfada "taslak" uyarısı var ve `noindex`. Onaydan sonra `legalOwner` (unvan, vergi dairesi/no, MERSİS) doldurulup `legalReviewed = true` yapılmalı. Online ödeme/kargo gelince sözleşme ve iade metinleri güncellenmeli.
 - **Ürün görselleri:** Yönetim panelinde görsel yükleme yok (Cloudflare R2 kararlaştırıldı, hesap bilgileri bekleniyor). Görseli olmayan ürünlerde kategori ikonlu yer tutucu çıkar. Şemada `ProductImage` hazır.
-- **Toplu ürün aktarımı:** Dükkânın stok programından (Turna Yazılım, ~10 bin ürün) içe aktarma yok; örnek dışa aktarım bekleniyor. Anahtar alanlar: `barcode`, `sku`. Canlıya çıkmadan önce `db:seed` örnek kataloğu gerçek veriyle değiştirilmeli.
+- **Toplu ürün aktarımı:** Excel (.xlsx) ile içe aktarma hazır (yukarıda, Yönetim paneli). Turna'nın gerçek sütun adları ve fiyatın KDV durumu örnek dışa aktarım gelince netleşecek (sütunlar arayüzden elle de eşlenebilir). Düzenli otomatik stok eşitleme yok: dükkândaki bilgisayardan siteye gönderen bir yol Turna'nın API'sine/otomatik dışa aktarımına bağlı; şimdilik günlük elle yükleme. Canlıya çıkmadan önce `db:seed` örnek kataloğu gerçek veriyle değiştirilmeli.
 - **Online ödeme ve kargo:** Yok (iyzico / PayTR seçimi bekliyor). Şimdilik yalnızca mağazadan teslim. Stok sipariş anında düşülür; ödeme gelince onay anına alınmalı (`actions/order.ts`).
-- **E-posta:** `lib/mail.ts` (Resend) ve `lib/mail-templates.ts` hazır: sipariş onayı, durum değişikliği (müşteriye), yeni sipariş / yeni mesaj (mağazaya) ve parola sıfırlama (`/sifremi-unuttum`). `RESEND_API_KEY` yokken gönderilmez, konsola yazılır. Gerçek gönderim için Resend hesabı + doğrulanmış alan adı gerekir (`.env.example`). E-posta doğrulama (kayıtta) henüz yok.
+- **E-posta:** `lib/mail.ts` (Resend) ve `lib/mail-templates.ts` hazır: sipariş onayı, durum değişikliği (müşteriye), yeni sipariş / yeni mesaj (mağazaya) ve parola sıfırlama (`/sifremi-unuttum`). `RESEND_API_KEY` yokken gönderilmez, konsola yazılır. Gerçek gönderim için Resend hesabı + doğrulanmış alan adı gerekir (`.env.example`). E-posta doğrulama (kayıtta) hazır, bkz. "E-posta doğrulama".
 - **Yorumlar ve markalar:** Hazır. Üyeler ürün sayfasındaki "Yorumlar" sekmesinden puan + yorum yazar (üye başına ürün başına tek yorum, saatte 5 sınırı); yorum `/yonetim/yorumlar`dan onaylanana kadar görünmez, ortalama puan ürün sayfasında ve JSON-LD'de çıkar. Markalar `/yonetim/markalar`da yönetilir, ürün formundan seçilir (kategori sayfasındaki marka filtresi bunu kullanır). Ürün kartlarında puan yok. Yorumu yalnızca satın alanlarla sınırlamak istenirse `actions/reviews.ts` içinde sipariş kontrolü eklenmeli.
 - **Logo:** `src/components/Logo.tsx` içinde satır içi SVG olarak tabeladan yeniden çizildi; renkler tahmini (`BLUE`, `PINK`, `YELLOW`). Resmî renk kodları gelince yalnızca bu sabitler değişir. `src/app/icon.svg` aynı işaretten. Sitenin sarısı artık logonun limon sarısıdır (`#e9e61c`, `globals.css` içindeki `--color-brand-*` ölçeği; `Logo.tsx`'teki `YELLOW` ile aynı). Logo sarısı değişirse `--color-brand-*`, `CategoryArt`, e-posta şablonları ve `category-icons.ts` içindeki sabitler de güncellenmeli. Ürün renk paletindeki "Sarı" (`lib/colors.ts`) ürünün gerçek rengidir, marka rengi değildir.
 - **Veritabanı:** Geliştirme ve canlı için tek Neon veritabanı var. Canlı için ayrı veritabanı açılıp `npm run db:deploy` ve `npm run admin:create` orada çalıştırılmalı.

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Heart, LogOut, MapPin, Package, UserRound } from "lucide-react";
 import { logout } from "@/actions/account";
+import { VerifyEmailBanner } from "@/components/EmailVerification";
 
 export type AccountSection = "siparisler" | "favoriler" | "adresler" | "profil";
 
@@ -12,7 +13,7 @@ const sections = [
 ] as const;
 
 interface AccountFrameProps {
-  user: { name: string | null; email: string; role: string };
+  user: { name: string | null; email: string; role: string; emailVerifiedAt?: Date | null };
   active: AccountSection;
   // Sayfa genişliği: favoriler ızgara olduğundan geniş, diğerleri dar okunur.
   wide?: boolean;
@@ -70,7 +71,11 @@ export default function AccountFrame({ user, active, wide = false, children }: A
         </ul>
       </nav>
 
-      <div className="mt-6">{children}</div>
+      <div className="mt-6">
+        {/* null: doğrulanmamış. undefined (alan verilmemiş) hatırlatma göstermez. */}
+        {user.emailVerifiedAt === null && <VerifyEmailBanner email={user.email} />}
+        {children}
+      </div>
     </div>
   );
 }

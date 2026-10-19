@@ -11,6 +11,9 @@ const nextConfig: NextConfig = {
   // Geliştirme sunucusuna aynı ağdaki telefondan (http://192.168.x.x:3000) bağlanabilmek için.
   // Bu izin olmadan Next.js dev kaynaklarını engeller ve sayfadaki JavaScript telefonda çalışmaz.
   allowedDevOrigins: ["192.168.*.*", "10.*.*.*"],
+  // Yönetimdeki Excel içe aktarma (actions/product-import.ts) dosyayı action ile yükler; varsayılan 1 MB sınırı 10 bin
+  // ürünlük dosyaya yetmez. Vercel istek sınırı 4,5 MB olduğundan bunun üstüne çıkılamaz.
+  experimental: { serverActions: { bodySizeLimit: "4.5mb" } },
 };
 
 export default nextConfig;

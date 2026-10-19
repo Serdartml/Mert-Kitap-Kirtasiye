@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import type { Prisma } from "@prisma/client";
-import { Plus } from "lucide-react";
+import { FileSpreadsheet, Plus } from "lucide-react";
 import { setProductActive } from "@/actions/admin";
 import StatusNote from "@/components/admin/StatusNote";
 import { requireAdmin } from "@/lib/auth";
@@ -97,9 +97,14 @@ export default async function AdminProductsPage({ searchParams }: PageProps) {
         <h1 className="text-2xl font-extrabold">
           <span className="marker">Ürünler</span>
         </h1>
-        <Link href="/yonetim/urunler/yeni" className="btn btn-primary">
-          <Plus size={16} aria-hidden /> Yeni ürün
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link href="/yonetim/urunler/ice-aktar" className="btn btn-outline">
+            <FileSpreadsheet size={16} aria-hidden /> Excel&apos;den aktar
+          </Link>
+          <Link href="/yonetim/urunler/yeni" className="btn btn-primary">
+            <Plus size={16} aria-hidden /> Yeni ürün
+          </Link>
+        </div>
       </div>
 
       <div className="mt-5">

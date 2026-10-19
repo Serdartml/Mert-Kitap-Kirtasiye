@@ -18,7 +18,7 @@ export const metadata: Metadata = {
 };
 
 interface PageProps {
-  searchParams: Promise<{ tekrar?: string }>;
+  searchParams: Promise<{ tekrar?: string; eposta?: string }>;
 }
 
 export default function AccountPage(props: PageProps) {
@@ -32,7 +32,7 @@ export default function AccountPage(props: PageProps) {
 // Oturum çerezden okunur; hiç önbelleğe alınmaz.
 async function AccountContent({ searchParams }: PageProps) {
   const user = await requireUser("/hesabim");
-  const { tekrar } = await searchParams;
+  const { tekrar, eposta } = await searchParams;
 
   const orders = await db.order.findMany({
     where: { userId: user.id },
@@ -43,6 +43,11 @@ async function AccountContent({ searchParams }: PageProps) {
 
   return (
     <AccountFrame user={user} active="siparisler">
+      {eposta === "dogrulandi" && (
+        <p role="status" className="mb-4 rounded-xl bg-green-100 p-3 text-sm font-semibold text-green-800 dark:bg-green-950 dark:text-green-300">
+          E-posta adresiniz doğrulandı. Teşekkürler.
+        </p>
+      )}
       {tekrar === "stok-yok" && (
         <p role="alert" className="mb-4 rounded-xl border-2 border-brand-500 bg-brand-50 p-4 text-sm font-semibold">
           Bu siparişteki ürünler şu an stokta olmadığı ya da satıştan kalktığı için sepete eklenemedi.

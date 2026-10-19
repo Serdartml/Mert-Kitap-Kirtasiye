@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { sendMail } from "@/lib/mail";
-import { newContactAdminMail, orderConfirmationMail, passwordResetMail } from "@/lib/mail-templates";
+import { emailVerificationMail, newContactAdminMail, orderConfirmationMail, passwordResetMail } from "@/lib/mail-templates";
 
 const message = { to: "a@b.com", subject: "Konu", text: "metin", html: "<p>metin</p>" };
 
@@ -79,5 +79,14 @@ describe("e-posta şablonları", () => {
     const mail = passwordResetMail("a@b.com", null, "tok/en+1", 60);
     expect(mail.text).toContain("/sifre-sifirla?token=tok%2Fen%2B1");
     expect(mail.text).toContain("60 dakika");
+  });
+
+  it("e-posta doğrulama bağlantısını kaçışlayarak ve süresiyle yazar, adı kaçışlar", () => {
+    const mail = emailVerificationMail("a@b.com", "<b>Ali</b>", "tok/en+1", 24);
+    expect(mail.to).toBe("a@b.com");
+    expect(mail.text).toContain("/eposta-dogrula?token=tok%2Fen%2B1");
+    expect(mail.text).toContain("24 saat");
+    expect(mail.html).toContain("&lt;b&gt;Ali&lt;/b&gt;");
+    expect(mail.html).not.toContain("<b>Ali</b>");
   });
 });

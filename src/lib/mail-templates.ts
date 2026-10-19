@@ -114,6 +114,21 @@ export function newContactAdminMail(to: string, message: { name: string; email: 
   };
 }
 
+// E-posta adresini doğrulama bağlantısı (kayıttan sonra ve "yeniden gönder" ile).
+export function emailVerificationMail(to: string, name: string | null, token: string, validHours: number): MailMessage {
+  const link = absolute(`/eposta-dogrula?token=${encodeURIComponent(token)}`);
+  const greeting = name ? `Merhaba ${name},` : "Merhaba,";
+  return {
+    to,
+    subject: "E-posta adresinizi doğrulayın",
+    text: `${greeting}\n\n${site.name} hesabınızın e-posta adresini doğrulamak için aşağıdaki bağlantıyı açın ve "Doğrula" düğmesine basın. Bağlantı ${validHours} saat geçerlidir.\n\n${link}\n\nBu hesabı siz açmadıysanız bu e-postayı yok sayabilirsiniz.`,
+    html: layout(
+      "E-posta adresinizi doğrulayın",
+      `<p>${esc(greeting)}</p><p>Hesabınızın e-posta adresini doğrulamak için aşağıdaki düğmeyi açıp "Doğrula"ya basın. Bağlantı ${validHours} saat geçerlidir.</p>${button(link, "E-postamı doğrula")}<p style="font-size:13px;color:#78716c">Bu hesabı siz açmadıysanız bu e-postayı yok sayabilirsiniz.</p>`,
+    ),
+  };
+}
+
 // Parola sıfırlama bağlantısı.
 export function passwordResetMail(to: string, name: string | null, token: string, validMinutes: number): MailMessage {
   const link = absolute(`/sifre-sifirla?token=${encodeURIComponent(token)}`);
