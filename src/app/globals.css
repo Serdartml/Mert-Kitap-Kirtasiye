@@ -249,6 +249,18 @@
     background-size: 11px 11px;
   }
 
+  /* Dokuma kumaş (çanta): iki yönde ince çapraz çizgiler */
+  .pattern-weave {
+    background-image:
+      repeating-linear-gradient(45deg, var(--pattern-color) 0 1px, transparent 1px 9px),
+      repeating-linear-gradient(-45deg, var(--pattern-color) 0 1px, transparent 1px 9px);
+  }
+
+  /* Yapı oyuncağı tuğlası (oyuncak): sıralı çıkıntılar */
+  .pattern-studs {
+    background-image: radial-gradient(circle 4px at 12px 12px, var(--pattern-color) 98%, transparent);
+    background-size: 24px 24px;
+  }
   /* Üst menüde kategori adının altından geçen fosforlu kalem: üzerine gelince soldan sağa çizilir. */
   .marker-hover {
     background-image: linear-gradient(transparent 58%, var(--color-marker) 58%, var(--color-marker) 94%, transparent 94%);
@@ -913,6 +925,59 @@ html[data-welcome="play"] .welcome-surface {
   --color-marker: #7cdfcd;
 }
 
+[data-cat="canta-beslenme"] {
+  --color-brand-50: #ecf8ea;
+  --color-brand-100: #d6f0d3;
+  --color-brand-200: #b4e3ad;
+  --color-brand-300: #91d687;
+  --color-brand-400: #76cd6a;
+  --color-brand-500: #62c554;
+  --color-brand-600: #56ad4a;
+  --color-brand-700: #31632a;
+  --color-marker: #91d687;
+}
+
+.dark [data-cat="canta-beslenme"] {
+  --color-brand-50: #162115;
+  --color-brand-100: #1d2f1a;
+  --color-brand-200: #244021;
+  --color-marker: #2a4c25;
+}
+
+[data-cat="canta-beslenme"] .theme-fixed,
+[data-cat="canta-beslenme"].theme-fixed {
+  --color-brand-50: #ecf8ea;
+  --color-brand-100: #d6f0d3;
+  --color-brand-200: #b4e3ad;
+  --color-marker: #91d687;
+}
+
+[data-cat="oyuncak"] {
+  --color-brand-50: #fdebea;
+  --color-brand-100: #fcd4d1;
+  --color-brand-200: #f9afab;
+  --color-brand-300: #f68b84;
+  --color-brand-400: #f46f66;
+  --color-brand-500: #f2594f;
+  --color-brand-600: #d54e46;
+  --color-brand-700: #792d28;
+  --color-marker: #f68b84;
+}
+
+.dark [data-cat="oyuncak"] {
+  --color-brand-50: #261514;
+  --color-brand-100: #371b19;
+  --color-brand-200: #4c221f;
+  --color-marker: #5b2723;
+}
+
+[data-cat="oyuncak"] .theme-fixed,
+[data-cat="oyuncak"].theme-fixed {
+  --color-brand-50: #fdebea;
+  --color-brand-100: #fcd4d1;
+  --color-brand-200: #f9afab;
+  --color-marker: #f68b84;
+}
 /* Kaydırılabilir şeritlerde yönü gösteren oklar (vitrin kategori düğmeleri): iki yana hafifçe gidip gelir. */
 @keyframes nudge-x {
   0%,

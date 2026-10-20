@@ -101,6 +101,35 @@ const art: Record<string, ReactNode> = {
       )}
     </g>
   ),
+  // Sırt çantası ve matara
+  "canta-beslenme": (
+    <>
+      <path d="M92 44c0-14 8-22 18-22s18 8 18 22" />
+      <rect x="62" y="40" width="96" height="116" rx="28" fill={PAPER} />
+      <path d="M62 84c14 10 30 14 48 14s34-4 48-14" />
+      <rect x="80" y="106" width="60" height="38" rx="10" fill={YELLOW} />
+      <path d="M92 120h36" strokeWidth="3" />
+      <path d="M62 70c-14 2-22 12-22 28v28c0 8 6 12 12 12h10" fill={PAPER} />
+      <rect x="168" y="62" width="26" height="86" rx="9" fill={PAPER} />
+      <rect x="172" y="46" width="18" height="16" rx="4" fill={INK} />
+      <path d="M168 92h26M168 118h26" strokeWidth="3" />
+    </>
+  ),
+  // Üst üste yapı tuğlaları
+  oyuncak: (
+    <>
+      <rect x="22" y="104" width="84" height="48" rx="5" fill={PAPER} />
+      <rect x="34" y="94" width="20" height="10" rx="3" fill={PAPER} />
+      <rect x="74" y="94" width="20" height="10" rx="3" fill={PAPER} />
+      <rect x="106" y="104" width="92" height="48" rx="5" fill={YELLOW} />
+      <rect x="118" y="94" width="20" height="10" rx="3" fill={YELLOW} />
+      <rect x="150" y="94" width="20" height="10" rx="3" fill={YELLOW} />
+      <rect x="62" y="56" width="92" height="48" rx="5" fill={INK} />
+      <rect x="74" y="46" width="20" height="10" rx="3" fill={INK} />
+      <rect x="122" y="46" width="20" height="10" rx="3" fill={INK} />
+      <path d="M32 138h64M116 138h72" strokeWidth="3" />
+    </>
+  ),
 };
 
 export default function CategoryArt({ rootSlug, className = "" }: { rootSlug: string; className?: string }) {
