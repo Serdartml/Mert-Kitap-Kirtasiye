@@ -37,6 +37,7 @@ const existing: ExistingProduct[] = [
     description: null,
     priceKurus: 44990,
     compareAtKurus: null,
+    costKurus: null,
     stock: 10,
     isActive: true,
     categoryId: "c-kal",
@@ -70,6 +71,27 @@ describe("detectMapping", () => {
     expect(missingFields(mapping, "tam")).toEqual(["Ürün adı", "Satış fiyatı", "Stok adedi"]);
     expect(missingFields({ sku: 0, stock: 1 }, "stok")).toEqual([]);
     expect(missingFields({ stock: 1 }, "stok")).toHaveLength(1);
+  });
+});
+
+describe("alış fiyatı", () => {
+  const COST_HEADERS = ["Stok Kodu", "Ürün Adı", "Satış Fiyatı", "Alış Fiyatı", "Stok", "Kategori"];
+
+  it("başlığı tanır ve yeni ürüne yazar", () => {
+    expect(detectMapping(COST_HEADERS)).toMatchObject({ cost: 3 });
+    const plan = run([COST_HEADERS, ["N-1", "Yeni Defter", 95, "62,5", 4, "Kırtasiye > Defterler"]]);
+    expect(plan.errors).toEqual([]);
+    expect(plan.creates[0]).toMatchObject({ priceKurus: 9500, costKurus: 6250 });
+  });
+
+  it("boş ya da sıfır alış fiyatı mevcut değeri silmez; farklıysa günceller", () => {
+    const withCost: ExistingProduct[] = [{ ...existing[0], costKurus: 20000 }];
+    const sameSku = (cost: unknown) => [COST_HEADERS, ["K-100", "Klasik Dolma Kalem", 449.9, cost, 10, "Kalemler"]];
+    expect(run(sameSku(0), options(), { existing: withCost }).updates).toEqual([]);
+    expect(run(sameSku(null), options(), { existing: withCost }).updates).toEqual([]);
+    const changed = run(sameSku(250), options(), { existing: withCost }).updates[0];
+    expect(changed).toMatchObject({ costKurus: 25000 });
+    expect(changed.changes).toContain("alış fiyatı");
   });
 });
 

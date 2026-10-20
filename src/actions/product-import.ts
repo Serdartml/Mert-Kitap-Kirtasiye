@@ -1,6 +1,5 @@
 "use server";
 
-import { Prisma } from "@prisma/client";
 import { readSheet } from "read-excel-file/node";
 import { updateTag } from "next/cache";
 import { requireAdmin } from "@/lib/auth";
@@ -20,8 +19,7 @@ import {
   type Mapping,
   type RowIssue,
 } from "@/lib/product-import";
-import { foldTr } from "@/lib/search-fold";
-import { slugify } from "@/lib/slug";
+import { writePlan } from "@/lib/product-import-write";
 
 // Excel'den ürün içe aktarma (yönetim). Önizleme hiçbir şey yazmaz; uygulama dosyayı yeniden okuyup planı güncel
 // katalogla yeniden çıkarır ve tek işlemde yazar (bir hata olursa hiçbir değişiklik kalmaz). Sunucu action'ları
@@ -112,7 +110,7 @@ async function buildPlan({ data, mapping, options }: Loaded): Promise<ImportPlan
   const parsed = parseRows(data, mapping, options);
   const [existing, categories, brands, reservedRows] = await Promise.all([
     db.product.findMany({
-      select: { id: true, sku: true, barcode: true, slug: true, name: true, description: true, priceKurus: true, compareAtKurus: true, stock: true, isActive: true, categoryId: true, brandId: true },
+      select: { id: true, sku: true, barcode: true, slug: true, name: true, description: true, priceKurus: true, compareAtKurus: true, costKurus: true, stock: true, isActive: true, categoryId: true, brandId: true },
     }),
     db.category.findMany({ select: { id: true, name: true, parentId: true } }),
     db.brand.findMany({ select: { id: true, name: true } }),
@@ -160,16 +158,6 @@ export async function previewImport(formData: FormData): Promise<PreviewResult> 
   };
 }
 
-function uniqueSlug(name: string, used: Set<string>): string {
-  const base = slugify(name) || "kategori";
-  let slug = base;
-  for (let counter = 2; used.has(slug); counter++) slug = `${base.slice(0, 74)}-${counter}`;
-  used.add(slug);
-  return slug;
-}
-
-const chunks = <T>(items: T[], size: number): T[][] => Array.from({ length: Math.ceil(items.length / size) }, (_, index) => items.slice(index * size, (index + 1) * size));
-
 export async function applyImport(formData: FormData): Promise<ApplyResult> {
   await requireAdmin();
 
@@ -183,81 +171,7 @@ export async function applyImport(formData: FormData): Promise<ApplyResult> {
   }
 
   try {
-    const counts = await db.$transaction(
-      async (tx) => {
-        // 1) Kategoriler: yol ("Ana > Alt") ile bulunur ya da oluşturulur.
-        const allCategories = await tx.category.findMany({ select: { id: true, name: true, parentId: true, slug: true, sortOrder: true } });
-        const categorySlugs = new Set(allCategories.map((category) => category.slug));
-        let sortOrder = allCategories.reduce((max, category) => Math.max(max, category.sortOrder), 0);
-        const created = new Map<string, string>();
-        let newCategoryCount = 0;
-
-        const ensure = async (name: string, parentId: string | null): Promise<string> => {
-          const key = `${parentId ?? ""}|${foldTr(name)}`;
-          const known = created.get(key) ?? allCategories.find((category) => category.parentId === parentId && foldTr(category.name) === foldTr(name))?.id;
-          if (known) return known;
-          const category = await tx.category.create({ data: { name, slug: uniqueSlug(name, categorySlugs), parentId, sortOrder: ++sortOrder }, select: { id: true } });
-          created.set(key, category.id);
-          newCategoryCount++;
-          return category.id;
-        };
-        const resolveCategory = async (target: CategoryTarget): Promise<string> => {
-          if ("id" in target) return target.id;
-          const rootId = await ensure(target.path[0], null);
-          return target.path.length === 2 ? ensure(target.path[1], rootId) : rootId;
-        };
-
-        // 2) Markalar.
-        const brandRows = await tx.brand.findMany({ select: { id: true, name: true, slug: true } });
-        const brandSlugs = new Set(brandRows.map((brand) => brand.slug));
-        const brandIds = new Map(brandRows.map((brand) => [foldTr(brand.name), brand.id]));
-        for (const name of plan.newBrands) {
-          const brand = await tx.brand.create({ data: { name, slug: uniqueSlug(name, brandSlugs) }, select: { id: true } });
-          brandIds.set(foldTr(name), brand.id);
-        }
-        const brandId = (name: string | null) => (name ? (brandIds.get(foldTr(name)) ?? null) : null);
-
-        // 3) Yeni ürünler.
-        const createData: Prisma.ProductCreateManyInput[] = [];
-        for (const create of plan.creates) {
-          createData.push({
-            sku: create.sku,
-            barcode: create.barcode,
-            name: create.name,
-            slug: create.slug,
-            description: create.description,
-            priceKurus: create.priceKurus,
-            compareAtKurus: create.compareAtKurus,
-            stock: create.stock,
-            isActive: create.isActive,
-            categoryId: await resolveCategory(create.category),
-            brandId: brandId(create.brandName),
-          });
-        }
-        for (const part of chunks(createData, 1000)) await tx.product.createMany({ data: part });
-
-        // 4) Güncellemeler: tek SQL ile yüzlerce satır (satır satır güncelleme 10 bin üründe zaman aşımına düşerdi).
-        for (const part of chunks(plan.updates, 500)) {
-          const values: Prisma.Sql[] = [];
-          for (const update of part) {
-            const categoryId = await resolveCategory(update.category);
-            const brand = update.brandName ? brandId(update.brandName) : update.brandId;
-            values.push(
-              Prisma.sql`(${update.id}::text, ${update.name}::text, ${update.description}::text, ${update.priceKurus}::int, ${update.compareAtKurus}::int, ${update.stock}::int, ${update.isActive}::boolean, ${categoryId}::text, ${brand}::text, ${update.barcode}::text)`,
-            );
-          }
-          await tx.$executeRaw`
-            UPDATE "Product" AS p SET
-              "name" = v."name", "description" = v."description", "priceKurus" = v."priceKurus",
-              "compareAtKurus" = v."compareAtKurus", "stock" = v."stock", "isActive" = v."isActive",
-              "categoryId" = v."categoryId", "brandId" = v."brandId", "barcode" = v."barcode", "updatedAt" = now()
-            FROM (VALUES ${Prisma.join(values)}) AS v("id", "name", "description", "priceKurus", "compareAtKurus", "stock", "isActive", "categoryId", "brandId", "barcode")
-            WHERE p."id" = v."id"`;
-        }
-        return { newCategoryCount };
-      },
-      { timeout: 55_000, maxWait: 10_000 },
-    );
+    const counts = await db.$transaction((tx) => writePlan(tx, plan), { timeout: 55_000, maxWait: 10_000 });
 
     updateTag(CATALOG_TAG);
     return {

@@ -26,6 +26,7 @@ export const IMPORT_FIELDS = [
   { key: "name", label: "Ürün adı", hint: "Yeni ürün eklerken gerekli" },
   { key: "price", label: "Satış fiyatı", hint: "KDV dahil" },
   { key: "compareAt", label: "Eski fiyat", hint: "İndirim gösterimi için, isteğe bağlı" },
+  { key: "cost", label: "Alış fiyatı", hint: "Yalnızca yönetimde görünür, isteğe bağlı" },
   { key: "stock", label: "Stok adedi", hint: "" },
   { key: "category", label: "Kategori", hint: "“Ana > Alt” ya da tek ad" },
   { key: "brand", label: "Marka", hint: "İsteğe bağlı" },
@@ -45,6 +46,7 @@ const ALIASES: Record<FieldKey, string[]> = {
   name: ["urunadi", "stokadi", "urunismi", "stokismi", "isim", "adi", "ad", "malinadi", "urun", "malcinsi", "urunaciklamasi"],
   price: ["satisfiyati", "satisfiyat", "fiyat", "perakendefiyat", "kdvlifiyat", "kdvdahilfiyat", "birimfiyat", "tutar", "etiketfiyati"],
   compareAt: ["eskifiyat", "indirimsizfiyat", "listefiyati", "listefiyat", "uzerinecizilifiyat"],
+  cost: ["alisfiyati", "alisfiyat", "alis", "maliyet", "maliyetfiyati", "birimalis", "alisbedeli", "birimmaliyet"],
   stock: ["stokadedi", "stok", "miktar", "adet", "mevcut", "bakiye", "stokmiktari", "kalan", "mevcutstok"],
   category: ["kategori", "kategoriadi", "grup", "grubu", "stokgrubu", "anagrup", "urungrubu"],
   brand: ["marka", "markaadi", "uretici"],
@@ -97,6 +99,8 @@ export interface ParsedRow {
   priceKurus: number | null;
   // undefined: sütun eşlenmemiş (dokunma); null: sütun var ama boş (eski fiyatı kaldır).
   compareAtKurus: number | null | undefined;
+  // Alış fiyatı; null: dosyada yok / boş / sıfır (mevcut değer korunur).
+  costKurus: number | null;
   stock: number | null;
   categoryPath: string[] | null;
   brandName: string | null;
@@ -211,6 +215,13 @@ export function parseRows(data: unknown[][], mapping: Mapping, options: Pick<Imp
       }
     }
 
+    let costKurus: number | null = null;
+    if (mapping.cost !== undefined) {
+      const parsedCost = cellKurus(get(row, "cost"), options.vatPercent);
+      if (parsedCost === "invalid") warn("Alış fiyatı geçersiz; yok sayıldı.");
+      else if (parsedCost) costKurus = parsedCost;
+    }
+
     let stock: number | null = null;
     const stockRaw = get(row, "stock");
     if (mapping.stock !== undefined) {
@@ -252,6 +263,7 @@ export function parseRows(data: unknown[][], mapping: Mapping, options: Pick<Imp
       name,
       priceKurus: priceCell,
       compareAtKurus: compareAt,
+      costKurus,
       stock,
       categoryPath,
       brandName: cellText(get(row, "brand")).slice(0, 80) || null,
@@ -273,6 +285,7 @@ export interface ExistingProduct {
   description: string | null;
   priceKurus: number;
   compareAtKurus: number | null;
+  costKurus: number | null;
   stock: number;
   isActive: boolean;
   categoryId: string;
@@ -302,6 +315,7 @@ export interface PlannedCreate {
   description: string | null;
   priceKurus: number;
   compareAtKurus: number | null;
+  costKurus: number | null;
   stock: number;
   isActive: boolean;
   category: CategoryTarget;
@@ -318,6 +332,7 @@ export interface PlannedUpdate {
   description: string | null;
   priceKurus: number;
   compareAtKurus: number | null;
+  costKurus: number | null;
   stock: number;
   isActive: boolean;
   category: CategoryTarget;
@@ -439,6 +454,10 @@ export function planImport(input: PlanInput, parseErrors: RowIssue[] = [], parse
           next.compareAtKurus = compare;
         }
       }
+      if (row.costKurus !== null && row.costKurus !== found.costKurus) {
+        changes.push("alış fiyatı");
+        next.costKurus = row.costKurus;
+      }
       if (row.isActive !== null && row.isActive !== found.isActive) {
         changes.push(row.isActive ? "yayına alındı" : "yayından kalktı");
         next.isActive = row.isActive;
@@ -493,6 +512,7 @@ export function planImport(input: PlanInput, parseErrors: RowIssue[] = [], parse
         description: next.description,
         priceKurus: next.priceKurus,
         compareAtKurus: next.compareAtKurus,
+        costKurus: next.costKurus,
         stock: next.stock,
         isActive: next.isActive,
         category: next.categoryTarget,
@@ -547,6 +567,7 @@ export function planImport(input: PlanInput, parseErrors: RowIssue[] = [], parse
       description: row.description,
       priceKurus: row.priceKurus,
       compareAtKurus: row.compareAtKurus ?? null,
+      costKurus: row.costKurus,
       stock: row.stock ?? 0,
       isActive: row.isActive ?? true,
       category: resolved.target,

@@ -14,7 +14,8 @@ export const productCardInclude = {
   images: { orderBy: { sortOrder: "asc" }, take: 1 },
 } satisfies Prisma.ProductInclude;
 
-export type ProductCardData = Prisma.ProductGetPayload<{ include: typeof productCardInclude }>;
+// costKurus (alış fiyatı) lib/db.ts'te varsayılan olarak çıkarılır; vitrin verisinde bulunmaz.
+export type ProductCardData = Omit<Prisma.ProductGetPayload<{ include: typeof productCardInclude }>, "costKurus">;
 
 export const sortOptions = [
   { key: "onerilen", label: "Önerilen" },
@@ -168,7 +169,8 @@ export async function getFilterOptions(categoryIds: string[]) {
   const where: Prisma.ProductWhereInput = { isActive: true, categoryId: { in: categoryIds } };
   const [brands, range] = await Promise.all([
     db.brand.findMany({
-      where: { products: { some: where } },
+      // Toptancı olarak işaretlenen markalar müşteriye listelenmez.
+      where: { isWholesaler: false, products: { some: where } },
       select: { slug: true, name: true },
       orderBy: { name: "asc" },
     }),
@@ -460,12 +462,26 @@ export async function getPrerenderProductSlugs() {
   cacheLife("hours");
   cacheTag(CATALOG_TAG);
 
-  const products = await db.product.findMany({
+  const PRERENDER_LIMIT = 50;
+  const featured = await db.product.findMany({
     where: { isActive: true, isFeatured: true },
     select: { slug: true },
-    take: 50,
+    take: PRERENDER_LIMIT,
   });
-  return products.map((product) => product.slug);
+  // Öne çıkan yoksa (ya da azsa) en yeni stoklu ürünlerle tamamlanır.
+  const fill =
+    featured.length < PRERENDER_LIMIT
+      ? await db.product.findMany({
+          where: { isActive: true, stock: { gt: 0 }, slug: { notIn: featured.map((product) => product.slug) } },
+          select: { slug: true },
+          orderBy: { createdAt: "desc" },
+          take: PRERENDER_LIMIT - featured.length,
+        })
+      : [];
+  const slugs = [...featured, ...fill].map((product) => product.slug);
+  // Cache Components, generateStaticParams'ın en az bir sonuç döndürmesini ister; katalog boşsa (ör. ürünler silinmişken)
+  // var olmayan bir adres verilir, bu sayfa zaten 404 döner.
+  return slugs.length > 0 ? slugs : ["urun-bulunamadi"];
 }
 
 export async function getSitemapEntries() {

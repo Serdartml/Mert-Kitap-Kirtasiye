@@ -162,13 +162,16 @@ async function ProductContent({ slug }: { slug: string }) {
     { label: product.name },
   ];
 
+  // Toptancı olarak işaretlenen markanın adı müşteriye (sayfada ve yapısal veride) gösterilmez.
+  const publicBrand = product.brand && !product.brand.isWholesaler ? product.brand : null;
+
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Product",
     name: product.name,
     description: product.description ?? undefined,
     sku: product.sku,
-    brand: product.brand ? { "@type": "Brand", name: product.brand.name } : undefined,
+    brand: publicBrand ? { "@type": "Brand", name: publicBrand.name } : undefined,
     aggregateRating:
       average !== null ? { "@type": "AggregateRating", ratingValue: average, reviewCount: reviews.length } : undefined,
     offers: {
@@ -204,7 +207,7 @@ async function ProductContent({ slug }: { slug: string }) {
         />
 
         <div>
-          {product.brand && <p className="text-sm font-bold text-neutral-500">{product.brand.name}</p>}
+          {publicBrand && <p className="text-sm font-bold text-neutral-500">{publicBrand.name}</p>}
           <div className="flex items-start justify-between gap-3">
             <h1 className="min-w-0 text-2xl font-extrabold leading-tight md:text-3xl">{product.name}</h1>
             <Suspense fallback={<ProductFavoriteFallback />}>
