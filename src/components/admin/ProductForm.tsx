@@ -13,6 +13,7 @@ export interface ProductFormValues {
   barcode: string;
   price: string;
   compareAt: string;
+  cost: string;
   stock: number;
   categoryId: string;
   brandId: string;
@@ -93,7 +94,7 @@ export default function ProductForm({
         </label>
       </fieldset>
 
-      <fieldset className="grid gap-4 rounded-xl border border-neutral-200 bg-raised p-5 sm:grid-cols-3">
+      <fieldset className="grid gap-4 rounded-xl border border-neutral-200 bg-raised p-5 sm:grid-cols-2">
         <legend className="px-1 text-sm font-extrabold">Fiyat ve stok</legend>
         <label className={label}>
           Satış fiyatı (TL)
@@ -104,6 +105,11 @@ export default function ProductForm({
           Eski fiyat (TL)
           <input name="compareAt" defaultValue={values.compareAt} inputMode="decimal" className="field mt-1.5 font-normal" placeholder="549,90" />
           <span className={hint}>İndirim yoksa boş bırakın.</span>
+        </label>
+        <label className={label}>
+          Alış fiyatı (TL)
+          <input name="cost" defaultValue={values.cost} inputMode="decimal" className="field mt-1.5 font-normal" placeholder="249,90" />
+          <span className={hint}>Yalnızca yönetimde görünür; sitede hiçbir yerde gösterilmez.</span>
         </label>
         <label className={label}>
           Stok adedi

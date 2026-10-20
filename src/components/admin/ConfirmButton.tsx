@@ -7,6 +7,8 @@ interface ConfirmButtonProps {
   className?: string;
   children: ReactNode;
   "aria-label"?: string;
+  // Düğme başka bir formun içindeyse (iç içe form olmaz) kendi eylemini taşır.
+  formAction?: (formData: FormData) => void | Promise<void>;
 }
 
 // Geri alınamayan işlemler (silme) için: formu göndermeden önce tarayıcının onay kutusunu açar.

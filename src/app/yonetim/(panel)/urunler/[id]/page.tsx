@@ -20,7 +20,7 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
   const { id } = await params;
 
   const [product, categories, brands] = await Promise.all([
-    db.product.findUnique({ where: { id }, include: { attributes: { orderBy: { sortOrder: "asc" } } } }),
+    db.product.findUnique({ where: { id }, omit: { costKurus: false }, include: { attributes: { orderBy: { sortOrder: "asc" } } } }),
     getCategoryOptions(),
     db.brand.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }),
   ]);
@@ -61,6 +61,7 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
           barcode: product.barcode ?? "",
           price: kurusToInput(product.priceKurus),
           compareAt: kurusToInput(product.compareAtKurus),
+          cost: kurusToInput(product.costKurus),
           stock: product.stock,
           categoryId: product.categoryId,
           description: product.description ?? "",

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { saveBrand } from "@/actions/admin";
 import { useServerForm } from "./useServerForm";
 
-export default function BrandForm({ values }: { values: { id?: string; name: string; slug: string } }) {
+export default function BrandForm({ values }: { values: { id?: string; name: string; slug: string; isWholesaler: boolean } }) {
   const { state, pending, onSubmit } = useServerForm(saveBrand);
 
   return (
@@ -20,6 +20,16 @@ export default function BrandForm({ values }: { values: { id?: string; name: str
         <input name="slug" defaultValue={values.slug} maxLength={80} className="field mt-1.5 font-normal" placeholder="bos-birakilirsa-addan-uretilir" />
         <span className="mt-1 block text-xs font-normal text-neutral-500">
           Kategori sayfalarındaki marka filtresinin adres parametresi (?marka=…). Değiştirmek eski filtre bağlantılarını kırar.
+        </span>
+      </label>
+
+      <label className="flex items-start gap-3 text-sm font-bold">
+        <input type="checkbox" name="isWholesaler" defaultChecked={values.isWholesaler} className="mt-0.5 size-5 shrink-0 accent-brand-500" />
+        <span>
+          Toptancı / dağıtıcı
+          <span className="mt-1 block text-xs font-normal text-neutral-500">
+            İşaretlenirse bu ad yalnızca yönetim panelinde görünür; ürün sayfasında ve kategori sayfasındaki marka filtresinde müşteriye gösterilmez.
+          </span>
         </span>
       </label>
 

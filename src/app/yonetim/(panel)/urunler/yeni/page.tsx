@@ -32,6 +32,7 @@ export default async function NewProductPage() {
           barcode: "",
           price: "",
           compareAt: "",
+          cost: "",
           stock: 0,
           categoryId: "",
           description: "",

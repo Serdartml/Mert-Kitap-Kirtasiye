@@ -1,9 +1,24 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import Link from "next/link";
-import type { Prisma } from "@prisma/client";
-import { FileSpreadsheet, Plus } from "lucide-react";
-import { setProductActive } from "@/actions/admin";
+import { ArrowDown, ArrowUp, ArrowUpDown, FileSpreadsheet, Plus } from "lucide-react";
+import { deleteProducts, setProductActive } from "@/actions/admin";
+import BulkSelect, { BulkCheckbox } from "@/components/admin/BulkSelect";
+import RememberSort from "@/components/admin/RememberSort";
 import StatusNote from "@/components/admin/StatusNote";
+import {
+  DEFAULT_SORT_PARAM,
+  isProductFilter,
+  parseProductSort,
+  productFilters as filters,
+  productListWhere,
+  productOrderBy,
+  SORT_COOKIE,
+  sortableColumns,
+  sortParam,
+  type ProductSort,
+  type SortColumn,
+} from "@/lib/admin-products";
 import { requireAdmin } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { formatPrice } from "@/lib/format";
@@ -11,25 +26,8 @@ import { formatPrice } from "@/lib/format";
 export const metadata: Metadata = { title: "Ürünler" };
 
 const PAGE_SIZE = 25;
-const LOW_STOCK = 5;
-
-const filters = [
-  { key: "", label: "Tümü" },
-  { key: "yayinda", label: "Yayında" },
-  { key: "pasif", label: "Pasif" },
-  { key: "stoksuz", label: "Stokta yok" },
-  { key: "azalan", label: "Stok azalıyor" },
-];
-
-const filterWhere: Record<string, Prisma.ProductWhereInput> = {
-  yayinda: { isActive: true },
-  pasif: { isActive: false },
-  stoksuz: { stock: 0 },
-  azalan: { stock: { gt: 0, lte: LOW_STOCK } },
-};
-
 interface PageProps {
-  searchParams: Promise<{ q?: string; kategori?: string; filtre?: string; sayfa?: string; durum?: string }>;
+  searchParams: Promise<{ q?: string; kategori?: string; filtre?: string; sayfa?: string; sirala?: string; durum?: string; adet?: string }>;
 }
 
 // Oturum arkasındaki yönetim sayfası: Next'in "anında gezinme" denetiminden çıkarıldı (README, Yönetim paneli).
@@ -41,8 +39,13 @@ export default async function AdminProductsPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const q = (params.q ?? "").trim().slice(0, 100);
   const categoryId = params.kategori ?? "";
-  const filter = params.filtre && filterWhere[params.filtre] ? params.filtre : "";
+  const filter = isProductFilter(params.filtre) ? params.filtre : "";
   const page = Math.max(1, Number.parseInt(params.sayfa ?? "1", 10) || 1);
+  // Adreste sıralama yoksa çerezde hatırlanan sıralama kullanılır; "sirala=son" varsayılana dönmeyi seçer.
+  const rememberedSort = (await cookies()).get(SORT_COOKIE)?.value;
+  const sort = parseProductSort(params.sirala ?? rememberedSort);
+  // Bağlantılara yazılan değer: sıralama yoksa ama çerez varsa, varsayılan seçimi kaybolmasın diye açıkça "son".
+  const sortValue = sort ? sortParam(sort) : rememberedSort ? DEFAULT_SORT_PARAM : "";
 
   const categories = await db.category.findMany({
     where: { parentId: null },
@@ -50,29 +53,14 @@ export default async function AdminProductsPage({ searchParams }: PageProps) {
     include: { children: { orderBy: { sortOrder: "asc" } } },
   });
 
-  // Ana kategori seçilirse alt kategorilerindeki ürünler de gelir.
-  const selectedRoot = categories.find((category) => category.id === categoryId);
-  const categoryIds = selectedRoot ? [selectedRoot.id, ...selectedRoot.children.map((child) => child.id)] : categoryId ? [categoryId] : null;
-
-  const where: Prisma.ProductWhereInput = {
-    ...(filter ? filterWhere[filter] : {}),
-    ...(categoryIds ? { categoryId: { in: categoryIds } } : {}),
-    ...(q
-      ? {
-          OR: [
-            { name: { contains: q, mode: "insensitive" } },
-            { sku: { contains: q, mode: "insensitive" } },
-            { barcode: { contains: q } },
-          ],
-        }
-      : {}),
-  };
+  const where = productListWhere({ q, categoryId, filter }, categories);
 
   const [items, total] = await Promise.all([
     db.product.findMany({
       where,
-      include: { category: true },
-      orderBy: { updatedAt: "desc" },
+      include: { category: true, brand: { select: { name: true } } },
+      omit: { costKurus: false },
+      orderBy: productOrderBy(sort),
       skip: (page - 1) * PAGE_SIZE,
       take: PAGE_SIZE,
     }),
@@ -81,14 +69,39 @@ export default async function AdminProductsPage({ searchParams }: PageProps) {
   const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   const href = (overrides: Record<string, string | number>) => {
-    const next = { q, kategori: categoryId, filtre: filter, sayfa: page, ...overrides };
+    const next = { q, kategori: categoryId, filtre: filter, sirala: sortValue, sayfa: page, ...overrides };
     const query = new URLSearchParams();
     if (next.q) query.set("q", String(next.q));
     if (next.kategori) query.set("kategori", String(next.kategori));
     if (next.filtre) query.set("filtre", String(next.filtre));
+    if (next.sirala) query.set("sirala", String(next.sirala));
     if (Number(next.sayfa) > 1) query.set("sayfa", String(next.sayfa));
     const qs = query.toString();
     return qs ? `/yonetim/urunler?${qs}` : "/yonetim/urunler";
+  };
+
+  // Başlığa ilk tıklama artan, sonraki tıklamalar artan/azalan arasında geçiş yapar; sıralama değişince ilk sayfaya dönülür.
+  const sortHref = (column: SortColumn) => {
+    const direction = sort?.column === column && sort.direction === "artan" ? "azalan" : "artan";
+    return href({ sirala: sortParam({ column, direction }), sayfa: 1 });
+  };
+  // Bileşen değil, JSX döndüren yardımcı: render içinde bileşen tanımlamak her seferinde yeniden kurulmasına yol açar.
+  const sortHeader = (column: SortColumn, align: "left" | "right" = "left") => {
+    const active = sort?.column === column ? sort : null;
+    const label = sortableColumns.find((item) => item.key === column)!.label;
+    const Icon = active ? (active.direction === "artan" ? ArrowUp : ArrowDown) : ArrowUpDown;
+    return (
+      <th key={column} aria-sort={active ? (active.direction === "artan" ? "ascending" : "descending") : undefined} className={`px-4 py-3 font-bold ${align === "right" ? "text-right" : ""}`}>
+        <Link
+          href={sortHref(column)}
+          title={`${label} sütununa göre sırala`}
+          className={`inline-flex items-center gap-1 uppercase tracking-wider hover:text-fg ${active ? "text-fg" : ""} ${align === "right" ? "flex-row-reverse" : ""}`}
+        >
+          {label}
+          <Icon size={13} aria-hidden className={active ? "" : "opacity-40"} />
+        </Link>
+      </th>
+    );
   };
 
   return (
@@ -107,8 +120,10 @@ export default async function AdminProductsPage({ searchParams }: PageProps) {
         </div>
       </div>
 
+      <RememberSort value={params.sirala === undefined ? undefined : sort ? sortParam(sort) : ""} />
+
       <div className="mt-5">
-        <StatusNote status={params.durum} />
+        <StatusNote status={params.durum} count={params.adet} />
       </div>
 
       <form action="/yonetim/urunler" className="flex flex-wrap gap-2">
@@ -125,6 +140,16 @@ export default async function AdminProductsPage({ searchParams }: PageProps) {
                   {child.name}
                 </option>
               ))}
+            </optgroup>
+          ))}
+        </select>
+        {/* Telefonda tablo başlıkları yok; sıralama buradan seçilir (masaüstünde de aramayla birlikte korunur). */}
+        <select name="sirala" defaultValue={sort ? sortParam(sort) : DEFAULT_SORT_PARAM} aria-label="Sırala" className="field min-w-0 flex-1 md:hidden">
+          <option value={DEFAULT_SORT_PARAM}>Sırala: Son güncellenen</option>
+          {sortableColumns.map((column) => (
+            <optgroup key={column.key} label={column.label}>
+              <option value={sortParam({ column: column.key, direction: "artan" } satisfies ProductSort)}>{column.label} (artan)</option>
+              <option value={sortParam({ column: column.key, direction: "azalan" } satisfies ProductSort)}>{column.label} (azalan)</option>
             </optgroup>
           ))}
         </select>
@@ -150,22 +175,37 @@ export default async function AdminProductsPage({ searchParams }: PageProps) {
         <span className="font-bold text-fg">{total}</span> ürün
       </p>
 
+      {/* Toplu seçim/silme: araç çubuğu ve her iki görünüm (kartlar, tablo) aynı seçimi paylaşır. */}
+      <BulkSelect
+        pageIds={items.map((product) => product.id)}
+        total={total}
+        filter={{ q, kategori: categoryId, filtre: filter }}
+        reset={params.durum === "toplu-silindi"}
+        deleteAction={deleteProducts}
+      >
       {/* Mobil: tablo yerine kartlar. Altı sütun dar ekrana sığmıyor; fiyat, stok ve durum yana kayıp kayboluyordu. */}
       <ul className="mt-2 space-y-2 md:hidden">
         {items.map((product) => (
           <li key={product.id} className="rounded-xl border border-neutral-200 bg-raised p-3">
-            <Link href={`/yonetim/urunler/${product.id}`} className="block">
-              <span className="block break-words font-bold">{product.name}</span>
-              <span className="mt-0.5 block text-xs text-neutral-500">
-                {product.sku} · {product.category.name}
+            <div className="flex items-start gap-3">
+              <span className="grid size-10 shrink-0 place-items-center">
+                <BulkCheckbox id={product.id} label={product.name} />
               </span>
-            </Link>
+              <Link href={`/yonetim/urunler/${product.id}`} className="block min-w-0 flex-1">
+                <span className="block break-words font-bold">{product.name}</span>
+                <span className="mt-0.5 block text-xs text-neutral-500">
+                  {product.sku} · {product.category.name}
+                {product.brand ? ` · ${product.brand.name}` : ""}
+                </span>
+              </Link>
+            </div>
             <div className="mt-2 flex items-center gap-3">
               <p className="min-w-0 flex-1 text-sm">
                 <span className="font-extrabold">{formatPrice(product.priceKurus)}</span>
                 {product.compareAtKurus && (
                   <span className="ml-1.5 text-xs text-neutral-500 line-through">{formatPrice(product.compareAtKurus)}</span>
                 )}
+                {product.costKurus != null && <span className="ml-1.5 text-xs font-normal text-neutral-500">Alış {formatPrice(product.costKurus)}</span>}
                 <span className={`mt-0.5 block text-xs font-bold ${product.stock === 0 ? "text-red-700 dark:text-red-400" : "text-neutral-600"}`}>
                   {product.stock === 0 ? "Stokta yok" : `Stok: ${product.stock}`}
                 </span>
@@ -196,17 +236,21 @@ export default async function AdminProductsPage({ searchParams }: PageProps) {
         <table className="w-full min-w-[46rem] text-left text-sm">
           <thead className="border-b border-neutral-200 text-xs uppercase tracking-wider text-neutral-500">
             <tr>
-              <th className="px-4 py-3 font-bold">Ürün</th>
-              <th className="px-4 py-3 font-bold">Kategori</th>
-              <th className="px-4 py-3 text-right font-bold">Fiyat</th>
-              <th className="px-4 py-3 text-right font-bold">Stok</th>
-              <th className="px-4 py-3 font-bold">Durum</th>
+              <th className="w-10 py-3 pl-4"><span className="sr-only">Seç</span></th>
+              {sortHeader("ad")}
+              {sortHeader("kategori")}
+              {sortHeader("fiyat", "right")}
+              {sortHeader("stok", "right")}
+              {sortHeader("durum")}
               <th className="px-4 py-3" />
             </tr>
           </thead>
           <tbody className="divide-y divide-neutral-200">
             {items.map((product) => (
               <tr key={product.id}>
+                <td className="py-3 pl-4">
+                  <BulkCheckbox id={product.id} label={product.name} />
+                </td>
                 <td className="px-4 py-3">
                   <Link href={`/yonetim/urunler/${product.id}`} className="font-bold hover:underline">
                     {product.name}
@@ -214,6 +258,7 @@ export default async function AdminProductsPage({ searchParams }: PageProps) {
                   <span className="block text-xs text-neutral-500">
                     {product.sku}
                     {product.barcode ? ` · ${product.barcode}` : ""}
+                    {product.brand ? ` · ${product.brand.name}` : ""}
                   </span>
                 </td>
                 <td className="px-4 py-3 text-neutral-600">{product.category.name}</td>
@@ -222,6 +267,7 @@ export default async function AdminProductsPage({ searchParams }: PageProps) {
                   {product.compareAtKurus && (
                     <span className="block text-xs font-normal text-neutral-500 line-through">{formatPrice(product.compareAtKurus)}</span>
                   )}
+                  {product.costKurus != null && <span className="block text-xs font-normal text-neutral-500">Alış {formatPrice(product.costKurus)}</span>}
                 </td>
                 <td className={`px-4 py-3 text-right font-bold ${product.stock === 0 ? "text-red-700 dark:text-red-400" : ""}`}>
                   {product.stock}
@@ -248,7 +294,7 @@ export default async function AdminProductsPage({ searchParams }: PageProps) {
             ))}
             {items.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-4 py-10 text-center text-neutral-500">
+                <td colSpan={7} className="px-4 py-10 text-center text-neutral-500">
                   Bu seçime uygun ürün yok.
                 </td>
               </tr>
@@ -256,6 +302,7 @@ export default async function AdminProductsPage({ searchParams }: PageProps) {
           </tbody>
         </table>
       </div>
+      </BulkSelect>
 
       {pageCount > 1 && (
         <nav aria-label="Sayfalar" className="mt-5 flex items-center justify-center gap-3 text-sm font-bold">

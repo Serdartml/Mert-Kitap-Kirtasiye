@@ -23,7 +23,7 @@ export default async function BrandFormPage({ params }: { params: Promise<{ id: 
       <h1 className="mb-6 text-2xl font-extrabold">
         <span className="marker">{isNew ? "Yeni marka" : "Markayı düzenle"}</span>
       </h1>
-      <BrandForm values={{ id: brand?.id, name: brand?.name ?? "", slug: brand?.slug ?? "" }} />
+      <BrandForm values={{ id: brand?.id, name: brand?.name ?? "", slug: brand?.slug ?? "", isWholesaler: brand?.isWholesaler ?? false }} />
     </>
   );
 }

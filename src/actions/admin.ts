@@ -6,6 +6,8 @@ import { redirect } from "next/navigation";
 import { after } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/auth";
+import { brandBackQuery } from "@/lib/admin-brands";
+import { isProductFilter, productListWhere } from "@/lib/admin-products";
 import { CATALOG_TAG } from "@/lib/catalog";
 import { db } from "@/lib/db";
 import { sendMail } from "@/lib/mail";
@@ -84,6 +86,10 @@ export async function saveProduct(_prev: FormState, formData: FormData): Promise
     return { error: "Eski fiyat, satış fiyatından yüksek olmalı; indirim yoksa boş bırakın." };
   }
 
+  const costRaw = text(formData, "cost");
+  const costKurus = costRaw ? parsePriceToKurus(costRaw) : null;
+  if (costRaw && costKurus == null) return { error: "Alış fiyatı geçerli değil (örnek: 249,90)." };
+
   const attributes = parseAttributes(text(formData, "attributes"));
   if (attributes.some((attribute) => attribute === null)) {
     return { error: 'Özellikler her satırda "Ad: Değer" biçiminde olmalı.' };
@@ -103,6 +109,7 @@ export async function saveProduct(_prev: FormState, formData: FormData): Promise
     description: description || null,
     priceKurus,
     compareAtKurus,
+    costKurus,
     isActive: formData.get("isActive") === "on",
     isFeatured: formData.get("isFeatured") === "on",
   };
@@ -135,6 +142,31 @@ export async function deleteProduct(id: string): Promise<void> {
   await db.product.delete({ where: { id } });
   updateTag(CATALOG_TAG);
   redirect("/yonetim/urunler?durum=silindi");
+}
+
+const MAX_BULK_IDS = 5000;
+
+// Ürün listesinden toplu silme. İki biçim: seçili kimlikler ("ids") ya da filtreye uyan tüm ürünler (scope=all; aynı
+// q/kategori/filtre ile liste koşulu yeniden kurulur). Siparişler korunur: kalemlerin ürün bağı kopar (şemada SetNull).
+export async function deleteProducts(formData: FormData): Promise<void> {
+  await requireAdmin();
+
+  let where: Prisma.ProductWhereInput;
+  if (text(formData, "scope") === "all") {
+    const roots = await db.category.findMany({ where: { parentId: null }, select: { id: true, children: { select: { id: true } } } });
+    const filter = text(formData, "filtre");
+    where = productListWhere({ q: text(formData, "q").slice(0, 100), categoryId: text(formData, "kategori"), filter: isProductFilter(filter) ? filter : "" }, roots);
+  } else {
+    const ids = [...new Set(formData.getAll("ids").map(String).filter((id) => id.length > 0 && id.length <= 40))];
+    if (ids.length === 0) redirect("/yonetim/urunler");
+    // Sessizce kırpmak yerine reddedilir: kullanıcı hepsinin silindiğini sanmasın.
+    if (ids.length > MAX_BULK_IDS) redirect("/yonetim/urunler?durum=cok-fazla");
+    where = { id: { in: ids } };
+  }
+
+  const { count } = await db.product.deleteMany({ where });
+  updateTag(CATALOG_TAG);
+  redirect(`/yonetim/urunler?durum=toplu-silindi&adet=${count}`);
 }
 
 export async function setProductActive(id: string, isActive: boolean): Promise<void> {
@@ -231,8 +263,9 @@ export async function saveBrand(_prev: FormState, formData: FormData): Promise<F
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Formu kontrol edin." };
 
   try {
-    if (id) await db.brand.update({ where: { id }, data: parsed.data });
-    else await db.brand.create({ data: parsed.data });
+    const data = { ...parsed.data, isWholesaler: formData.get("isWholesaler") === "on" };
+    if (id) await db.brand.update({ where: { id }, data });
+    else await db.brand.create({ data });
   } catch (error) {
     const message = uniqueError(error, { slug: "adres" });
     if (message) return { error: message };
@@ -241,6 +274,26 @@ export async function saveBrand(_prev: FormState, formData: FormData): Promise<F
 
   updateTag(CATALOG_TAG);
   redirect("/yonetim/markalar?durum=kaydedildi");
+}
+
+// Seçili markaları toptancı yapar (sitede gizlenir) ya da tekrar marka yapar (sitede görünür). Liste sayfasındaki forma
+// bağlıdır; hangi düğmeye basıldığı "islem" alanında gelir.
+export async function setBrandsWholesaler(formData: FormData): Promise<void> {
+  await requireAdmin();
+
+  const back = brandBackQuery(text(formData, "geri"));
+  const ids = [...new Set(formData.getAll("ids").map(String).filter((id) => id.length > 0 && id.length <= 40))].slice(0, 2000);
+  const action = text(formData, "islem");
+  if (ids.length === 0 || (action !== "toptanci" && action !== "marka")) {
+    back.set("durum", "marka-secilmedi");
+    redirect(`/yonetim/markalar?${back}`);
+  }
+
+  const { count } = await db.brand.updateMany({ where: { id: { in: ids } }, data: { isWholesaler: action === "toptanci" } });
+  updateTag(CATALOG_TAG);
+  back.set("durum", action === "toptanci" ? "toptanci-yapildi" : "marka-yapildi");
+  back.set("adet", String(count));
+  redirect(`/yonetim/markalar?${back}`);
 }
 
 export async function deleteBrand(id: string): Promise<void> {
