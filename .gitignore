@@ -21,3 +21,8 @@ prisma/*.db-journal
 
 # Vercel CLI proje bağlantısı (vercel link)
 .vercel
+
+# Turna stok dosyaları ve hazırlanmış çıktılar (alış fiyatları içerir; depoya girmez)
+/stok*.xlsx
+/stok-cikti/
+~$*
