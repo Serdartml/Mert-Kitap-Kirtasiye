@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useRef, useState } from "react";
 import { Loader2, Play, Square } from "lucide-react";
@@ -10,6 +10,8 @@ export default function CoverFetcher({ pending }: { pending: number }) {
   const [running, setRunning] = useState(false);
   const [scanned, setScanned] = useState(0);
   const [added, setAdded] = useState(0);
+  const [found, setFound] = useState(0);
+  const [problems, setProblems] = useState<string[]>([]);
   const [message, setMessage] = useState("");
   const stop = useRef(false);
 
@@ -18,10 +20,14 @@ export default function CoverFetcher({ pending }: { pending: number }) {
     setRunning(true);
     setScanned(0);
     setAdded(0);
+    setFound(0);
+    setProblems([]);
     setMessage("");
     let cursor = "";
     let totalScanned = 0;
     let totalAdded = 0;
+    let totalFound = 0;
+    const seen = new Set<string>();
     try {
       for (;;) {
         const result = await fetchBarcodeCovers(cursor);
@@ -31,8 +37,13 @@ export default function CoverFetcher({ pending }: { pending: number }) {
         }
         totalScanned += result.scanned;
         totalAdded += result.added;
+        totalFound += result.found;
         setScanned(totalScanned);
         setAdded(totalAdded);
+        setFound(totalFound);
+        // Aynı nedenler tekrar tekrar listelenmesin: ilk birkaç farklı neden yeter.
+        for (const problem of result.problems) if (seen.size < 6) seen.add(problem);
+        setProblems([...seen]);
         if (result.cursor === null) {
           setMessage("Tarama bitti.");
           break;
@@ -66,9 +77,15 @@ export default function CoverFetcher({ pending }: { pending: number }) {
         )}
         {running && <Loader2 size={18} className="animate-spin" aria-hidden />}
         <span aria-live="polite" className="text-sm font-semibold">
-          {scanned > 0 || running ? `${scanned} ürün tarandı, ${added} kapak eklendi` : ""} {message}
+          {scanned > 0 || running ? `${scanned} ürün tarandı, ${found} kapak bulundu, ${added} eklendi` : ""} {message}
         </span>
       </div>
+      {problems.length > 0 && (
+        <p className="mt-3 text-xs text-neutral-600">
+          Sorunlar (tanı için): {problems.join(" · ")}
+        </p>
+      )}
     </div>
   );
 }
+
