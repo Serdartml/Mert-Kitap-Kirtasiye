@@ -5,6 +5,9 @@ import { ExternalLink, Trash2 } from "lucide-react";
 import { deleteProduct } from "@/actions/admin";
 import ConfirmButton from "@/components/admin/ConfirmButton";
 import ProductForm from "@/components/admin/ProductForm";
+import ProductImages from "@/components/admin/ProductImages";
+import StatusNote from "@/components/admin/StatusNote";
+import { r2Config } from "@/lib/r2";
 import { getCategoryOptions } from "@/lib/admin-data";
 import { requireAdmin } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -15,12 +18,17 @@ export const metadata: Metadata = { title: "Ürünü Düzenle" };
 // Oturum arkasındaki yönetim sayfası: Next'in "anında gezinme" denetiminden çıkarıldı (README, Yönetim paneli).
 export const instant = false;
 
-export default async function EditProductPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function EditProductPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ durum?: string; adet?: string }> }) {
   await requireAdmin();
   const { id } = await params;
+  const { durum, adet } = await searchParams;
 
   const [product, categories, brands] = await Promise.all([
-    db.product.findUnique({ where: { id }, omit: { costKurus: false }, include: { attributes: { orderBy: { sortOrder: "asc" } } } }),
+    db.product.findUnique({
+      where: { id },
+      omit: { costKurus: false },
+      include: { attributes: { orderBy: { sortOrder: "asc" } }, images: { orderBy: { sortOrder: "asc" }, select: { id: true, url: true } } },
+    }),
     getCategoryOptions(),
     db.brand.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }),
   ]);
@@ -48,6 +56,10 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
           </form>
         </div>
       </div>
+
+      <StatusNote status={durum} count={adet} />
+
+      <ProductImages productId={product.id} images={product.images} configured={r2Config() !== null} />
 
       <ProductForm
         categories={categories}

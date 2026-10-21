@@ -4,7 +4,6 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { MapPin, MessageCircle, Phone } from "lucide-react";
 import AddToCartButton from "@/components/AddToCartButton";
-import { LOW_STOCK_THRESHOLD } from "@/components/ProductCard";
 import ProductFavorite, { ProductFavoriteFallback } from "@/components/ProductFavorite";
 import ProductTabs, { type TabItem } from "@/components/ProductTabs";
 import StickyBuyBar from "@/components/StickyBuyBar";
@@ -26,6 +25,7 @@ import {
   getRelatedProducts,
 } from "@/lib/catalog";
 import { discountPercent, formatPrice } from "@/lib/format";
+import { isLowStock } from "@/lib/low-stock";
 import { site, whatsappHref } from "@/lib/site";
 
 // Asıl "Sepete Ekle" alanı; ekrandan çıkınca mobilde StickyBuyBar görünür.
@@ -84,7 +84,7 @@ async function ProductContent({ slug }: { slug: string }) {
   ]);
   const discount = discountPercent(product.priceKurus, product.compareAtKurus);
   const rootSlug = rootCategory.slug;
-  const stockLow = product.stock > 0 && product.stock <= LOW_STOCK_THRESHOLD;
+  const stockLow = isLowStock(product.stock, rootSlug);
   const stockLabel = product.stock < 1 ? "Stokta yok" : stockLow ? `Son ${product.stock} adet` : "Stokta var";
 
   // Sekmeler: içeriği olmayan sekme gösterilmez. Teslimat bilgisi sipariş akışındaki gerçek duruma göredir.

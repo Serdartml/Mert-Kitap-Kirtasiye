@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isProductFilter, parseProductSort, productListWhere, productOrderBy, sortParam } from "@/lib/admin-products";
+import { filtersCookieValue, isProductFilter, parseProductSort, parseSavedFilters, productListWhere, productOrderBy, sortParam } from "@/lib/admin-products";
 
 describe("sıralama", () => {
   it("adres parametresini okur, geçersizi yok sayar", () => {
@@ -36,6 +36,22 @@ describe("productListWhere", () => {
     const where = productListWhere({ q: "silgi", categoryId: "", filter: "stoksuz" }, roots);
     expect(where).toMatchObject({ stock: 0 });
     expect(where.OR).toHaveLength(4); // ad, stok kodu, barkod, marka
+  });
+
+  it("indirimli, öne çıkan ve stok azalıyor süzgeçleri", () => {
+    expect(productListWhere({ q: "", categoryId: "", filter: "indirimli" }, roots)).toEqual({ compareAtKurus: { not: null } });
+    expect(productListWhere({ q: "", categoryId: "", filter: "onecikan" }, roots)).toEqual({ isFeatured: true });
+    // Stok azalıyor: 1-2 adet ve kitap kategorileri hariç.
+    expect(productListWhere({ q: "", categoryId: "", filter: "azalan" }, roots)).toMatchObject({ stock: { gt: 0, lte: 2 }, NOT: expect.anything() });
+  });
+
+  it("hatırlanan süzgeci ve kategoriyi güvenli okur", () => {
+    expect(filtersCookieValue("azalan", "abc123")).toBe("azalan~abc123");
+    expect(filtersCookieValue("", "")).toBe("");
+    expect(parseSavedFilters("azalan~abc123")).toEqual({ filter: "azalan", categoryId: "abc123" });
+    expect(parseSavedFilters("~abc123")).toEqual({ filter: "", categoryId: "abc123" });
+    expect(parseSavedFilters("rastgele~<script>")).toEqual({ filter: "", categoryId: "" });
+    expect(parseSavedFilters(undefined)).toEqual({ filter: "", categoryId: "" });
   });
 
   it("bilinmeyen filtre anahtarını kabul etmez", () => {

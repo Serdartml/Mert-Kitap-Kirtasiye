@@ -1,7 +1,7 @@
 "use client";
 
-import { createContext, useContext, useEffect, useMemo, useSyncExternalStore, type ReactNode } from "react";
-import { Trash2 } from "lucide-react";
+import { createContext, useContext, useEffect, useMemo, useState, useSyncExternalStore, type ReactNode } from "react";
+import { Star, Trash2 } from "lucide-react";
 
 // Ürün listesinde toplu seçim ve silme. Seçim sayfalar arasında kalsın diye tarayıcı oturumunda (sekme kapanana kadar)
 // saklanır; hem mobil kartlar hem masaüstü tablo aynı seçimi paylaşır. Form yalnızca araç çubuğunu sarar; seçili
@@ -73,10 +73,19 @@ interface BulkSelectProps {
   // Silme tamamlandıktan sonraki sayfada true: saklanan seçim temizlenir.
   reset: boolean;
   deleteAction: (formData: FormData) => void | Promise<void>;
+  // Toplu öne çıkarma; aynı seçimle (gizli alanlar) gönderilir.
+  editAction: (formData: FormData) => void | Promise<void>;
   children: ReactNode;
 }
 
-export default function BulkSelect({ pageIds, total, filter, reset, deleteAction, children }: BulkSelectProps) {
+const EDIT_OPERATIONS = [
+  { value: "one-cikar", label: "Öne çıkanlara ekle" },
+  { value: "one-cikarma", label: "Öne çıkanlardan kaldır" },
+] as const;
+
+export default function BulkSelect({ pageIds, total, filter, reset, deleteAction, editAction, children }: BulkSelectProps) {
+  const [operation, setOperation] = useState<(typeof EDIT_OPERATIONS)[number]["value"]>("one-cikar");
+  const operationConfig = EDIT_OPERATIONS.find((item) => item.value === operation)!;
   const stored = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
   const signature = `${filter.q}|${filter.kategori}|${filter.filtre}`;
   const allMatching = stored.all !== "" && stored.all === signature;
@@ -156,8 +165,32 @@ export default function BulkSelect({ pageIds, total, filter, reset, deleteAction
           </span>
         )}
 
+        {/* Toplu öne çıkarma (indirim ürün sayfasından düzenlenir). Silme düğmesinden ayrı eylemle gönderilir. */}
+        <div className="flex basis-full flex-wrap items-center gap-2 border-t border-neutral-200 pt-2">
+          <select name="islem" value={operation} onChange={(event) => setOperation(event.target.value as typeof operation)} aria-label="Toplu işlem" className="field min-w-0 flex-1 sm:max-w-64 sm:flex-none">
+            {EDIT_OPERATIONS.map((item) => (
+              <option key={item.value} value={item.value}>
+                {item.label}
+              </option>
+            ))}
+          </select>
+          <button
+            type="submit"
+            formAction={editAction}
+            formNoValidate
+            disabled={count === 0 || tooMany}
+            className="btn btn-dark py-2 disabled:cursor-not-allowed disabled:opacity-40"
+            onClick={(event) => {
+              if (!window.confirm(`${count} ürün için "${operationConfig.label}" uygulanacak. Emin misiniz?`)) event.preventDefault();
+            }}
+          >
+            <Star size={16} aria-hidden /> Seçilenlere uygula
+          </button>
+        </div>
+
         <button
           type="submit"
+          formNoValidate
           disabled={count === 0 || tooMany}
           className="btn ml-auto border border-red-300 py-2 text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950"
           onClick={(event) => {

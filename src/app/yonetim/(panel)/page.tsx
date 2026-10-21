@@ -4,8 +4,7 @@ import { getDailyOrderStats, getTopSoldProducts } from "@/lib/admin-data";
 import { requireAdmin } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { formatPrice } from "@/lib/format";
-
-const LOW_STOCK = 5;
+import { LOW_STOCK, lowStockWhere } from "@/lib/low-stock";
 
 // Oturum arkasındaki yönetim sayfası: Next'in "anında gezinme" denetiminden çıkarıldı (README, Yönetim paneli).
 export const instant = false;
@@ -18,11 +17,12 @@ export default async function AdminDashboardPage() {
     db.product.count(),
     db.product.count({ where: { isActive: true } }),
     db.product.count({ where: { isActive: true, stock: 0 } }),
-    db.product.count({ where: { isActive: true, stock: { gt: 0, lte: LOW_STOCK } } }),
+    db.product.count({ where: { isActive: true, ...lowStockWhere } }),
     db.category.count(),
     db.contactMessage.count(),
     db.product.findMany({
-      where: { isActive: true, stock: { lte: LOW_STOCK } },
+      // Biten ürünler (kitaplar dahil) ve stoğu azalanlar (kitaplar hariç).
+      where: { isActive: true, OR: [{ stock: 0 }, lowStockWhere] },
       orderBy: [{ stock: "asc" }, { name: "asc" }],
       take: 10,
       select: { id: true, name: true, sku: true, stock: true, priceKurus: true },
@@ -41,7 +41,7 @@ export default async function AdminDashboardPage() {
     { label: "Açık sipariş", value: openOrders, note: "teslim bekleyen", href: "/yonetim/siparisler" },
     { label: "Ürün", value: total, note: `${active} yayında`, href: "/yonetim/urunler" },
     { label: "Stokta yok", value: outOfStock, note: "yayındaki ürünler", href: "/yonetim/urunler?filtre=stoksuz" },
-    { label: "Stok azalıyor", value: lowStock, note: `${LOW_STOCK} adet ve altı`, href: "/yonetim/urunler?filtre=azalan" },
+    { label: "Stok azalıyor", value: lowStock, note: `${LOW_STOCK} adet ve altı, kitaplar hariç`, href: "/yonetim/urunler?filtre=azalan" },
     { label: "Kategori", value: categories, note: "ana ve alt", href: "/yonetim/kategoriler" },
     { label: "Mesaj", value: messages, note: "iletişim formu", href: "/yonetim/mesajlar" },
   ];

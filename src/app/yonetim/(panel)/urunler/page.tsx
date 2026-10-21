@@ -2,14 +2,18 @@ import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import Link from "next/link";
 import { ArrowDown, ArrowUp, ArrowUpDown, FileSpreadsheet, Plus } from "lucide-react";
-import { deleteProducts, setProductActive } from "@/actions/admin";
+import { deleteProducts, editProducts, setProductActive } from "@/actions/admin";
 import BulkSelect, { BulkCheckbox } from "@/components/admin/BulkSelect";
+import RememberFilters from "@/components/admin/RememberFilters";
 import RememberSort from "@/components/admin/RememberSort";
 import StatusNote from "@/components/admin/StatusNote";
 import {
   DEFAULT_SORT_PARAM,
+  FILTER_COOKIE,
+  filtersCookieValue,
   isProductFilter,
   parseProductSort,
+  parseSavedFilters,
   productFilters as filters,
   productListWhere,
   productOrderBy,
@@ -21,7 +25,7 @@ import {
 } from "@/lib/admin-products";
 import { requireAdmin } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { formatPrice } from "@/lib/format";
+import { discountPercent, formatPrice } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Ürünler" };
 
@@ -38,11 +42,15 @@ export default async function AdminProductsPage({ searchParams }: PageProps) {
 
   const params = await searchParams;
   const q = (params.q ?? "").trim().slice(0, 100);
-  const categoryId = params.kategori ?? "";
-  const filter = isProductFilter(params.filtre) ? params.filtre : "";
   const page = Math.max(1, Number.parseInt(params.sayfa ?? "1", 10) || 1);
+  const cookieStore = await cookies();
+  // Süzgeç ve kategori: adreste "filtre" ya da "kategori" varsa (boş olsa bile) seçim oradandır; yoksa çerezde hatırlanan kullanılır.
+  const filtersInUrl = params.filtre !== undefined || params.kategori !== undefined;
+  const saved = parseSavedFilters(cookieStore.get(FILTER_COOKIE)?.value);
+  const filter = filtersInUrl ? (isProductFilter(params.filtre) ? params.filtre : "") : saved.filter;
+  const requestedCategory = filtersInUrl ? (params.kategori ?? "") : saved.categoryId;
   // Adreste sıralama yoksa çerezde hatırlanan sıralama kullanılır; "sirala=son" varsayılana dönmeyi seçer.
-  const rememberedSort = (await cookies()).get(SORT_COOKIE)?.value;
+  const rememberedSort = cookieStore.get(SORT_COOKIE)?.value;
   const sort = parseProductSort(params.sirala ?? rememberedSort);
   // Bağlantılara yazılan değer: sıralama yoksa ama çerez varsa, varsayılan seçimi kaybolmasın diye açıkça "son".
   const sortValue = sort ? sortParam(sort) : rememberedSort ? DEFAULT_SORT_PARAM : "";
@@ -52,6 +60,10 @@ export default async function AdminProductsPage({ searchParams }: PageProps) {
     orderBy: { sortOrder: "asc" },
     include: { children: { orderBy: { sortOrder: "asc" } } },
   });
+
+  // Silinmiş kategori hatırlanmışsa boş liste yerine tüm kategoriler gösterilir.
+  const categoryExists = categories.some((category) => category.id === requestedCategory || category.children.some((child) => child.id === requestedCategory));
+  const categoryId = categoryExists ? requestedCategory : "";
 
   const where = productListWhere({ q, categoryId, filter }, categories);
 
@@ -72,12 +84,12 @@ export default async function AdminProductsPage({ searchParams }: PageProps) {
     const next = { q, kategori: categoryId, filtre: filter, sirala: sortValue, sayfa: page, ...overrides };
     const query = new URLSearchParams();
     if (next.q) query.set("q", String(next.q));
-    if (next.kategori) query.set("kategori", String(next.kategori));
-    if (next.filtre) query.set("filtre", String(next.filtre));
+    // Boş olsa da yazılır: "Tümü" seçimi hatırlanan süzgeci temizlesin diye adres seçimi açıkça taşır.
+    query.set("kategori", String(next.kategori));
+    query.set("filtre", String(next.filtre));
     if (next.sirala) query.set("sirala", String(next.sirala));
     if (Number(next.sayfa) > 1) query.set("sayfa", String(next.sayfa));
-    const qs = query.toString();
-    return qs ? `/yonetim/urunler?${qs}` : "/yonetim/urunler";
+    return `/yonetim/urunler?${query}`;
   };
 
   // Başlığa ilk tıklama artan, sonraki tıklamalar artan/azalan arasında geçiş yapar; sıralama değişince ilk sayfaya dönülür.
@@ -121,13 +133,14 @@ export default async function AdminProductsPage({ searchParams }: PageProps) {
       </div>
 
       <RememberSort value={params.sirala === undefined ? undefined : sort ? sortParam(sort) : ""} />
+      <RememberFilters value={filtersInUrl ? filtersCookieValue(filter, categoryId) : undefined} />
 
       <div className="mt-5">
         <StatusNote status={params.durum} count={params.adet} />
       </div>
 
       <form action="/yonetim/urunler" className="flex flex-wrap gap-2">
-        {filter && <input type="hidden" name="filtre" value={filter} />}
+        <input type="hidden" name="filtre" value={filter} />
         {/* Mobilde arama kutusu tam satır; kategori ile buton altında yan yana. */}
         <input name="q" type="search" defaultValue={q} placeholder="Ad, stok kodu veya barkod" aria-label="Ürün ara" className="field basis-full sm:max-w-xs sm:basis-auto" />
         <select name="kategori" defaultValue={categoryId} aria-label="Kategori" className="field min-w-0 flex-1 sm:max-w-56 sm:flex-none">
@@ -182,6 +195,7 @@ export default async function AdminProductsPage({ searchParams }: PageProps) {
         filter={{ q, kategori: categoryId, filtre: filter }}
         reset={params.durum === "toplu-silindi"}
         deleteAction={deleteProducts}
+        editAction={editProducts}
       >
       {/* Mobil: tablo yerine kartlar. Altı sütun dar ekrana sığmıyor; fiyat, stok ve durum yana kayıp kayboluyordu. */}
       <ul className="mt-2 space-y-2 md:hidden">
@@ -192,7 +206,10 @@ export default async function AdminProductsPage({ searchParams }: PageProps) {
                 <BulkCheckbox id={product.id} label={product.name} />
               </span>
               <Link href={`/yonetim/urunler/${product.id}`} className="block min-w-0 flex-1">
-                <span className="block break-words font-bold">{product.name}</span>
+                <span className="block break-words font-bold">
+                  {product.name}
+                  {product.isFeatured && <span className="ml-1.5 rounded bg-brand-500 px-1.5 py-0.5 align-middle text-[10px] font-extrabold text-ink">Öne çıkan</span>}
+                </span>
                 <span className="mt-0.5 block text-xs text-neutral-500">
                   {product.sku} · {product.category.name}
                 {product.brand ? ` · ${product.brand.name}` : ""}
@@ -203,7 +220,9 @@ export default async function AdminProductsPage({ searchParams }: PageProps) {
               <p className="min-w-0 flex-1 text-sm">
                 <span className="font-extrabold">{formatPrice(product.priceKurus)}</span>
                 {product.compareAtKurus && (
-                  <span className="ml-1.5 text-xs text-neutral-500 line-through">{formatPrice(product.compareAtKurus)}</span>
+                  <span className="ml-1.5 text-xs text-neutral-500">
+                    <span className="line-through">{formatPrice(product.compareAtKurus)}</span> %{discountPercent(product.priceKurus, product.compareAtKurus) ?? 0}
+                  </span>
                 )}
                 {product.costKurus != null && <span className="ml-1.5 text-xs font-normal text-neutral-500">Alış {formatPrice(product.costKurus)}</span>}
                 <span className={`mt-0.5 block text-xs font-bold ${product.stock === 0 ? "text-red-700 dark:text-red-400" : "text-neutral-600"}`}>
@@ -255,6 +274,7 @@ export default async function AdminProductsPage({ searchParams }: PageProps) {
                   <Link href={`/yonetim/urunler/${product.id}`} className="font-bold hover:underline">
                     {product.name}
                   </Link>
+                  {product.isFeatured && <span className="ml-1.5 rounded bg-brand-500 px-1.5 py-0.5 align-middle text-[10px] font-extrabold text-ink">Öne çıkan</span>}
                   <span className="block text-xs text-neutral-500">
                     {product.sku}
                     {product.barcode ? ` · ${product.barcode}` : ""}
@@ -265,7 +285,9 @@ export default async function AdminProductsPage({ searchParams }: PageProps) {
                 <td className="whitespace-nowrap px-4 py-3 text-right font-semibold">
                   {formatPrice(product.priceKurus)}
                   {product.compareAtKurus && (
-                    <span className="block text-xs font-normal text-neutral-500 line-through">{formatPrice(product.compareAtKurus)}</span>
+                    <span className="block text-xs font-normal text-neutral-500">
+                      <span className="line-through">{formatPrice(product.compareAtKurus)}</span> %{discountPercent(product.priceKurus, product.compareAtKurus) ?? 0}
+                    </span>
                   )}
                   {product.costKurus != null && <span className="block text-xs font-normal text-neutral-500">Alış {formatPrice(product.costKurus)}</span>}
                 </td>

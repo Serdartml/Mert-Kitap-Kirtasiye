@@ -4,15 +4,15 @@ import ProductVisual from "./ProductVisual";
 import QuickViewArea from "./QuickViewArea";
 import { getNewProductCutoff, type ProductCardData } from "@/lib/catalog";
 import { discountPercent, formatPrice } from "@/lib/format";
+import { isLowStock } from "@/lib/low-stock";
 
-// Stoğu bu sayıya ya da altına düşen ürüne "Son N adet" rozeti konur.
-export const LOW_STOCK_THRESHOLD = 5;
 
 const badgeBase = "rounded-md px-1.5 py-0.5 text-[11px] font-extrabold leading-4 shadow-sm sm:px-2 sm:text-xs";
 
 // Rozetler görselin alt kenarına yarı biner (yapıştırılmış etiket gibi). Satır, rozet olmasa da yer tutar:
 // aynı ızgaradaki kartların yazıları aynı hizada kalır. Renkler sabittir (her temada aynı okunur).
-function Badges({ stock, isNew }: { stock: number; isNew: boolean }) {
+// "Son N adet" rozeti, stok azalıyor kuralına göredir (lib/low-stock.ts): kitaplarda gösterilmez.
+function Badges({ stock, isNew, rootSlug }: { stock: number; isNew: boolean; rootSlug: string }) {
   return (
     <div className="pointer-events-none relative z-10 -mt-3 flex h-6 items-center gap-1 px-1.5">
       {stock < 1 ? (
@@ -20,7 +20,7 @@ function Badges({ stock, isNew }: { stock: number; isNew: boolean }) {
       ) : (
         <>
           {isNew && <span className={`${badgeBase} -rotate-2 bg-brand-500 text-ink`}>Yeni</span>}
-          {stock <= LOW_STOCK_THRESHOLD && (
+          {isLowStock(stock, rootSlug) && (
             <span className={`${badgeBase} rotate-1 bg-[#fff1f0] text-[#b42318] ring-1 ring-[#f5b5ae]`}>Son {stock} adet</span>
           )}
         </>
@@ -49,7 +49,7 @@ export default async function ProductCard({ product }: { product: ProductCardDat
           </span>
         )}
       </Link>
-      <Badges stock={product.stock} isNew={isNew} />
+      <Badges stock={product.stock} isNew={isNew} rootSlug={rootSlug} />
 
       <div className="flex flex-1 flex-col pt-1.5">
         <p className="truncate text-xs font-semibold text-neutral-500">{product.category.name}</p>

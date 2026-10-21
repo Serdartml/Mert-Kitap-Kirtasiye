@@ -39,10 +39,11 @@ export default function ProductVisual({ name, rootCategorySlug, image, sizes = "
     <div
       id={id}
       data-fly-source
-      className={`@container relative aspect-square overflow-hidden rounded-lg ${image ? "bg-neutral-100" : tone.split(" ")[0]}`}
+      className={`@container relative aspect-square overflow-hidden rounded-lg ${image ? "bg-white" : tone.split(" ")[0]}`}
     >
       {image ? (
-        <Image src={image.url} alt={image.alt ?? name} fill sizes={sizes} priority={priority} className="object-cover" />
+        // object-contain: fotoğraf kırpılmadan (yakınlaştırılmadan) kareye sığar; boş kalan yerler beyaz zemindir (ürün fotoğrafları çoğunlukla beyaz zeminlidir).
+        <Image src={image.url} alt={image.alt ?? name} fill sizes={sizes} priority={priority} className="object-contain" />
       ) : (
         <div
           className={`product-placeholder relative size-full ${pattern} ${tone.split(" ")[1]} [--pattern-color:color-mix(in_srgb,currentColor_14%,transparent)]`}

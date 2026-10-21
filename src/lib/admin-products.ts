@@ -1,14 +1,15 @@
 import type { Prisma } from "@prisma/client";
+import { lowStockWhere } from "./low-stock";
 
-// Yönetim ürün listesinin filtreleri. Liste sayfası ve toplu silme aynı koşulu kullanır; böylece "bu aramadaki tüm
-// ürünleri sil" tam olarak listede görünen ürünleri siler.
-
-export const LOW_STOCK = 5;
+// Yönetim ürün listesinin filtreleri. Liste sayfası, toplu silme ve toplu düzenleme aynı koşulu kullanır; böylece
+// "bu aramadaki tüm ürünleri sil/düzenle" tam olarak listede görünen ürünleri etkiler.
 
 export const productFilters = [
   { key: "", label: "Tümü" },
   { key: "yayinda", label: "Yayında" },
   { key: "pasif", label: "Pasif" },
+  { key: "indirimli", label: "İndirimli" },
+  { key: "onecikan", label: "Öne çıkan" },
   { key: "stoksuz", label: "Stokta yok" },
   { key: "azalan", label: "Stok azalıyor" },
 ];
@@ -16,11 +17,24 @@ export const productFilters = [
 const filterWhere: Record<string, Prisma.ProductWhereInput> = {
   yayinda: { isActive: true },
   pasif: { isActive: false },
+  indirimli: { compareAtKurus: { not: null } },
+  onecikan: { isFeatured: true },
   stoksuz: { stock: 0 },
-  azalan: { stock: { gt: 0, lte: LOW_STOCK } },
+  azalan: lowStockWhere,
 };
 
 export const isProductFilter = (key: string | undefined): key is string => !!key && key in filterWhere;
+
+// Seçilen süzgeç ve kategori çereze yazılır; adreste ikisi de yoksa (menüden girişte, kayıt sonrası dönüşte) oradan okunur.
+// Adreste "filtre=" ya da "kategori=" geçiyorsa (boş olsa bile) seçim açıkça adresten gelir.
+export const FILTER_COOKIE = "yonetim-urun-filtre";
+
+export const filtersCookieValue = (filter: string, categoryId: string) => (filter || categoryId ? `${filter}~${categoryId}` : "");
+
+export function parseSavedFilters(value: string | undefined): { filter: string; categoryId: string } {
+  const [filter = "", categoryId = ""] = (value ?? "").split("~");
+  return { filter: isProductFilter(filter) ? filter : "", categoryId: /^[A-Za-z0-9]{1,40}$/.test(categoryId) ? categoryId : "" };
+}
 
 // Sütun başlıklarından sıralama: adres parametresi "sirala=fiyat-artan" biçimindedir.
 export const sortableColumns = [

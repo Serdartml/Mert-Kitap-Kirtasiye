@@ -46,17 +46,24 @@ function resetShift(book: HTMLElement) {
   for (const sibling of book.parentElement?.children ?? []) (sibling as HTMLElement).style.translate = "";
 }
 
+// Bu sayıdan az kitap tek rafa konur (ikiye bölünce alt rafta tek tük kitap kalırdı).
+const MIN_FOR_TWO_SHELVES = 6;
+
 export default function BookShelf({ products }: { products: ProductCardData[] }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selected = products.find((product) => product.id === selectedId) ?? null;
-  const shelf = useRef<HTMLUListElement>(null);
+  const shelves = useRef<HTMLDivElement>(null);
+
+  // Her sayfada iki raf: kitaplar iki satıra eşit bölünür (ekran genişliğine göre sarılmaz); böylece alt rafta 1-2 kitap
+  // kalmaz. Çok az kitap varsa (son sayfa) tek raf.
+  const rows = products.length > MIN_FOR_TWO_SHELVES ? [products.slice(0, Math.ceil(products.length / 2)), products.slice(Math.ceil(products.length / 2))] : [products];
 
   // Dokunmatik ekran: seçilen kitap fareyle üstüne gelinmiş gibi açılır; seçim değişince / kapanınca komşular geri döner.
   useEffect(() => {
-    const list = shelf.current;
-    if (!list) return;
-    for (const child of list.children) (child as HTMLElement).style.translate = "";
-    const book = selectedId ? list.querySelector<HTMLElement>(`[data-book="${selectedId}"]`) : null;
+    const root = shelves.current;
+    if (!root) return;
+    for (const child of root.querySelectorAll<HTMLElement>("[data-book]")) child.style.translate = "";
+    const book = selectedId ? root.querySelector<HTMLElement>(`[data-book="${selectedId}"]`) : null;
     if (book) shiftNext(book);
   }, [selectedId]);
 
@@ -64,11 +71,13 @@ export default function BookShelf({ products }: { products: ProductCardData[] })
     <>
       {/* theme-fixed: sırt renkleri her temada aynı kalır. Satır yüksekliği ve raf tahtası globals.css'te. */}
       {/* Sağdaki dolgu (pr), en büyük genişleme farkından (açık genişlik - en dar kitap) büyüktür: satır sonundaki kitaplar kayınca buraya taşar, taşma olmaz. */}
+      <div ref={shelves}>
+      {rows.map((row, rowIndex) => (
       <ul
-        ref={shelf}
-        className="bookshelf theme-fixed flex flex-wrap items-end gap-x-1 px-3 pr-[3.75rem] [--open-w:6rem] sm:gap-x-1.5 sm:px-10 sm:pr-[7.5rem] sm:[--open-w:7.5rem] lg:px-16 lg:pr-36"
+        key={rowIndex}
+        className="bookshelf theme-fixed flex flex-nowrap items-end gap-x-1 px-3 pr-[6rem] [--open-w:6rem] [--scale:1] sm:gap-x-1.5 sm:px-10 sm:pr-[7.5rem] sm:[--open-w:7.5rem] sm:[--scale:1.4] lg:px-16 lg:pr-36 lg:[--scale:1.8]"
       >
-        {products.map((product) => {
+        {row.map((product) => {
           const seed = hash(product.id);
           const tone = tones[seed % tones.length];
           const rootSlug = product.category.parent?.slug ?? product.category.slug;
@@ -82,7 +91,7 @@ export default function BookShelf({ products }: { products: ProductCardData[] })
             <li
               key={product.id}
               data-book={product.id}
-              className="group relative flex h-[var(--shelf-row)] w-[var(--book-w)] items-end pb-[10px] transition-[translate] duration-300 ease-out motion-reduce:transition-none"
+              className="group relative flex h-[var(--shelf-row)] w-[calc(var(--book-w)*var(--scale))] min-w-0 items-end pb-[10px] transition-[translate] duration-300 ease-out motion-reduce:transition-none"
               style={{ "--book-w": `${2.5 + (seed % 4) * 0.3}rem` } as CSSProperties}
               onPointerEnter={(event) => event.pointerType === "mouse" && shiftNext(event.currentTarget)}
               onPointerLeave={(event) => event.pointerType === "mouse" && resetShift(event.currentTarget)}
@@ -134,6 +143,8 @@ export default function BookShelf({ products }: { products: ProductCardData[] })
           );
         })}
       </ul>
+      ))}
+      </div>
 
       {/* Dokunmatik ekran: seçilen kitabın kartı altta sabit durur. */}
       {selected && (
@@ -168,7 +179,4 @@ export default function BookShelf({ products }: { products: ProductCardData[] })
     </>
   );
 }
-
-
-
 

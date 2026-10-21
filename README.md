@@ -1,4 +1,4 @@
-# Mert Kitap Kırtasiye - E-ticaret
+﻿# Mert Kitap Kırtasiye - E-ticaret
 
 Next.js (App Router) + TypeScript + Tailwind CSS v4 + Prisma.
 
@@ -201,7 +201,7 @@ src/app/globals.css       renk paleti ve ortak sınıflar
 ## Bilinen eksikler
 
 - **Yasal metinler:** `/bilgi/*` taslakları `src/lib/legal-content.ts` içinde yazıldı (mağazadan teslim, ödeme mağazada akışına göre). Hukuki onay gelene kadar `legalReviewed = false`: sayfada "taslak" uyarısı var ve `noindex`. Onaydan sonra `legalOwner` (unvan, vergi dairesi/no, MERSİS) doldurulup `legalReviewed = true` yapılmalı. Online ödeme/kargo gelince sözleşme ve iade metinleri güncellenmeli.
-- **Ürün görselleri:** Yönetim panelinde görsel yükleme yok (Cloudflare R2 kararlaştırıldı, hesap bilgileri bekleniyor). Görseli olmayan ürünlerde kategori ikonlu yer tutucu çıkar. Şemada `ProductImage` hazır.
+- **Ürün görselleri (Cloudflare R2):** Yönetim > Ürünü düzenle sayfasında "Görseller" bölümünden yüklenir (en fazla 8, ilk görsel kapak; tarayıcı 1600 px WebP'ye küçültür, sunucu eylemi `uploadProductImages` R2'ye yazar, adres `ProductImage`'a kaydedilir). Bağlamak için `.env` ve Vercel ortam değişkenleri: `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET` (bkz. `.env.example`); değişince yeniden dağıtım gerekir. Dördü de yoksa yükleme kapalıdır ve sayfa bunu söyler. Görseller sitenin kendi `/gorsel/...` adresinden sunulur (r2.dev adresleri bazı ağlarda açılmıyor); kovaya kendi alan adınızı bağlarsanız `R2_PUBLIC_URL` ile doğrudan oradan da verilebilir. Görseli olmayan ürünlerde kategori ikonlu yer tutucu çıkar.
 - **Toplu ürün aktarımı:** Excel (.xlsx) ile içe aktarma hazır (yukarıda, Yönetim paneli). Turna'nın gerçek sütun adları ve fiyatın KDV durumu örnek dışa aktarım gelince netleşecek (sütunlar arayüzden elle de eşlenebilir). Düzenli otomatik stok eşitleme yok: dükkândaki bilgisayardan siteye gönderen bir yol Turna'nın API'sine/otomatik dışa aktarımına bağlı; şimdilik günlük elle yükleme. Canlıya çıkmadan önce `db:seed` örnek kataloğu gerçek veriyle değiştirilmeli.
 - **Online ödeme ve kargo:** Yok (iyzico / PayTR seçimi bekliyor). Şimdilik yalnızca mağazadan teslim. Stok sipariş anında düşülür; ödeme gelince onay anına alınmalı (`actions/order.ts`).
 - **E-posta:** `lib/mail.ts` (Resend) ve `lib/mail-templates.ts` hazır: sipariş onayı, durum değişikliği (müşteriye), yeni sipariş / yeni mesaj (mağazaya) ve parola sıfırlama (`/sifremi-unuttum`). `RESEND_API_KEY` yokken gönderilmez, konsola yazılır. Gerçek gönderim için Resend hesabı + doğrulanmış alan adı gerekir (`.env.example`). E-posta doğrulama (kayıtta) hazır, bkz. "E-posta doğrulama".
@@ -209,3 +209,4 @@ src/app/globals.css       renk paleti ve ortak sınıflar
 - **Logo:** `src/components/Logo.tsx` içinde satır içi SVG olarak tabeladan yeniden çizildi; renkler tahmini (`BLUE`, `PINK`, `YELLOW`). Resmî renk kodları gelince yalnızca bu sabitler değişir. `src/app/icon.svg` aynı işaretten. Sitenin sarısı artık logonun limon sarısıdır (`#e9e61c`, `globals.css` içindeki `--color-brand-*` ölçeği; `Logo.tsx`'teki `YELLOW` ile aynı). Logo sarısı değişirse `--color-brand-*`, `CategoryArt`, e-posta şablonları ve `category-icons.ts` içindeki sabitler de güncellenmeli. Ürün renk paletindeki "Sarı" (`lib/colors.ts`) ürünün gerçek rengidir, marka rengi değildir.
 - **Veritabanı:** Geliştirme ve canlı için tek Neon veritabanı var. Canlı için ayrı veritabanı açılıp `npm run db:deploy` ve `npm run admin:create` orada çalıştırılmalı.
 - **Test:** `npm test` (Vitest, `tests/`): slug/fiyat, parola, sipariş numarası ve durumları, e-posta, yasal metinler, toplu sepet ekleme. Testler veritabanına bağlanmaz (db `vi.mock` ile değiştirilir); sipariş/stok işlemleri ve sayfalar için uçtan uca test yok.
+

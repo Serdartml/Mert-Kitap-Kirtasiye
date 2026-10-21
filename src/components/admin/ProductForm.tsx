@@ -1,8 +1,12 @@
 "use client";
 
 
+import { useState } from "react";
 import Link from "next/link";
 import { saveProduct } from "@/actions/admin";
+import { applyDiscount, parsePercent, percentOf } from "@/lib/discount";
+import { formatPrice } from "@/lib/format";
+import { kurusToInput, parsePriceToKurus } from "@/lib/slug";
 import { useServerForm } from "./useServerForm";
 
 export interface ProductFormValues {
@@ -42,6 +46,41 @@ export default function ProductForm({
   brands: { id: string; name: string }[];
 }) {
   const { state, pending, onSubmit } = useServerForm(saveProduct);
+  // Satış fiyatı, eski fiyat ve indirim yüzdesi birbirine bağlıdır; hangisi yazılırsa diğerleri canlı güncellenir.
+  const [price, setPrice] = useState(values.price);
+  const [compareAt, setCompareAt] = useState(values.compareAt);
+  const [percent, setPercent] = useState(() => percentOf(parsePriceToKurus(values.price), parsePriceToKurus(values.compareAt)));
+  const priceKurus = parsePriceToKurus(price);
+  const compareKurus = parsePriceToKurus(compareAt);
+  const hasDiscount = priceKurus != null && compareKurus != null && compareKurus > priceKurus;
+
+  function onPriceChange(value: string) {
+    setPrice(value);
+    setPercent(percentOf(parsePriceToKurus(value), compareKurus));
+  }
+
+  function onCompareChange(value: string) {
+    setCompareAt(value);
+    setPercent(percentOf(priceKurus, parsePriceToKurus(value)));
+  }
+
+  // Yüzde, asıl fiyat (varsa eski fiyat, yoksa satış fiyatı) üzerinden uygulanır; yüzde silinirse indirim kalkar.
+  function onPercentChange(value: string) {
+    setPercent(value);
+    if (value.trim() === "") {
+      if (hasDiscount) {
+        setPrice(kurusToInput(compareKurus));
+        setCompareAt("");
+      }
+      return;
+    }
+    const parsed = parsePercent(value);
+    if (parsed == null || priceKurus == null) return;
+    const next = applyDiscount(priceKurus, compareKurus, parsed);
+    if (!next) return;
+    setPrice(kurusToInput(next.priceKurus));
+    setCompareAt(kurusToInput(next.compareAtKurus));
+  }
 
   return (
     <form onSubmit={onSubmit} className="max-w-3xl space-y-6">
@@ -98,14 +137,26 @@ export default function ProductForm({
         <legend className="px-1 text-sm font-extrabold">Fiyat ve stok</legend>
         <label className={label}>
           Satış fiyatı (TL)
-          <input name="price" defaultValue={values.price} required inputMode="decimal" className="field mt-1.5 font-normal" placeholder="449,90" />
+          <input name="price" value={price} onChange={(event) => onPriceChange(event.target.value)} required inputMode="decimal" className="field mt-1.5 font-normal" placeholder="449,90" />
           <span className={hint}>KDV dahil.</span>
         </label>
         <label className={label}>
           Eski fiyat (TL)
-          <input name="compareAt" defaultValue={values.compareAt} inputMode="decimal" className="field mt-1.5 font-normal" placeholder="549,90" />
+          <input name="compareAt" value={compareAt} onChange={(event) => onCompareChange(event.target.value)} inputMode="decimal" className="field mt-1.5 font-normal" placeholder="549,90" />
           <span className={hint}>İndirim yoksa boş bırakın.</span>
         </label>
+        <label className={label}>
+          İndirim yüzdesi (%)
+          <input value={percent} onChange={(event) => onPercentChange(event.target.value)} inputMode="decimal" className="field mt-1.5 font-normal" placeholder="20" />
+          <span className={hint}>Yüzde yazınca eski ve satış fiyatı hesaplanır; eski fiyat yazınca yüzde hesaplanır. Yüzdeyi silerseniz indirim kalkar.</span>
+        </label>
+        <p aria-live="polite" className={`self-center rounded-lg border p-3 text-sm font-semibold sm:col-span-2 ${hasDiscount ? "border-green-300 bg-green-50 text-green-800 dark:border-green-800 dark:bg-green-950 dark:text-green-300" : compareAt.trim() && !hasDiscount ? "border-red-300 bg-red-50 text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-300" : "border-neutral-200 text-neutral-500"}`}>
+          {hasDiscount
+            ? `İndirim %${percent}: ${formatPrice(compareKurus)} yerine ${formatPrice(priceKurus)} (${formatPrice(compareKurus - priceKurus)} tasarruf)`
+            : compareAt.trim()
+              ? "Eski fiyat, satış fiyatından yüksek olmalı."
+              : "İndirim yok. Eski fiyat ya da yüzde yazarak indirim ekleyebilirsiniz."}
+        </p>
         <label className={label}>
           Alış fiyatı (TL)
           <input name="cost" defaultValue={values.cost} inputMode="decimal" className="field mt-1.5 font-normal" placeholder="249,90" />

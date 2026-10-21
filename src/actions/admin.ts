@@ -1,5 +1,6 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
 import { Prisma, type OrderStatus } from "@prisma/client";
 import { updateTag } from "next/cache";
 import { redirect } from "next/navigation";
@@ -13,6 +14,7 @@ import { db } from "@/lib/db";
 import { sendMail } from "@/lib/mail";
 import { orderStatusMail } from "@/lib/mail-templates";
 import { closedStatuses, nextStatuses } from "@/lib/order-status";
+import { deleteObject, keyFromUrl, r2Config, uploadObject } from "@/lib/r2";
 import { parsePriceToKurus, slugify } from "@/lib/slug";
 
 // Bu dosyadaki her action önce requireAdmin() çağırır: action'lar doğrudan POST ile de çağrılabilir.
@@ -146,27 +148,96 @@ export async function deleteProduct(id: string): Promise<void> {
 
 const MAX_BULK_IDS = 5000;
 
-// Ürün listesinden toplu silme. İki biçim: seçili kimlikler ("ids") ya da filtreye uyan tüm ürünler (scope=all; aynı
-// q/kategori/filtre ile liste koşulu yeniden kurulur). Siparişler korunur: kalemlerin ürün bağı kopar (şemada SetNull).
-export async function deleteProducts(formData: FormData): Promise<void> {
-  await requireAdmin();
-
-  let where: Prisma.ProductWhereInput;
+// Toplu işlemin hedefi: seçili kimlikler ("ids") ya da filtreye uyan tüm ürünler (scope=all; aynı q/kategori/filtre ile
+// liste koşulu yeniden kurulur).
+async function bulkTargetWhere(formData: FormData): Promise<Prisma.ProductWhereInput> {
   if (text(formData, "scope") === "all") {
     const roots = await db.category.findMany({ where: { parentId: null }, select: { id: true, children: { select: { id: true } } } });
     const filter = text(formData, "filtre");
-    where = productListWhere({ q: text(formData, "q").slice(0, 100), categoryId: text(formData, "kategori"), filter: isProductFilter(filter) ? filter : "" }, roots);
-  } else {
-    const ids = [...new Set(formData.getAll("ids").map(String).filter((id) => id.length > 0 && id.length <= 40))];
-    if (ids.length === 0) redirect("/yonetim/urunler");
-    // Sessizce kırpmak yerine reddedilir: kullanıcı hepsinin silindiğini sanmasın.
-    if (ids.length > MAX_BULK_IDS) redirect("/yonetim/urunler?durum=cok-fazla");
-    where = { id: { in: ids } };
+    return productListWhere({ q: text(formData, "q").slice(0, 100), categoryId: text(formData, "kategori"), filter: isProductFilter(filter) ? filter : "" }, roots);
   }
+  const ids = [...new Set(formData.getAll("ids").map(String).filter((id) => id.length > 0 && id.length <= 40))];
+  if (ids.length === 0) redirect("/yonetim/urunler");
+  // Sessizce kırpmak yerine reddedilir: kullanıcı hepsinin işlendiğini sanmasın.
+  if (ids.length > MAX_BULK_IDS) redirect("/yonetim/urunler?durum=cok-fazla");
+  return { id: { in: ids } };
+}
+
+// Ürün listesinden toplu silme. Siparişler korunur: kalemlerin ürün bağı kopar (şemada SetNull).
+export async function deleteProducts(formData: FormData): Promise<void> {
+  await requireAdmin();
+  const where = await bulkTargetWhere(formData);
 
   const { count } = await db.product.deleteMany({ where });
   updateTag(CATALOG_TAG);
   redirect(`/yonetim/urunler?durum=toplu-silindi&adet=${count}`);
+}
+
+// Ürün listesinden toplu öne çıkarma ("islem": one-cikar ya da one-cikarma). İndirim ürün sayfasından tek tek düzenlenir.
+export async function editProducts(formData: FormData): Promise<void> {
+  await requireAdmin();
+  const where = await bulkTargetWhere(formData);
+  const featured = text(formData, "islem") === "one-cikar";
+
+  const { count } = await db.product.updateMany({ where, data: { isFeatured: featured } });
+  updateTag(CATALOG_TAG);
+  redirect(`/yonetim/urunler?durum=${featured ? "one-cikarildi" : "one-cikarilmadi"}&adet=${count}`);
+}
+
+// ---------- Ürün görselleri (Cloudflare R2) ----------
+
+const IMAGE_TYPES: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp", "image/avif": "avif" };
+// Vercel'de istek 4,5 MB'ı aşamaz; tarayıcı görseli yüklemeden önce küçültür (components/admin/ProductImages), bu yalnızca üst sınırdır.
+const MAX_IMAGE_BYTES = 4 * 1024 * 1024;
+const MAX_IMAGES_PER_PRODUCT = 8;
+
+export async function uploadProductImages(_prev: FormState, formData: FormData): Promise<FormState> {
+  await requireAdmin();
+
+  const productId = text(formData, "productId");
+  const config = r2Config();
+  if (!config) return { error: "Görsel depolama (Cloudflare R2) henüz bağlı değil. Ortam değişkenlerini girin (.env.example)." };
+
+  const files = formData.getAll("files").filter((file): file is File => file instanceof File && file.size > 0);
+  if (files.length === 0) return { error: "Önce bir görsel seçin." };
+  for (const file of files) {
+    if (!IMAGE_TYPES[file.type]) return { error: `${file.name}: yalnızca JPG, PNG, WebP ya da AVIF yüklenebilir.` };
+    if (file.size > MAX_IMAGE_BYTES) return { error: `${file.name}: görsel 4 MB'tan büyük.` };
+  }
+
+  const existing = await db.productImage.findMany({ where: { productId }, select: { sortOrder: true } });
+  if (existing.length + files.length > MAX_IMAGES_PER_PRODUCT) return { error: `Bir ürüne en fazla ${MAX_IMAGES_PER_PRODUCT} görsel eklenebilir.` };
+  let sortOrder = existing.reduce((max, image) => Math.max(max, image.sortOrder), -1);
+
+  for (const file of files) {
+    const key = `urunler/${productId}/${randomUUID()}.${IMAGE_TYPES[file.type]}`;
+    const url = await uploadObject(config, key, new Uint8Array(await file.arrayBuffer()), file.type);
+    await db.productImage.create({ data: { productId, url, sortOrder: ++sortOrder } });
+  }
+
+  updateTag(CATALOG_TAG);
+  redirect(`/yonetim/urunler/${productId}?durum=gorsel-eklendi&adet=${files.length}`);
+}
+
+export async function deleteProductImage(id: string): Promise<void> {
+  await requireAdmin();
+  const image = await db.productImage.delete({ where: { id } });
+  // Nesne silinemezse (ağ hatası) kayıt yine de gider; artık hiçbir sayfada görünmez, yalnızca depoda yetim dosya kalır.
+  const config = r2Config();
+  const key = config ? keyFromUrl(config, image.url) : null;
+  if (config && key) await deleteObject(config, key).catch(() => undefined);
+  updateTag(CATALOG_TAG);
+  redirect(`/yonetim/urunler/${image.productId}?durum=gorsel-silindi`);
+}
+
+// Seçilen görseli ürünün ilk (kapak) görseli yapar.
+export async function setPrimaryProductImage(id: string): Promise<void> {
+  await requireAdmin();
+  const image = await db.productImage.findUniqueOrThrow({ where: { id } });
+  const first = await db.productImage.findFirst({ where: { productId: image.productId }, orderBy: { sortOrder: "asc" } });
+  if (first && first.id !== id) await db.productImage.update({ where: { id }, data: { sortOrder: first.sortOrder - 1 } });
+  updateTag(CATALOG_TAG);
+  redirect(`/yonetim/urunler/${image.productId}?durum=kaydedildi`);
 }
 
 export async function setProductActive(id: string, isActive: boolean): Promise<void> {
