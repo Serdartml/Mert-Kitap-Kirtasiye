@@ -6,8 +6,9 @@ import { ImagePlus, Star, Trash2 } from "lucide-react";
 import { deleteProductImage, setPrimaryProductImage, uploadProductImages } from "@/actions/admin";
 import ConfirmButton from "./ConfirmButton";
 
-// En uzun kenar bu kadar pikselden büyükse küçültülür; hem Vercel'in 4,5 MB istek sınırına hem hızlı sayfa yüklemeye uyar.
-const MAX_SIDE = 1600;
+// En uzun kenar bu kadar pikselden büyükse küçültülür; Vercel'in 4,5 MB istek sınırına uyar ve görseller sunucuda
+// ayrıca işlenmeden (ücretli görsel optimizasyonu kullanılmadan) sunulduğu için sayfalar hafif kalır.
+const MAX_SIDE = 1000;
 const MAX_FILES = 8;
 
 // Görseli tarayıcıda küçültüp WebP'ye çevirir. Çözülemeyen biçimde (ör. AVIF desteği yok) özgün dosya aynen gider.
@@ -19,7 +20,7 @@ async function shrink(file: File): Promise<File> {
     canvas.width = Math.round(bitmap.width * scale);
     canvas.height = Math.round(bitmap.height * scale);
     canvas.getContext("2d")!.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/webp", 0.85));
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/webp", 0.8));
     return blob ? new File([blob], file.name.replace(/\.[^.]+$/, "") + ".webp", { type: "image/webp" }) : file;
   } catch {
     return file;
@@ -62,7 +63,7 @@ export default function ProductImages({ productId, images, configured }: Product
           {images.map((image, index) => (
             <li key={image.id} className="space-y-1.5">
               <div className="relative aspect-square overflow-hidden rounded-lg bg-white">
-                <Image src={image.url} alt="" fill sizes="160px" className="object-contain" />
+                <Image src={image.url} alt="" fill sizes="160px" unoptimized={image.url.startsWith("/gorsel/")} className="object-contain" />
                 {index === 0 && <span className="absolute left-1.5 top-1.5 rounded bg-brand-500 px-1.5 py-0.5 text-[10px] font-extrabold text-ink">Kapak</span>}
               </div>
               <div className="flex gap-1.5">

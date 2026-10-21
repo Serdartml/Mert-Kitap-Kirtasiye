@@ -1,4 +1,4 @@
-import { foldTr } from "./search-fold";
+﻿import { foldTr } from "./search-fold";
 import type { ParsedName, TurnaItem } from "./turna-catalog";
 
 // Turna ürünlerine "Ana > Alt" kategori atar. Kurallar katlanmış (foldTr: küçük harf, ı=i, ç=c ...) ad üzerinde çalışır.
@@ -39,7 +39,7 @@ const CAT = {
   elektronik: "Elektronik > Aksesuarlar",
   cocukKitap: "Kültür Kitapları > Çocuk Kitapları",
   roman: "Kültür Kitapları > Roman & Edebiyat",
-  diger: "Diğer Ürünler > Çeşitli",
+  diger: "Kırtasiye > Diğer Ürünler",
 } as const;
 
 // ---------- Kitaplar ----------
@@ -371,3 +371,4 @@ export function classify(item: TurnaItem, parsed: ParsedName, signals: BookSigna
   if (any) return { category: any, kind: "urun" };
   return { category: CAT.diger, kind: "belirsiz" };
 }
+

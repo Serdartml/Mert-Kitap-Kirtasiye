@@ -19,7 +19,8 @@ export async function GET(_request: Request, { params }: { params: Promise<{ key
       headers: {
         "Content-Type": object.ContentType ?? "application/octet-stream",
         ...(object.ContentLength != null ? { "Content-Length": String(object.ContentLength) } : {}),
-        "Cache-Control": "public, max-age=31536000, immutable",
+        // s-maxage: Vercel'in CDN'i de saklar; aynı görsel için sunucu işlevi yalnızca ilk istekte çalışır.
+        "Cache-Control": "public, max-age=31536000, s-maxage=31536000, immutable",
       },
     });
   } catch (error) {

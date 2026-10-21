@@ -83,7 +83,7 @@ async function main() {
     if (item.costKurus === 0) flags.push("Alış fiyatı yok");
     if (item.stock >= HIGH_STOCK) flags.push("Stok çok yüksek");
     if (!Number.isInteger(item.stock)) flags.push("Stok ondalıklı");
-    const category = result.category ?? "Diğer Ürünler > Çeşitli";
+    const category = result.category ?? "Kırtasiye > Diğer Ürünler";
     const edition = category.startsWith("Hazırlık Kitapları") ? editionOf(item.name) : null;
     return { item, parsed, category, kind: result.kind, name, brand, barcode, flags, edition };
   });
@@ -139,4 +139,5 @@ main().catch((error) => {
   console.error(error);
   process.exit(1);
 });
+
 

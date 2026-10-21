@@ -43,7 +43,8 @@ export default function ProductVisual({ name, rootCategorySlug, image, sizes = "
     >
       {image ? (
         // object-contain: fotoğraf kırpılmadan (yakınlaştırılmadan) kareye sığar; boş kalan yerler beyaz zemindir (ürün fotoğrafları çoğunlukla beyaz zeminlidir).
-        <Image src={image.url} alt={image.alt ?? name} fill sizes={sizes} priority={priority} className="object-contain" />
+        // Kendi /gorsel/ görsellerimiz yüklemede zaten küçültülüyor; Vercel'in görsel optimizasyonundan (ücretli kota) geçirilmez.
+        <Image src={image.url} alt={image.alt ?? name} fill sizes={sizes} priority={priority} unoptimized={image.url.startsWith("/gorsel/")} className="object-contain" />
       ) : (
         <div
           className={`product-placeholder relative size-full ${pattern} ${tone.split(" ")[1]} [--pattern-color:color-mix(in_srgb,currentColor_14%,transparent)]`}

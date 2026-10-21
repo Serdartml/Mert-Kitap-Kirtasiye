@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import Link from "next/link";
-import { ArrowDown, ArrowUp, ArrowUpDown, FileSpreadsheet, Plus } from "lucide-react";
+import { ArrowDown, ArrowUp, ArrowUpDown, FileSpreadsheet, Image as ImageIcon, Plus } from "lucide-react";
 import { deleteProducts, editProducts, setProductActive } from "@/actions/admin";
 import BulkSelect, { BulkCheckbox } from "@/components/admin/BulkSelect";
 import RememberFilters from "@/components/admin/RememberFilters";
@@ -123,6 +123,9 @@ export default async function AdminProductsPage({ searchParams }: PageProps) {
           <span className="marker">Ürünler</span>
         </h1>
         <div className="flex flex-wrap gap-2">
+          <Link href="/yonetim/urunler/kapaklar" className="btn btn-outline">
+            <ImageIcon size={16} aria-hidden /> Kapakları getir
+          </Link>
           <Link href="/yonetim/urunler/ice-aktar" className="btn btn-outline">
             <FileSpreadsheet size={16} aria-hidden /> Excel&apos;den aktar
           </Link>
