@@ -125,5 +125,20 @@ describe("kategori", () => {
 
   it("yayınevi markasıyla aynı olan oyuncak markası ürün kalır", () => {
     expect(categoryOf("Slime Dondurma-yasin", 0, ["yasin"])).toBe("Oyuncak > Peluş & Fidget");
+    expect(categoryOf("Klavye Işıklı Anahtarlık Minecraft Tekli-çınar", 0, ["çınar"])).toBe("Hediyelik > Hediye & Biblo");
+    expect(categoryOf("Vangogh Puf Defter A5-çınar", 0, ["çınar"])).toBe("Kırtasiye > Defterler & Not Kâğıtları");
+  });
+
+  it("hediyelik yalnızca biblo, anahtarlık gibi hediye eşyalarını içerir", () => {
+    expect(categoryOf("Biblo Anime Kızlar-Doğubey")).toBe("Hediyelik > Hediye & Biblo");
+    expect(categoryOf("Anahtarlık Einstein-Özbala")).toBe("Hediyelik > Hediye & Biblo");
+    // "maşa" ve "müzik" katlanınca masa/muzik olur; hediyelik kelimeleriyle karışmamalı.
+    expect(categoryOf("Maşa Raptiye No:3 75Mm-Mas Büro")).toBe("Kırtasiye > Ofis Gereçleri");
+    expect(categoryOf("Müzik Defteri Küçük 40Yp.Mopak", 10)).toBe("Kırtasiye > Defterler & Not Kâğıtları");
+    expect(categoryOf("Masa Tenisi Raketi-slazenger")).toBe("Oyuncak > Spor & Top");
+    expect(categoryOf("Kitap Ayracı Tom Ve Jerry-Mabbels")).toBe("Kırtasiye > Defterler & Not Kâğıtları");
+    expect(categoryOf("Hediye Çantası Sevimli Hayvanlar K2-keskincolor")).toBe("Kırtasiye > Zarf, Etiket & Sticker");
+    expect(categoryOf("Hediye Poşeti Metalize 50X70")).toBe("Kırtasiye > Zarf, Etiket & Sticker");
+    expect(categoryOf("Boya Kalemi Grip Turkuaz-Faber")).toBe("Sanatsal > Boyalar");
   });
 });

@@ -1,10 +1,10 @@
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+﻿import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { readSheet } from "read-excel-file/node";
 import writeXlsxFile from "write-excel-file/node";
 import { foldTr } from "../src/lib/search-fold";
 import { buildBrandNames, editionOf, notForSaleReason, parseName, readTurnaRows, type Edition, type ParsedName, type TurnaItem } from "../src/lib/turna-catalog";
-import { classify, learnPublishers } from "../src/lib/turna-categories";
+import { classify, learnProductBrands, learnPublishers } from "../src/lib/turna-categories";
 
 // Turna dışa aktarımını (başlıksız .xlsx) siteye yüklenecek biçime çevirir. Veritabanına dokunmaz.
 //   npx tsx scripts/turna-hazirla.ts stok-temiz.xlsx [çıktı-klasörü]
@@ -61,11 +61,12 @@ async function main() {
   }
 
   const publishers = learnPublishers(kept.map(({ item, parsed }) => ({ brand: parsed.brand, vat: item.vat })));
+  const productBrands = learnProductBrands(kept.map(({ item, parsed }) => ({ brand: parsed.brand, name: item.name })));
   const brandNames = buildBrandNames(kept.flatMap(({ parsed }) => (parsed.brand ? [parsed.brand] : [])));
 
   const seenBarcodes = new Set<string>();
   const rows: Row[] = kept.map(({ item, parsed }) => {
-    const result = classify(item, parsed, { publishers });
+    const result = classify(item, parsed, { publishers, productBrands });
     const brand = parsed.brand ? (brandNames.get(foldTr(parsed.brand)) ?? parsed.brand) : null;
     // Sitede görünen ad markasızdır (marka/toptancı adı müşteriye gösterilmez); marka ayrı alanda, yönetimde görünür.
     const name = parsed.title.slice(0, 200);
@@ -138,3 +139,4 @@ main().catch((error) => {
   console.error(error);
   process.exit(1);
 });
+

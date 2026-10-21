@@ -33,8 +33,8 @@ const CAT = {
   pelus: "Oyuncak > Peluş & Fidget",
   spor: "Oyuncak > Spor & Top",
   parti: "Oyuncak > Parti & Yılbaşı",
+  // Hediyelik yalnızca biblo, anahtarlık, kumbara gibi hediye eşyaları içindir; ambalaj, kırtasiye ve günlük eşya buraya girmez.
   hediye: "Hediyelik > Hediye & Biblo",
-  kitapAks: "Hediyelik > Kitap Aksesuarları",
   hesap: "Elektronik > Hesap Makineleri",
   elektronik: "Elektronik > Aksesuarlar",
   cocukKitap: "Kültür Kitapları > Çocuk Kitapları",
@@ -117,7 +117,8 @@ const HARD_LEADS: Record<CategoryPath, string> = {
   [CAT.pelus]: "pelus squishy slime yoyo oynar kinetik tatli kopuk ruzgar pop soft kopuren",
   [CAT.spor]: "futbol basketbol voleybol hentbol tenis pinpon badminton kaykay",
   [CAT.parti]: "balon konfeti noel yilbasi sus",
-  [CAT.hediye]: "hediyelik hediye biblo anahtarlik kupa muzik buhurdanlik tutsuluk magnet miknatisli hatira fanus taki bileklik semsiye mendil kumbara bayrak dekoratif plak anime duvar kum fotograf rozet atli islak calar mumluk",
+  [CAT.hediye]: "hediyelik biblo anahtarlik kupa muzik buhurdanlik tutsuluk magnet miknatisli hatira fanus taki bileklik kumbara dekoratif plak anime duvar kum fotograf rozet atli calar mumluk",
+  [CAT.diger]: "semsiye mendil islak bayrak",
   [CAT.hesap]: "hesap",
   [CAT.elektronik]: "pil sarj usb kulaklik mouse tablet telefon laptop bilgisayar kronometre elektrik dijital flash led el arac",
 };
@@ -132,7 +133,7 @@ const SOFT_LEADS: Record<CategoryPath, string> = {
   [CAT.boya]: "sulu pastel",
   [CAT.okulGerec]: "ogrenci",
   [CAT.hobi]: "mum ahsap",
-  [CAT.hediye]: "masa pul",
+  [CAT.hediye]: "masa",
   [CAT.puzzle]: "oyun zeka",
   [CAT.pelus]: "sihirli surpriz stres",
   [CAT.spor]: "top",
@@ -143,6 +144,40 @@ const SOFT_LEADS: Record<CategoryPath, string> = {
 
 // Adın başındaki ikili/üçlü kalıplar tek kelimeden güvenilirdir; önce bunlara bakılır. Başında ^ olmayanlar ad içinde aranır.
 const PHRASES: [RegExp, CategoryPath][] = [
+  // "maşa" ve "müzik" gibi kelimeler katlanınca (masa, muzik) hediyelik kelimeleriyle çakışır; bunlar önce yakalanır.
+  [/^masa raptiye/, CAT.ofis],
+  [/^masa ajanda/, CAT.ajanda],
+  [/^masa tenisi/, CAT.spor],
+  [/^top model .*daksil/, CAT.silgi],
+  [/^top model|^mumya kalem|silgili kalem/, CAT.kalem],
+  [/^mum boya|boya kalemi|^aquarelle/, CAT.boya],
+  [/^bos kalem kutu/, CAT.kalemlik],
+  [/^(cd|dvd) bos|^kareoke|^fan\b|\bpili\b/, CAT.elektronik],
+  [/^(norf|karambit)/, CAT.arac],
+  [/^(slot makina|sut ve gol|scotland yard|pinart)/, CAT.puzzle],
+  [/^ozluk dosya/, CAT.dosya],
+  [/maket bicag/, CAT.ofis],
+  [/^(matematik islem|gezegen seti|volkanin gucu)/, CAT.okulGerec],
+  [/^(hazir )?(defter|kitap) kabi/, CAT.okulGerec],
+  [/defter cantasi/, CAT.canta],
+  [/^yazi izi defter/, CAT.defter],
+  [/^sihirli (boyama|hayvanlar)|^harf ve cizgi/, CAT.cocukKitap],
+  [/^sihirli defter/, CAT.defter],
+  [/^(cam|kar) kure|^cam plaket|^cam .*cerceve|^cam kullu/, CAT.hediye],
+  [/^masa sandalye|^sanal bebek/, CAT.arac],
+  [/^muzik defter|^anahtarlikli .*defter|^hediyelik defter/, CAT.defter],
+  [/^hediyelik kalemlik/, CAT.kalemlik],
+  [/^hediyelik (ahsap )?kalem\b|^sahte para/, CAT.kalem],
+  [/^pul sanati/, CAT.puzzle],
+  [/^pul\b/, CAT.hobi],
+  [/^(taki|bileklik) .*(boncuk|tasarim) seti/, CAT.hobi],
+  [/^(tebrik|hediye) kart|^(hediye|hediyelik) (canta|poset|kutu)|^poset/, CAT.zarf],
+  [/kitap ayrac/, CAT.defter],
+  [/^muzik sor/, CAT.cocukKitap],
+  [/^fotograf (kagi|baski)/, CAT.kagit],
+  [/^fotograf alb/, CAT.defter],
+  [/^duvar stic/, CAT.zarf],
+  [/^dekoratif radyo|^masa ustu .*fan/, CAT.elektronik],
   [/boyama (kitab|defter)|kitabim\b/, CAT.cocukKitap],
   [/^resim defter|^hatira defter/, CAT.defter],
   [/^sinav silgi|^hamur silgi/, CAT.silgi],
@@ -162,7 +197,7 @@ const PHRASES: [RegExp, CategoryPath][] = [
   [/^(tubitak|cocuklar icin)/, CAT.cocukKitap],
   [/^masa takvim/, CAT.ajanda],
   [/^maket (bicag|bicagi)|^ambalaj lastik/, CAT.ofis],
-  [/^(ambalaj kagit|hediye kagit|hediye poset|hediye kutu|poset)/, CAT.hediye],
+  [/^(ambalaj kagit|hediye kagit)/, CAT.kagit],
   [/^(fotograf (kagit|baski))|^renkli kagit|^kuse kagit/, CAT.kagit],
   [/^(fotograf albu|fotograf askis)/, CAT.hediye],
   [/^(yazi tahtas|beyaz tahta(?! kalem))/, CAT.okulGerec],
@@ -170,10 +205,20 @@ const PHRASES: [RegExp, CategoryPath][] = [
   [/^(cam|seramik|kumas|tekstil|ahsap|su bazli|sulu) ?boya|boyasi\b|^parmak boya/, CAT.boya],
   [/^(su|matara) ?(matara|sisesi|mataras)|^matara/, CAT.matara],
   [/^okul canta/, CAT.okulCanta],
-  [/^(kitap ayrac|kitap kabi|hazir kitap kabi)/, CAT.kitapAks],
   [/^hesap makin/, CAT.hesap],
   [/^(cam |kar )(kure|sprey)|^kar (kure|sprey)|^yilbasi/, CAT.parti],
   [/^cam (boya|jel|sticker|vitray)/, CAT.boya],
+  // Yayınevi sanılan marka ürünleri (Barış Ahşap, Esen, Mungyo, Top Dünyası, Emin...) kitap kategorisine düşmesin.
+  [/^ahsap .*(kutu|saklama|box)/, CAT.kalemlik],
+  [/^ahsap\b/, CAT.hobi],
+  [/toz pastel|^sac boyama seti/, CAT.boya],
+  [/^fermuar susu/, CAT.hediye],
+  [/^maske lastikli/, CAT.diger],
+  [/deney seti|dinamometre seti|dunya sistemi isikli/, CAT.okulGerec],
+  [/tuval seti/, CAT.firca],
+  [/^atlama ipi/, CAT.spor],
+  [/^stres carki|tas kagit makas oyunu|^carkifelek oyunu|^at yakala oyunu|^buzdagi oyunu/, CAT.puzzle],
+  [/^hoptop oyuncak/, CAT.arac],
 ];
 
 const leadIndex = (rules: Record<CategoryPath, string>) => {
@@ -195,16 +240,19 @@ const ANYWHERE: [RegExp, CategoryPath][] = [
   [/kirtasiye seti|baslangic seti|yazi tahtasi temizleyici/, CAT.okulGerec],
   [/squishy|slime|pop-?it|hamuru\b/, CAT.pelus],
   [/kalemtras|\bsilgi/, CAT.silgi],
-  [/makbuz|otokopili|kontrat|tutanak|taahhut|\bfisi?\b|adisyon|numarator|\batas|sumen|klips|kartvizit|kasasi|kimlik|ehliyet|kilif|karne|asma kilit|vantuz|kaplik/, CAT.ofis],
+  [/makbuz|otokopili|kontrat|tutanak|taahhut|\bfisi?\b|adisyon|numarator|\batas\b|sumen|klips|kartvizit|kasasi|kimlik|ehliyet|kilif|karne|asma kilit|vantuz|kaplik/, CAT.ofis],
   [/kagi[dt]|bristol|aydinger|jelatin|folyo|kaplama|persomen|\bkarton\b/, CAT.kagit],
-  [/paten|dizlik|\bkask\b|snorkel|yuzucu|simit|sisme|kamp yatagi|bisiklet|plates|boks|rugby|havuz|oyun\s*kart/, CAT.spor],
+  [/paten|dizlik|\bkask\b|snorkel|yuzucu|simit|sisme|kamp yatagi|bisiklet|plates|boks|rugby|havuz/, CAT.spor],
+  [/oyun\s*karti?/, CAT.puzzle],
   [/tombala|mangala|domino|\btabu\b|scrabble|twister|cluedo|hafiza kart|misket|topac|tangram|\boyun\w*|\bzeka\b|puzzle|satranc|\brisk\b|kutu oyun/, CAT.puzzle],
+  [/anahtarlik/, CAT.hediye],
   [/sarj|power ?bank|\busb\b|kablo|speaker|pikap|karaoke|mikrofon|klavye|\bmouse\b|\bmp3\b|ampul|lamba|\bled\b|nemlendirici|buhar mak|kamera|\bpil\b|sd kart|cakmak|flut|melodika/, CAT.elektronik],
   [/ekskavator|motorsiklet|mini gt|vosvos|maket araba|jordania|nerf|nork/, CAT.arac],
   [/dekopaj|quiling|quilling|mozaik|spatul|spatula|vitray|oyma seti|pon ?pon|baget|dugme|hasir|\btuy\b|soma kup|funny kids|nail art|tirnak|modelleme|terebentin|keten yagi|canvas pad|sovale|\btoka\b|pouring/, CAT.hobi],
   [/sablon|kesir|birim kup|geometrik|taban bloklari|oruntu|ebesuar|carpim tablosu|pistole|klavuz cizgili|sistemi seti|dolasim|sindirim|bosaltim|gezegen sistemi|teleskop|durbun|mikroskop|harita|\bkure\b/, CAT.okulGerec],
   [/yemek kabi|lunchbox/, CAT.beslenme],
-  [/biblo|cerceve|poster|portre|kosesi|kolye|yuzuk|tarak|\bayna\b|maske|kolonya|sabun|kumbara|terlik susu|tattoo|anahtarlik|bardak|tepsi|tebrik|yelpaze|sifonyer|tuzluk|kullukl?u?k|fiyonk|hasir ipi|sahte para|dedeler/, CAT.hediye],
+  [/\bmaske\b|kolonya|sabun|\btarak|tuzluk|tepsi|sifonyer|fiyonk|tattoo/, CAT.diger],
+  [/biblo|cerceve|poster|portre|kosesi|kolye|yuzuk|\bayna\b|kumbara|terlik susu|anahtarlik|bardak|yelpaze|kullukl?u?k|hasir ipi|dedeler/, CAT.hediye],
   [/doğum günü|dogum gunu|\bmum/, CAT.parti],
   [/\b(kalem\w*|tukenmez|versatil)\b/, CAT.kalem],
   [/\bdosya\b/, CAT.dosya],
@@ -215,6 +263,10 @@ const ANYWHERE: [RegExp, CategoryPath][] = [
   [/\boyuncak\b/, CAT.arac],
   [/\bsticker\b/, CAT.zarf],
 ];
+
+// Yazarsız ad bunlardan birini içeriyorsa, marka yayınevi gibi görünse bile kitap değil üründür.
+const STRONG_PRODUCT =
+  /\b(defter|kalem|silgi|anahtarlik|cerceve|tepsi|sovale|nemlendirici|kumbara|klavye|folyo|persomen|versatil|melodika|cakmak|duduk|topac|tangram|dama|tombala|ebesuar|spatul|tuval)\b|oyun kart|futbolcu kart|kart oyunu|ticaret oyunu|surpriz kutu|kalem seti|yapim seti|hasir ipi|ahsap (tepsi|anahtarlik|cekmeceli|klipsli)/;
 
 export function leadWord(folded: string): string {
   return folded.split(/[\s.,:;/()+-]+/).find(Boolean) ?? "";
@@ -243,6 +295,24 @@ export function anywhereCategory(folded: string): CategoryPath | null {
 
 export interface BookSignals {
   publishers: Set<string>;
+  // Çoğunlukla ürün (kırtasiye, oyuncak) satan markalar; yayınevi sayılmaz, adı kitaba benzese de kitap olarak atanmaz.
+  productBrands?: Set<string>;
+}
+
+// Adı kesin ürün kelimesiyle başlayan ürünleri çoğunlukta olan markalar (Çınar, Saha, Gökçe...) ürün markasıdır.
+export function learnProductBrands(entries: { brand: string | null; name: string }[]): Set<string> {
+  const seen = new Map<string, { hard: number; all: number }>();
+  for (const { brand, name } of entries) {
+    if (!brand) continue;
+    const key = foldTr(brand);
+    const stat = seen.get(key) ?? { hard: 0, all: 0 };
+    stat.all++;
+    if (hardCategory(foldTr(name))) stat.hard++;
+    seen.set(key, stat);
+  }
+  const brands = new Set<string>();
+  for (const [key, stat] of seen) if (stat.hard >= 3 && stat.hard / stat.all >= 0.4) brands.add(key);
+  return brands;
 }
 
 // Markası (son "-" sonrası) çoğunlukla KDV %0 ürünlerde geçen adlar yayınevi sayılır.
@@ -270,7 +340,8 @@ export function classify(item: TurnaItem, parsed: ParsedName, signals: BookSigna
   const folded = foldTr(item.name);
   const brand = foldTr(parsed.brand ?? "");
   const hasAuthor = /\(.*-.*\)/.test(item.name);
-  const publisherBrand = brand !== "" && signals.publishers.has(brand);
+  const productBrand = brand !== "" && !!signals.productBrands?.has(brand);
+  const publisherBrand = brand !== "" && signals.publishers.has(brand) && !productBrand;
   const hard = hardCategory(folded);
 
   // 1) Sınav/hazırlık kitabı (Turna bazılarını yanlış KDV ile girmiş; KDV'ye bakılmaz).
@@ -282,6 +353,12 @@ export function classify(item: TurnaItem, parsed: ParsedName, signals: BookSigna
   // 3) Kesin ürün kelimesi.
   if (hard) return { category: hard, kind: "urun" };
 
+  // 3b) Çınar, Gökçe, Esen gibi markalar ya da yanlış KDV %0 girilmiş ürünler yayınevi sanılıp kitaba düşmesin: adı açıkça ürün söylüyorsa ürün.
+  if (STRONG_PRODUCT.test(folded)) {
+    const any = anywhereCategory(folded);
+    if (any) return { category: any, kind: "urun" };
+  }
+
   // 4) Yayınevi markalı ya da KDV %0 + Turna kitap etiketi: kitap.
   const labelBook = /kitap/.test(foldTr(item.label));
   if (publisherBrand || labelBook) return { category: bookCategory(item, parsed, folded), kind: "kitap" };
@@ -289,7 +366,7 @@ export function classify(item: TurnaItem, parsed: ParsedName, signals: BookSigna
   // 5) Belirsiz ürün kelimesi, sonra ad içi sinyaller.
   const soft = softCategory(folded);
   if (soft) return { category: soft, kind: "urun" };
-  if (item.vat === 0) return { category: bookCategory(item, parsed, folded), kind: "kitap" };
+  if (item.vat === 0 && !productBrand) return { category: bookCategory(item, parsed, folded), kind: "kitap" };
   const any = anywhereCategory(folded);
   if (any) return { category: any, kind: "urun" };
   return { category: CAT.diger, kind: "belirsiz" };
