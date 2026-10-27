@@ -20,7 +20,8 @@ const CONCURRENCY = 3;
 const DELAY_MS = 250;
 
 const rootArg = process.argv.indexOf("--kok");
-const ROOT = rootArg > -1 ? process.argv[rootArg + 1] : "Kültür Kitapları";
+// Virgülle ayrılmış birden çok ana kategori verilebilir. Kitap dışı kategoriler denenince yalnızca henüz görseli olmayan ürünler alınır.
+const ROOTS = (rootArg > -1 ? process.argv[rootArg + 1] : "Kültür Kitapları").split(",").map((s) => s.trim());
 const limitArg = process.argv.indexOf("--limit");
 const limit = limitArg > -1 ? Number(process.argv[limitArg + 1]) : Infinity;
 
@@ -68,7 +69,7 @@ console.log(`Yer tutucu özeti: ${[...placeholders].join(", ") || "yok (site 404
 
 const db = new PrismaClient();
 const products = await db.product.findMany({
-  where: { barcode: { not: null }, category: { parent: { name: ROOT } } },
+  where: { barcode: { not: null }, category: { parent: { name: { in: ROOTS } } }, images: { none: {} } },
   select: { barcode: true },
   orderBy: { barcode: "asc" },
 });
@@ -78,7 +79,7 @@ const todo = products
   .map((p) => p.barcode.trim())
   .filter((b) => /^\d{8,14}$/.test(b) && !["ok", "yok"].includes(done.get(b)))
   .slice(0, limit);
-console.log(`${ROOT}: ${products.length} ürün, ${products.length - todo.length} atlandı/önceden bitti, ${todo.length} işlenecek.`);
+console.log(`${ROOTS.join(", ")} (görselsiz): ${products.length} ürün, ${products.length - todo.length} atlandı/önceden bitti, ${todo.length} işlenecek.`);
 
 let stopping = false;
 process.on("SIGINT", () => {

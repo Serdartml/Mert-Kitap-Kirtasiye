@@ -19,7 +19,11 @@ const IMG_DIR = `${DIR}/guclu`;
 const STATE = `${DIR}/guclu-durum.jsonl`;
 const SITE = "https://b2b.guclukirtasiye.com";
 const EDGE = "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe";
-const ROOTS = ["Kırtasiye", "Sanatsal", "Hediyelik", "Elektronik", "Oyuncak", "Çanta & Beslenme"];
+const rootArg = process.argv.indexOf("--kok");
+// Varsayılan: kitap dışı ana kategoriler. --kok "Kültür Kitapları,Hazırlık Kitapları" ile kitaplar da denenebilir.
+const ROOTS = rootArg > -1
+  ? process.argv[rootArg + 1].split(",").map((s) => s.trim())
+  : ["Kırtasiye", "Sanatsal", "Hediyelik", "Elektronik", "Oyuncak", "Çanta & Beslenme"];
 const CONCURRENCY = 3;
 const DELAY_MS = 400;
 
@@ -52,7 +56,7 @@ if (existsSync(STATE)) {
 
 const db = new PrismaClient();
 const products = await db.product.findMany({
-  where: { barcode: { not: null }, category: { parent: { name: { in: ROOTS } } } },
+  where: { barcode: { not: null }, category: { parent: { name: { in: ROOTS } } }, images: { none: {} } },
   select: { barcode: true },
   orderBy: { barcode: "asc" },
 });
