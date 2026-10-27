@@ -26,3 +26,6 @@ prisma/*.db-journal
 /stok*.xlsx
 /stok-cikti/
 ~$*
+
+# Toptancılardan indirilen ürün görselleri ve indirme ilerleme dosyaları (R2'ye yüklenir, depoya girmez)
+/gorsel-veri/
