@@ -126,6 +126,9 @@ export default async function AdminProductsPage({ searchParams }: PageProps) {
           <Link href="/yonetim/urunler/kapaklar" className="btn btn-outline">
             <ImageIcon size={16} aria-hidden /> Kapakları getir
           </Link>
+          <Link href="/yonetim/urunler/fotosuz" className="btn btn-outline">
+            <ImageIcon size={16} aria-hidden /> Fotoğrafsız ürünler
+          </Link>
           <Link href="/yonetim/urunler/ice-aktar" className="btn btn-outline">
             <FileSpreadsheet size={16} aria-hidden /> Excel&apos;den aktar
           </Link>
