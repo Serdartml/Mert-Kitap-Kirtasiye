@@ -3,7 +3,8 @@ import { cookies } from "next/headers";
 import Link from "next/link";
 import { ArrowDown, ArrowUp, ArrowUpDown, FileSpreadsheet, Image as ImageIcon, Plus } from "lucide-react";
 import { deleteProducts, editProducts, setProductActive } from "@/actions/admin";
-import BulkSelect, { BulkCheckbox } from "@/components/admin/BulkSelect";
+import BarcodeScanner from "@/components/admin/BarcodeScanner";
+import BulkSelect,{ BulkCheckbox } from "@/components/admin/BulkSelect";
 import RememberFilters from "@/components/admin/RememberFilters";
 import RememberSort from "@/components/admin/RememberSort";
 import StatusNote from "@/components/admin/StatusNote";
@@ -123,9 +124,6 @@ export default async function AdminProductsPage({ searchParams }: PageProps) {
           <span className="marker">Ürünler</span>
         </h1>
         <div className="flex flex-wrap gap-2">
-          <Link href="/yonetim/urunler/kapaklar" className="btn btn-outline">
-            <ImageIcon size={16} aria-hidden /> Kapakları getir
-          </Link>
           <Link href="/yonetim/urunler/fotosuz" className="btn btn-outline">
             <ImageIcon size={16} aria-hidden /> Fotoğrafsız ürünler
           </Link>
@@ -149,6 +147,7 @@ export default async function AdminProductsPage({ searchParams }: PageProps) {
         <input type="hidden" name="filtre" value={filter} />
         {/* Mobilde arama kutusu tam satır; kategori ile buton altında yan yana. */}
         <input name="q" type="search" defaultValue={q} placeholder="Ad, stok kodu veya barkod" aria-label="Ürün ara" className="field basis-full sm:max-w-xs sm:basis-auto" />
+        <BarcodeScanner />
         <select name="kategori" defaultValue={categoryId} aria-label="Kategori" className="field min-w-0 flex-1 sm:max-w-56 sm:flex-none">
           <option value="">Tüm kategoriler</option>
           {categories.map((category) => (
