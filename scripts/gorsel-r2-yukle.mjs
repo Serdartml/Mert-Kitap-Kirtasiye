@@ -1,4 +1,4 @@
-// İndirilen ürün görsellerini (gorsel-veri/basari ve gorsel-veri/guclu) Cloudflare R2'ye yükler ve her ürüne ProductImage satırı yazar.
+// İndirilen ürün görsellerini (gorsel-veri/<kaynak>: basari, guclu, isler, dogrukaynak, prefix, bora, dunya, akgun) Cloudflare R2'ye yükler ve her ürüne ProductImage satırı yazar.
 // R2 anahtarı: urunler/<ürün-kimliği>/<barkod>.jpg. Veritabanına yazılan adres src/lib/r2.ts'deki urlForKey ile aynı kurala uyar
 // (R2_PUBLIC_URL yoksa ya da *.r2.dev ise sitenin /gorsel/... adresi).
 //
@@ -57,10 +57,10 @@ if (existsSync(STATE)) {
   }
 }
 
-// Dosyalar: Başarı (kitap) öncelikli; aynı barkod iki kaynakta varsa Başarı kullanılır.
+// Dosyalar: aynı barkod birden çok kaynakta varsa listede sonra gelen kullanılır (Başarı en öncelikli, sonra Güçlü).
 const files = new Map();
 const sourceArg = process.argv.indexOf("--kaynak");
-const sources = sourceArg > -1 ? [process.argv[sourceArg + 1]] : ["guclu", "basari"];
+const sources = sourceArg > -1 ? [process.argv[sourceArg + 1]] : ["akgun", "dunya", "bora", "prefix", "dogrukaynak", "isler", "guclu", "basari"];
 for (const src of sources) {
   if (!existsSync(`${DIR}/${src}`)) continue;
   for (const f of readdirSync(`${DIR}/${src}`)) if (f.endsWith(".jpg")) files.set(f.slice(0, -4), `${DIR}/${src}/${f}`);

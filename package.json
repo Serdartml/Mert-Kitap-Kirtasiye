@@ -18,6 +18,12 @@
     "admin:create": "tsx --env-file=.env scripts/create-admin.ts",
     "gorsel:basari": "node scripts/gorsel-basari.mjs",
     "gorsel:guclu": "node scripts/gorsel-guclu.mjs",
+    "gorsel:isler": "node scripts/gorsel-isler.mjs",
+    "gorsel:dogrukaynak": "node scripts/gorsel-dogrukaynak.mjs",
+    "gorsel:prefix": "node scripts/gorsel-prefix.mjs",
+    "gorsel:bora": "node scripts/gorsel-bora.mjs",
+    "gorsel:dunya": "node scripts/gorsel-dunya.mjs",
+    "gorsel:akgun": "node scripts/gorsel-akgun.mjs",
     "gorsel:r2": "node scripts/gorsel-r2-yukle.mjs"
   },
   "prisma": {
