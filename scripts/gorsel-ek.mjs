@@ -21,7 +21,7 @@ const SRC = sourceArg > -1 ? process.argv[sourceArg + 1] : null;
 if (!["akgun", "dunya", "guclu"].includes(SRC)) throw new Error("--kaynak akgun|dunya|guclu gerekli");
 const limitArg = process.argv.indexOf("--limit");
 const limit = limitArg > -1 ? Number(process.argv[limitArg + 1]) : Infinity;
-const CONCURRENCY = { akgun: 3, dunya: 3, guclu: 3 }[SRC];
+const CONCURRENCY = { akgun: 3, dunya: 3, guclu: 6 }[SRC];
 const DELAY_MS = 300;
 
 mkdirSync(OUT, { recursive: true });
