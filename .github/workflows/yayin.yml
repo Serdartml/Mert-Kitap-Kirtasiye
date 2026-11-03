@@ -1,0 +1,112 @@
+# Canlı yayın: main'e her push'ta (ya da Actions sekmesinden elle) test eder, migration'ları uygular, Docker imajını
+# derleyip GitHub Container Registry'ye koyar ve Hetzner sunucusunda çalıştırır. Kurulum: README, "Canlı yayın".
+#
+# Gerekenler (Settings > Secrets and variables > Actions):
+#   Secrets:   ENV_FILE (canlı .env'in tamamı), SSH_HOST (sunucu IP'si), SSH_PRIVATE_KEY (deploy anahtarının gizli kısmı)
+#   Variables: SITE_DOMAIN (örn. mertkitap.com.tr), DEPLOY_ENABLED = true (sunucu hazır olana kadar tanımlamayın)
+name: Yayın
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: yayin
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  yayin:
+    if: vars.DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Bağımlılıklar
+        run: npm ci
+
+      - name: Testler
+        run: npm test
+
+      - name: Canlı ortam dosyası
+        env:
+          ENV_FILE: ${{ secrets.ENV_FILE }}
+        run: |
+          printf '%s\n' "$ENV_FILE" > .env
+          chmod 600 .env
+
+      - name: Migration'lar (prisma migrate deploy)
+        run: npx prisma migrate deploy
+
+      - name: İmaj adı
+        id: imaj
+        run: echo "ad=ghcr.io/${GITHUB_REPOSITORY,,}:${GITHUB_SHA::12}" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: İmajı derle ve gönder
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.imaj.outputs.ad }}
+          secret-files: env=.env
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Sunucuya yayınla
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SITE_DOMAIN: ${{ vars.SITE_DOMAIN }}
+          APP_IMAGE: ${{ steps.imaj.outputs.ad }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/yayin
+          chmod 600 ~/.ssh/yayin
+          ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+          SSH="ssh -i $HOME/.ssh/yayin deploy@$SSH_HOST"
+
+          printf 'APP_IMAGE=%s\nSITE_DOMAIN=%s\n' "$APP_IMAGE" "$SITE_DOMAIN" > .deploy
+          scp -i ~/.ssh/yayin deploy/compose.yml deploy/Caddyfile .env .deploy "deploy@$SSH_HOST:/opt/mertkitap/"
+
+          echo "$GHCR_TOKEN" | $SSH "docker login ghcr.io -u '${{ github.actor }}' --password-stdin"
+          $SSH 'set -e
+            cd /opt/mertkitap
+            chmod 600 .env
+            docker compose --env-file .deploy pull
+            docker compose --env-file .deploy up -d --remove-orphans
+            docker logout ghcr.io
+            docker image prune -af --filter "until=168h"'
+
+      - name: Ayakta mı?
+        env:
+          SITE_DOMAIN: ${{ vars.SITE_DOMAIN }}
+        run: |
+          for i in $(seq 1 20); do
+            if curl -fsS -o /dev/null "https://$SITE_DOMAIN/"; then echo "Site yanıt veriyor."; exit 0; fi
+            sleep 6
+          done
+          echo "Site 2 dakikada yanıt vermedi: sunucuda 'docker compose logs app' ile bakın." >&2
+          exit 1
+
+      - name: Temizlik
+        if: always()
+        run: rm -f .env .deploy ~/.ssh/yayin

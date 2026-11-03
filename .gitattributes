@@ -1,0 +1,4 @@
+# Sunucuda (Linux) çalışan dosyalar Windows satır sonuyla bozulmasın.
+*.sh text eol=lf
+deploy/* text eol=lf
+Dockerfile text eol=lf

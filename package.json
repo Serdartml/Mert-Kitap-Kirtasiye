@@ -15,6 +15,7 @@
     "db:seed": "prisma db seed",
     "db:seed-more": "tsx --env-file=.env scripts/add-sample-products.ts",
     "db:studio": "prisma studio",
+    "yasal:cikti": "tsx scripts/yasal-cikti.ts",
     "admin:create": "tsx --env-file=.env scripts/create-admin.ts",
     "gorsel:basari": "node scripts/gorsel-basari.mjs",
     "gorsel:guclu": "node scripts/gorsel-guclu.mjs",

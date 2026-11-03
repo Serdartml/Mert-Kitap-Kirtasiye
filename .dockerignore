@@ -1,0 +1,20 @@
+.git
+.github
+.next
+.vercel
+node_modules
+.env
+.env*
+!.env.example
+*.tsbuildinfo
+next-env.d.ts
+
+# Büyük / gizli yerel dosyalar: imaja girmez
+stok*.xlsx
+stok-cikti
+gorsel-veri
+video
+logo.pdf
+yasal-inceleme
+deploy
+tests

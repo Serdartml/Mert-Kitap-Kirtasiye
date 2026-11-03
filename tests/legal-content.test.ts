@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getLegalDocument } from "@/lib/legal-content";
+import { getLegalDocument, legalDocumentText, legalReviewed, missingOwnerInfo } from "@/lib/legal-content";
 import { infoPages } from "@/lib/site";
 
 describe("yasal metinler", () => {
@@ -24,5 +24,25 @@ describe("yasal metinler", () => {
 
   it("bilinmeyen sayfa için null döner", () => {
     expect(getLegalDocument("yok")).toBeNull();
+  });
+
+  // Hukuki onay verildi diye işaretlenip ticari bilgiler unutulursa yayına "[DOLDURULACAK]" yazılı metin çıkmasın.
+  it("onaylı (legalReviewed) metinlerde eksik ticari bilgi kalmaz", () => {
+    if (!legalReviewed) return;
+    expect(missingOwnerInfo()).toEqual([]);
+    for (const page of infoPages) {
+      expect(JSON.stringify(getLegalDocument(page.slug)), page.slug).not.toContain("[DOLDURULACAK");
+    }
+  });
+
+  it("taslakta eksik ticari bilgiler metinde işaretlenir", () => {
+    if (missingOwnerInfo().length === 0) return;
+    expect(JSON.stringify(getLegalDocument("mesafeli-satis-sozlesmesi"))).toContain("[DOLDURULACAK");
+  });
+
+  it("düz metin çıktısı başlık ve bölümleri içerir", () => {
+    const text = legalDocumentText("Mesafeli Satış Sözleşmesi", getLegalDocument("mesafeli-satis-sozlesmesi")!);
+    expect(text).toContain("MESAFELİ SATIŞ SÖZLEŞMESİ");
+    expect(text).toContain("6. Cayma hakkı");
   });
 });

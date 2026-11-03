@@ -1,0 +1,37 @@
+# Sunucuda /opt/mertkitap/compose.yml olarak durur (yayın iş akışı her seferinde günceller).
+# APP_IMAGE ve SITE_DOMAIN /opt/mertkitap/.deploy dosyasından gelir (docker compose --env-file .deploy).
+
+services:
+  app:
+    image: ${APP_IMAGE}
+    restart: unless-stopped
+    env_file: .env
+    # Uygulama dışarıya kapalı; yalnızca Caddy ve sunucudaki temizlik görevi (127.0.0.1:3000) erişir.
+    ports:
+      - "127.0.0.1:3000:3000"
+    # after() ile bekleyen e-postalar gönderilsin diye kapanırken süre tanınır.
+    stop_grace_period: 30s
+    logging: &logging
+      driver: json-file
+      options: { max-size: "10m", max-file: "5" }
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    depends_on: [app]
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      SITE_DOMAIN: ${SITE_DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    logging: *logging
+
+volumes:
+  # HTTPS sertifikaları burada; silinirse Caddy yeniden alır.
+  caddy_data:
+  caddy_config:

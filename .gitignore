@@ -19,6 +19,9 @@ prisma/*.db-journal
 # logonun kaynak taraması; depoya girmez
 /logo.pdf
 
+# Avukata giden yasal metin çıktısı (npm run yasal:cikti); kaynağı src/lib/legal-content.ts
+/yasal-inceleme/
+
 # Vercel CLI proje bağlantısı (vercel link)
 .vercel
 

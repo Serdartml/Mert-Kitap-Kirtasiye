@@ -36,6 +36,11 @@ export default function ContactForm() {
       {state.message && (
         <p role="alert" className="text-sm font-semibold text-red-700 dark:text-red-400">{state.message}</p>
       )}
+      <p className="text-xs text-neutral-500">
+        Gönderdiğiniz bilgiler yalnızca mesajınızı yanıtlamak için{" "}
+        <a href="/bilgi/kvkk" target="_blank" rel="noopener" className="underline underline-offset-2">KVKK Aydınlatma Metni</a>{" "}
+        kapsamında işlenir.
+      </p>
       <button type="submit" disabled={pending} className="btn btn-dark w-full sm:w-auto">
         <Send size={16} /> {pending ? "Gönderiliyor..." : "Gönder"}
       </button>

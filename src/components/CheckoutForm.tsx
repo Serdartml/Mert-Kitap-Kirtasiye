@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { Store, Truck } from "lucide-react";
 import { placeOrder } from "@/actions/order";
 import { useServerForm } from "@/components/admin/useServerForm";
@@ -74,14 +75,35 @@ export default function CheckoutForm({ defaults, pickup, totalLabel }: CheckoutF
         </p>
       )}
 
-      <div>
+      <div className="space-y-3">
+        {/* Mesafeli Sözleşmeler Yönetmeliği m. 6: ön bilgilendirmenin teyidi sipariş onayından önce alınır.
+            Sunucu da kontrol eder (actions/order.ts). Bağlantılar formu kaybetmemek için yeni sekmede açılır. */}
+        <label className="flex items-start gap-3 text-sm">
+          <input name="sozlesme" type="checkbox" required className="mt-0.5 size-5 shrink-0 accent-current" />
+          <span>
+            <LegalLink slug="on-bilgilendirme-formu">Ön Bilgilendirme Formu</LegalLink>&apos;nu ve{" "}
+            <LegalLink slug="mesafeli-satis-sozlesmesi">Mesafeli Satış Sözleşmesi</LegalLink>&apos;ni okudum, onaylıyorum.
+          </span>
+        </label>
+        <p className="text-xs text-neutral-500">
+          Kişisel verileriniz siparişinizin hazırlanması ve teslimi için{" "}
+          <LegalLink slug="kvkk">KVKK Aydınlatma Metni</LegalLink> kapsamında işlenir.
+        </p>
         <button type="submit" disabled={pending} className="btn btn-primary w-full py-3.5 text-base">
           {pending ? "Siparişiniz oluşturuluyor..." : `Siparişi Onayla · ${totalLabel}`}
         </button>
-        <p className="mt-2 text-center text-xs text-neutral-500">
-          Ürünler adınıza ayrılır; ödemeyi mağazada teslim alırken yaparsınız.
+        <p className="text-center text-xs text-neutral-500">
+          Siparişi onaylayınca ürünler adınıza ayrılır ve ödeme yükümlülüğü doğar; ödemeyi mağazada teslim alırken yaparsınız.
         </p>
       </div>
     </form>
+  );
+}
+
+function LegalLink({ slug, children }: { slug: string; children: ReactNode }) {
+  return (
+    <a href={`/bilgi/${slug}`} target="_blank" rel="noopener" className="font-bold underline underline-offset-2">
+      {children}
+    </a>
   );
 }

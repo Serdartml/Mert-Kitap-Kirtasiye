@@ -116,22 +116,81 @@ okumaları (`new Date()`, `Math.random()`) için render sırasında `await io()`
 gerekir (`getOrderForViewer`). Numara tahmin edilemez (tarih + 6 rastgele karakter) ve sorgu IP başına 15 dakikada 20 ile
 sınırlıdır. Numara küçük harf, boşluk ya da tiresiz yazılabilir.
 
-## Deneme yayını (Vercel)
+## Canlı yayın (Hetzner + Docker)
 
-Vercel Hobby planı ticari kullanıma kapalıdır ("ürün satışını duyurmak" ve "ödeme istemek" ticari sayılır); gerçek müşteriyle
-satışa çıkarken Pro gerekir. Hobby yalnızca **özel deneme** içindir: gerçek müşteri ve reklam yok, arama motorlarına kapalı,
-mümkünse Vercel Authentication açık (Project Settings > Deployment Protection). Kurulum:
+Site tek bir Hetzner sunucusunda Docker ile çalışır. Sunucu veri tutmaz: veritabanı Neon'da, görseller R2'de. Sunucu bozulursa
+yenisi kurulup iş akışı yeniden çalıştırılır. Parçalar:
 
-1. Vercel'de GitHub deposunu içe aktarın (framework Next.js, kök dizin). Tek proje hem mağazayı hem `/yonetim`'i yayınlar.
-2. Ortam değişkenleri (Production ve Preview): `DATABASE_URL` (havuzlu), `DATABASE_URL_UNPOOLED`, `NEXT_PUBLIC_SITE_URL`
-   (yayın adresi; değişince yeniden yayınlanmalı). `SITE_INDEXABLE` deneme yayınında TANIMLANMAZ: robots.txt her şeyi yasaklar,
-   sitemap boş olur, sayfalara `noindex` eklenir (`lib/indexing.ts`).
-3. Veritabanı: deneme için AYRI bir Neon veritabanı ya da branch kullanın (geliştirme verisiyle karışmasın). Migration yayın
-   sırasında çalışmaz: `DATABASE_URL_UNPOOLED` o veritabanına ayarlıyken yerelde `npm run db:deploy`, sonra `npm run admin:create -- eposta`
-   (ve istenirse `npm run db:seed`) çalıştırın.
-4. `vercel.json` bölgeyi `fra1` yapar (Neon eu-central-1 ile aynı bölge).
-5. Gerçek yayında: Pro plana geçin, özel alan adı bağlayın, `NEXT_PUBLIC_SITE_URL` ve `SITE_INDEXABLE=1` verin, canlı için
-   ayrı veritabanında yönetici hesabını yeniden oluşturun.
+| Dosya | Görevi |
+| --- | --- |
+| `Dockerfile` | `next build` (standalone) ve çalışan imaj. Canlı `.env` derlemeye *secret* olarak girer, imaja yazılmaz |
+| `.github/workflows/yayin.yml` | main'e push'ta: test, `prisma migrate deploy`, imajı derle → GHCR, sunucuya yayınla, siteyi yokla |
+| `deploy/compose.yml` | Sunucuda `app` (Next, yalnızca 127.0.0.1:3000) + `caddy` (80/443, otomatik HTTPS) |
+| `deploy/Caddyfile` | HTTPS, www → çıplak alan adı yönlendirmesi, gerçek istemci IP'si (`X-Real-IP`, Cloudflare destekli) |
+| `deploy/sunucu-kurulum.sh` | Yeni sunucuyu bir kez hazırlar: Docker, güvenlik duvarı, yalnızca anahtarla SSH, otomatik güvenlik güncellemeleri, `deploy` kullanıcısı, günlük temizlik cron'u |
+
+Derleme sunucuda değil GitHub Actions'ta yapılır (10 bin ürünlük derleme 4 GB'lık sunucuyu zorlar). Migration'lar
+her yayında otomatik uygulanır (yalnızca depoya girmiş `prisma/migrations`).
+
+### İlk kurulum (bir kez)
+
+1. **Alan adı:** .com.tr alan adını bir Türk kayıt firmasından alın. Kayıt firmasının panelinde ad sunucularını (nameserver)
+   Cloudflare'in verdiği iki adresle değiştirin (Cloudflare ücretsiz plan > *Add a domain*). DNS artık Cloudflare'den yönetilir.
+2. **Sunucu:** Hetzner Cloud > yeni proje > *Add Server*: konum Nürnberg ya da Falkenstein (Neon Frankfurt'a yakın), Ubuntu 24.04,
+   4 GB RAM'li en küçük paylaşımlı x86 plan, kendi bilgisayarınızın SSH anahtarı. *Firewalls* ile 22, 80, 443 (TCP) ve 443 (UDP)
+   açık bir güvenlik duvarı ekleyin.
+3. **Yayın anahtarı** (GitHub Actions'ın sunucuya bağlanacağı anahtar; kendi bilgisayarınızda):
+   `ssh-keygen -t ed25519 -f yayin-anahtari -C github-actions-yayin -N '""'` (PowerShell). `yayin-anahtari.pub` açık kısım,
+   `yayin-anahtari` gizli kısım. Gizli kısmı GitHub'a girdikten sonra bilgisayardan silin.
+4. **Sunucuyu hazırlayın:** `ssh root@SUNUCU_IP`, `deploy/sunucu-kurulum.sh` içeriğini sunucuda `kurulum.sh` olarak kaydedin ve
+   `bash kurulum.sh "<yayin-anahtari.pub içeriği>"` çalıştırın.
+5. **DNS kayıtları** (Cloudflare > DNS): `A @ SUNUCU_IP` ve `A www SUNUCU_IP`, ikisi de **DNS only (gri bulut)**. Caddy
+   sertifikayı ilk yayında kendisi alır. İsterseniz sonra turuncu buluta (proxy) geçin; o zaman SSL/TLS modu **Full (strict)** olmalı.
+6. **E-posta (Resend):** resend.com'da alan adını ekleyin, verdiği DNS kayıtlarını Cloudflare'e girin, API anahtarı oluşturun.
+   Gelen kutusu için Cloudflare > Email > *Email Routing* ile `info@alanadi` adresini mevcut e-postaya yönlendirebilirsiniz.
+7. **GitHub** (depo > Settings > Secrets and variables > Actions):
+   - Secret `ENV_FILE`: canlı `.env`'in tamamı (aşağıdaki örnek). Boşluk içeren değerleri çift tırnağa alın, değerlerde `$` kullanmayın.
+   - Secret `SSH_HOST`: sunucunun IP'si. Secret `SSH_PRIVATE_KEY`: `yayin-anahtari` dosyasının içeriği.
+   - Variable `SITE_DOMAIN`: örn. `mertkitap.com.tr`. Variable `DEPLOY_ENABLED`: `true` (tanımlı değilse iş akışı hiç çalışmaz).
+8. **İlk yayın:** Actions > *Yayın* > *Run workflow*. Sonraki yayınlar main'e her push'ta kendiliğinden çalışır.
+9. Vercel projesinin bağlantısını kaldırın (Vercel > Project > Settings > Git > Disconnect); `vercel.json` artık kullanılmaz.
+
+`ENV_FILE` örneği:
+
+```
+DATABASE_URL="postgresql://...-pooler.eu-central-1.aws.neon.tech/neondb?sslmode=require"
+DATABASE_URL_UNPOOLED="postgresql://....eu-central-1.aws.neon.tech/neondb?sslmode=require"
+NEXT_PUBLIC_SITE_URL="https://mertkitap.com.tr"
+# SITE_INDEXABLE=1   (yasal metinler onaylanıp satışa açılınca)
+CRON_SECRET="uzun-rastgele-deger"
+RESEND_API_KEY="re_..."
+MAIL_FROM="Mert Kitap <siparis@mertkitap.com.tr>"
+ADMIN_NOTIFY_EMAIL="..."
+R2_ACCOUNT_ID="..."
+R2_ACCESS_KEY_ID="..."
+R2_SECRET_ACCESS_KEY="..."
+R2_BUCKET="..."
+```
+
+Veritabanı: ürün verisi şu an tek Neon veritabanında. Bu veritabanı **canlı** olarak kalsın; geliştirme için Neon'da bir *branch*
+açıp yerel `.env`'i ona çevirin, böylece denemeler canlı siparişlere karışmaz. Yönetici hesabı veritabanında durduğu için yeniden oluşturmak gerekmez.
+
+### Günlük işler
+
+- Sunucuda durum: `ssh deploy@SUNUCU_IP`, `cd /opt/mertkitap`, `docker compose --env-file .deploy ps` / `logs -f app`.
+- Ortam değişkeni değişince: GitHub'da `ENV_FILE`'ı güncelleyip *Run workflow* (değerlerin bir kısmı derlemeye gömülüdür).
+- Geri alma: Actions'ta eski bir başarılı çalışmayı *Re-run* edin (o commit'in imajı yeniden yayınlanır).
+- Sunucu güncellemeleri kendiliğinden kurulur; çekirdek güncellemesinden sonra arada bir `sudo reboot` gerekir
+  (konteynerler kendiliğinden geri gelir).
+
+### Satışa açılış kontrol listesi
+
+1. Ticari bilgiler `src/lib/legal-content.ts` → `legalOwner` (unvan, sahibi, vergi dairesi/no, MERSİS ya da sicil no).
+2. `npm run yasal:cikti` ile avukata giden PDF'i alın (`yasal-inceleme/`), düzeltmeleri `legal-content.ts`'e işleyin,
+   onaydan sonra `legalReviewed = true` yapın (eksik bilgi kalırsa `npm test` kırılır).
+3. ETBİS kaydı (e-Devlet, Ticaret Bakanlığı Elektronik Ticaret Bilgi Sistemi): alan adıyla kayıt; verilen doğrulama
+   karekodu/bağlantısı altbilgiye eklenecek.
+4. `ENV_FILE`'a `SITE_INDEXABLE=1`, yeniden yayın; Google Search Console'a alan adını ve `/sitemap.xml`'i ekleyin.
 
 ## Hesabım
 
@@ -153,10 +212,10 @@ doğrulanmamış üyeye `/hesabim` sayfalarında hatırlatma ve "yeniden gönder
 
 ## Günlük temizlik
 
-`vercel.json` her gün 03:00'te (UTC) `/api/cron/temizlik` adresini çağırır (`lib/cleanup.ts`): süresi dolmuş oturumlar, deneme
-sınırı sayaçları, kullanılmış/süresi dolmuş parola sıfırlama ve e-posta doğrulama kayıtları silinir. Uç nokta `CRON_SECRET`
-ortam değişkeni olmadan kapalıdır (401); Vercel'de bu değişkeni uzun rastgele bir değerle tanımlayın, Vercel çağrıya
-`Authorization: Bearer` başlığını kendisi ekler. Yerelde: `curl -H "Authorization: Bearer $CRON_SECRET" localhost:3000/api/cron/temizlik`.
+Sunucudaki cron (`/etc/cron.d/mertkitap`, `deploy/sunucu-kurulum.sh` kurar) her gün 03:00'te (UTC) `/api/cron/temizlik`
+adresini çağırır (`lib/cleanup.ts`): süresi dolmuş oturumlar, deneme sınırı sayaçları, kullanılmış/süresi dolmuş parola sıfırlama
+ve e-posta doğrulama kayıtları silinir. Uç nokta `CRON_SECRET` ortam değişkeni olmadan kapalıdır (401); betik değeri sunucudaki
+`/opt/mertkitap/.env`'den okuyup `Authorization: Bearer` başlığıyla gönderir. Günlük: `/var/log/mertkitap-temizlik.log`. Yerelde: `curl -H "Authorization: Bearer $CRON_SECRET" localhost:3000/api/cron/temizlik`.
 
 ## Deneme sınırı
 
@@ -200,7 +259,7 @@ src/app/globals.css       renk paleti ve ortak sınıflar
 
 ## Bilinen eksikler
 
-- **Yasal metinler:** `/bilgi/*` taslakları `src/lib/legal-content.ts` içinde yazıldı (mağazadan teslim, ödeme mağazada akışına göre). Hukuki onay gelene kadar `legalReviewed = false`: sayfada "taslak" uyarısı var ve `noindex`. Onaydan sonra `legalOwner` (unvan, vergi dairesi/no, MERSİS) doldurulup `legalReviewed = true` yapılmalı. Online ödeme/kargo gelince sözleşme ve iade metinleri güncellenmeli.
+- **Yasal metinler:** `/bilgi/*` yedi metin `src/lib/legal-content.ts` içinde (KVKK, gizlilik, çerez, ön bilgilendirme, mesafeli satış, iade, üyelik; mağazadan teslim, ödeme mağazada akışına göre). Eksik ticari bilgiler metinde `[DOLDURULACAK: ...]` olarak görünür, altbilgide yalnızca dolu olanlar çıkar. Siparişte ön bilgilendirme + sözleşme, kayıtta üyelik sözleşmesi onay kutusu zorunludur (sunucu da kontrol eder); sipariş onayı e-postası iki metnin tam halini alıcı ve sipariş bilgileriyle gönderir. Avukat çıktısı ve inceleme soruları: `npm run yasal:cikti`. Hukuki onaya kadar `legalReviewed = false` (taslak uyarısı, `noindex`). Altyapı sağlayıcısı eklenince `dataProcessors`, yeni çerez eklenince çerez politikası güncellenmeli. Online ödeme/kargo gelince sözleşme, ön bilgilendirme ve iade metinleri güncellenmeli.
 - **Ürün görselleri (Cloudflare R2):** Yönetim > Ürünü düzenle sayfasında "Görseller" bölümünden yüklenir (en fazla 8, ilk görsel kapak; tarayıcı 1600 px WebP'ye küçültür, sunucu eylemi `uploadProductImages` R2'ye yazar, adres `ProductImage`'a kaydedilir). Bağlamak için `.env` ve Vercel ortam değişkenleri: `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET` (bkz. `.env.example`); değişince yeniden dağıtım gerekir. Dördü de yoksa yükleme kapalıdır ve sayfa bunu söyler. Görseller sitenin kendi `/gorsel/...` adresinden sunulur (r2.dev adresleri bazı ağlarda açılmıyor); kovaya kendi alan adınızı bağlarsanız `R2_PUBLIC_URL` ile doğrudan oradan da verilebilir. Görseli olmayan ürünlerde kategori ikonlu yer tutucu çıkar.
 - **Toplu ürün aktarımı:** Excel (.xlsx) ile içe aktarma hazır (yukarıda, Yönetim paneli). Turna'nın gerçek sütun adları ve fiyatın KDV durumu örnek dışa aktarım gelince netleşecek (sütunlar arayüzden elle de eşlenebilir). Düzenli otomatik stok eşitleme yok: dükkândaki bilgisayardan siteye gönderen bir yol Turna'nın API'sine/otomatik dışa aktarımına bağlı; şimdilik günlük elle yükleme. Canlıya çıkmadan önce `db:seed` örnek kataloğu gerçek veriyle değiştirilmeli.
 - **Online ödeme ve kargo:** Yok (iyzico / PayTR seçimi bekliyor). Şimdilik yalnızca mağazadan teslim. Stok sipariş anında düşülür; ödeme gelince onay anına alınmalı (`actions/order.ts`).

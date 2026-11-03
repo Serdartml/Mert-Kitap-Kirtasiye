@@ -6,6 +6,7 @@ import OpenStatus from "./OpenStatus";
 import PatternStrip from "./PatternStrip";
 import { infoPages, site, whatsappHref } from "@/lib/site";
 import { getNavCategories } from "@/lib/catalog";
+import { legalOwner } from "@/lib/legal-content";
 
 export default async function Footer() {
   // Yıl için tarih okunduğundan bileşen önbelleğe alınır; günde bir yenilenir.
@@ -15,6 +16,11 @@ export default async function Footer() {
   const categories = await getNavCategories();
   const year = new Date().getFullYear();
   const whatsapp = whatsappHref("Merhaba, bilgi almak istiyorum.");
+  const sellerInfo = [
+    legalOwner.title,
+    legalOwner.taxOffice && legalOwner.taxNo ? `${legalOwner.taxOffice} V.D. ${legalOwner.taxNo}` : "",
+    legalOwner.mersis ? `MERSİS ${legalOwner.mersis}` : legalOwner.tradeRegistry ? `Sicil No ${legalOwner.tradeRegistry}` : "",
+  ].filter(Boolean);
 
   return (
     <footer className="theme-fixed mt-16 bg-ink text-neutral-300">
@@ -115,7 +121,9 @@ export default async function Footer() {
           <p className="text-xs text-neutral-400">
             © {year} {site.name}. Tüm hakları saklıdır.
           </p>
-</div>
+          {/* Elektronik ticarette hizmet sağlayıcı bilgileri (6563 s. Kanun m. 3). Yalnızca dolu olanlar görünür. */}
+          {sellerInfo.length > 0 && <p className="text-xs text-neutral-400">{sellerInfo.join(" · ")}</p>}
+        </div>
       </div>
     </footer>
   );

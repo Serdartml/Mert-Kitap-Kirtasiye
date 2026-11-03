@@ -49,6 +49,7 @@ export async function register(_prev: FormState, formData: FormData): Promise<Fo
     password: String(formData.get("password") ?? ""),
   });
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Formu kontrol edin." };
+  if (formData.get("sozlesme") !== "on") return { error: "Üye olmak için Üyelik Sözleşmesi'ni kabul edin." };
 
   const blocked = await checkLimits([{ key: `register-ip:${await clientIp()}`, limit: LIMITS.registerIp }]);
   if (blocked) return { error: blocked };

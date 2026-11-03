@@ -58,7 +58,8 @@ async function consume(key: string, limit: Limit): Promise<{ ok: boolean; retryA
 
 const digest = (value: string) => createHash("sha256").update(value).digest("base64url");
 
-// İstemci adresi. Vercel x-forwarded-for'u kendisi yazar; ilk değer istemcidir. Yerelde başlık yoktur.
+// İstemci adresi. Canlıda Caddy (deploy/Caddyfile) X-Real-IP'yi gerçek adresle ezer; ziyaretçinin gönderdiği değer
+// geçmez. Uygulama portu dışarıya kapalı olduğundan başlığı yalnızca Caddy yazabilir. Yerelde başlık yoktur.
 export async function clientIp(): Promise<string> {
   const h = await headers();
   return h.get("x-real-ip") ?? h.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "bilinmiyor";

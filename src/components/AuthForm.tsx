@@ -42,6 +42,26 @@ export default function AuthForm({ mode, next }: { mode: "login" | "register"; n
           </Link>
         </p>
       )}
+      {isRegister && (
+        <div className="space-y-2">
+          <label className="flex items-start gap-3 text-sm">
+            <input name="sozlesme" type="checkbox" required className="mt-0.5 size-5 shrink-0 accent-current" />
+            <span>
+              <a href="/bilgi/uyelik-sozlesmesi" target="_blank" rel="noopener" className="font-bold underline underline-offset-2">
+                Üyelik Sözleşmesi
+              </a>
+              &apos;ni okudum, kabul ediyorum.
+            </span>
+          </label>
+          <p className="text-xs text-neutral-500">
+            Kişisel verileriniz{" "}
+            <a href="/bilgi/kvkk" target="_blank" rel="noopener" className="underline underline-offset-2">
+              KVKK Aydınlatma Metni
+            </a>{" "}
+            kapsamında işlenir.
+          </p>
+        </div>
+      )}
       {state.error && (
         <p role="alert" className="text-sm font-semibold text-red-700 dark:text-red-400">
           {state.error}

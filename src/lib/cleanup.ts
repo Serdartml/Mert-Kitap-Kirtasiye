@@ -10,7 +10,7 @@ export interface CleanupResult {
 
 // Süresi dolmuş geçici kayıtları siler: deneme sınırı sayaçları, oturumlar, parola sıfırlama ve e-posta doğrulama
 // bağlantıları. Hiçbiri artık kullanılamayacağı için silinmeleri hiçbir işlevi etkilemez (süresi dolmuş oturum zaten
-// giriş saymaz). Günlük çalışır (vercel.json crons -> /api/cron/temizlik); sayaç tablosu ayrıca rastgele aralıklarla da temizlenir.
+// giriş saymaz). Günlük çalışır (sunucu cron'u -> /api/cron/temizlik); sayaç tablosu ayrıca rastgele aralıklarla da temizlenir.
 export async function cleanupExpired(now = new Date()): Promise<CleanupResult> {
   const [rateLimits, sessions, passwordResets, emailVerifications] = await Promise.all([
     db.rateLimit.deleteMany({ where: { resetAt: { lt: now } } }),

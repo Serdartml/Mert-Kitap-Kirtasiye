@@ -2,7 +2,8 @@ import "server-only";
 import { formatPrice } from "./format";
 import type { MailMessage } from "./mail";
 import { formatOrderDate, orderStatusLabels, orderStatusNotes } from "./order-status";
-import { site } from "./site";
+import { getLegalDocument, legalDocumentText } from "./legal-content";
+import { infoPageTitle, site } from "./site";
 import type { OrderStatus } from "@prisma/client";
 
 // E-posta şablonları. HTML, e-posta istemcileri için satır içi stillidir; her iletinin düz metin karşılığı da vardır.
@@ -57,16 +58,38 @@ function itemsHtml(order: MailOrder): string {
   return `<table style="width:100%;border-collapse:collapse;font-size:14px">${rows}<tr><td style="padding:10px 0;font-weight:bold">Toplam</td><td style="padding:10px 0;font-weight:bold;text-align:right">${esc(formatPrice(order.totalKurus))}</td></tr></table>`;
 }
 
+// Sipariş onayıyla gönderilen yasal metinler: Mesafeli Sözleşmeler Yönetmeliği, sözleşmenin ve ön bilgilendirmenin
+// tüketiciye kalıcı veri saklayıcısıyla (e-posta) ulaştırılmasını ister. Sitedeki bağlantı değişebileceği için metnin
+// kendisi gönderilir; sipariş özeti (yukarıdaki ürünler, tarih, numara) sözleşmenin parçasıdır.
+const ORDER_LEGAL_SLUGS = ["on-bilgilendirme-formu", "mesafeli-satis-sozlesmesi"] as const;
+
+function orderLegalText(order: MailOrder): string {
+  const header = `Alıcı: ${order.fullName} · ${order.phone} · ${order.email}\nSipariş: ${order.orderNo} · ${formatOrderDate(order.createdAt)} · Toplam ${formatPrice(order.totalKurus)} (KDV dahil)`;
+  const docs = ORDER_LEGAL_SLUGS.map((slug) => legalDocumentText(infoPageTitle(slug), getLegalDocument(slug)!));
+  return [header, ...docs].join("\n\n----------------------------------------\n\n");
+}
+
+function orderLegalHtml(order: MailOrder): string {
+  const docs = ORDER_LEGAL_SLUGS.map((slug) => {
+    const doc = getLegalDocument(slug)!;
+    const sections = doc.sections
+      .map((s) => `<p style="margin:12px 0 4px;font-weight:bold">${esc(s.heading)}</p>${s.paragraphs.map((p) => `<p style="margin:0 0 6px">${esc(p)}</p>`).join("")}`)
+      .join("");
+    return `<h2 style="font-size:15px;margin:24px 0 8px">${esc(infoPageTitle(slug))}</h2>${doc.intro ? `<p style="margin:0 0 6px">${esc(doc.intro)}</p>` : ""}${sections}`;
+  });
+  return `<div style="margin-top:28px;padding-top:12px;border-top:1px solid #e7e5e4;font-size:12px;color:#44403c;line-height:1.5"><p style="margin:0 0 6px">Aşağıda siparişinizle kabul ettiğiniz Ön Bilgilendirme Formu ve Mesafeli Satış Sözleşmesi yer almaktadır. Bu e-postayı saklamanızı öneririz.</p><p style="margin:0">Alıcı: ${esc(order.fullName)} · ${esc(order.phone)} · ${esc(order.email)}<br>Sipariş: ${esc(order.orderNo)} · ${esc(formatOrderDate(order.createdAt))} · Toplam ${esc(formatPrice(order.totalKurus))} (KDV dahil)</p>${docs.join("")}</div>`;
+}
+
 // Müşteriye: sipariş alındı.
 export function orderConfirmationMail(order: MailOrder): MailMessage {
   const link = absolute(`/siparis/${order.orderNo}`);
   return {
     to: order.email,
     subject: `Siparişiniz alındı - ${order.orderNo}`,
-    text: `Merhaba ${order.fullName},\n\nSiparişiniz alındı. Sipariş numaranız: ${order.orderNo}\n\n${itemsText(order)}\n\nToplam: ${formatPrice(order.totalKurus)}\n\nSiparişiniz mağazamızdan teslim edilir, ödeme teslim sırasında mağazada yapılır. Hazır olduğunda size haber vereceğiz.\n\nSipariş durumu: ${link}\n\n${site.name}\n${site.address.full}\n${site.phone}`,
+    text: `Merhaba ${order.fullName},\n\nSiparişiniz alındı. Sipariş numaranız: ${order.orderNo}\n\n${itemsText(order)}\n\nToplam: ${formatPrice(order.totalKurus)}\n\nSiparişiniz mağazamızdan teslim edilir, ödeme teslim sırasında mağazada yapılır. Hazır olduğunda size haber vereceğiz.\n\nSipariş durumu: ${link}\n\n${site.name}\n${site.address.full}\n${site.phone}\n\n========================================\nSiparişinizle kabul ettiğiniz metinler (bu e-postayı saklamanızı öneririz)\n========================================\n\n${orderLegalText(order)}`,
     html: layout(
       "Siparişiniz alındı",
-      `<p>Merhaba ${esc(order.fullName)},</p><p>Sipariş numaranız: <strong>${esc(order.orderNo)}</strong></p>${itemsHtml(order)}<p>Siparişiniz mağazamızdan teslim edilir, ödeme teslim sırasında mağazada yapılır. Hazır olduğunda size haber vereceğiz.</p>${button(link, "Sipariş durumunu gör")}`,
+      `<p>Merhaba ${esc(order.fullName)},</p><p>Sipariş numaranız: <strong>${esc(order.orderNo)}</strong></p>${itemsHtml(order)}<p>Siparişiniz mağazamızdan teslim edilir, ödeme teslim sırasında mağazada yapılır. Hazır olduğunda size haber vereceğiz.</p>${button(link, "Sipariş durumunu gör")}${orderLegalHtml(order)}`,
     ),
   };
 }

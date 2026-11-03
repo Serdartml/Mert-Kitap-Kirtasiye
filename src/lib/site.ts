@@ -54,10 +54,16 @@ export function whatsappHref(text: string): string | null {
   return `https://wa.me/${site.whatsapp}?text=${encodeURIComponent(text)}`;
 }
 
-// Yasal / bilgi sayfaları. Metinler henüz yazılmadı; içerik hukuki onayla eklenecek.
+// Yasal / bilgi sayfaları (/bilgi/[slug]). Metinler lib/legal-content.ts içinde; hukuki onay bekliyor (legalReviewed).
 export const infoPages = [
   { slug: "kvkk", title: "KVKK Aydınlatma Metni" },
   { slug: "gizlilik", title: "Gizlilik Politikası" },
+  { slug: "cerez-politikasi", title: "Çerez Politikası" },
+  { slug: "on-bilgilendirme-formu", title: "Ön Bilgilendirme Formu" },
   { slug: "mesafeli-satis-sozlesmesi", title: "Mesafeli Satış Sözleşmesi" },
   { slug: "iade-ve-degisim", title: "İade ve Değişim" },
+  { slug: "uyelik-sozlesmesi", title: "Üyelik Sözleşmesi" },
 ] as const;
+
+export type InfoPageSlug = (typeof infoPages)[number]["slug"];
+export const infoPageTitle = (slug: InfoPageSlug) => infoPages.find((p) => p.slug === slug)!.title;

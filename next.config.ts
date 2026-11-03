@@ -12,6 +12,8 @@ function r2ImagePatterns(): NonNullable<NonNullable<NextConfig["images"]>["remot
 }
 
 const nextConfig: NextConfig = {
+  // Docker imajı (Dockerfile) .next/standalone'dan çalışır; yalnızca orada açılır, yerelde `next start` olduğu gibi kalır.
+  output: process.env.NEXT_OUTPUT === "standalone" ? "standalone" : undefined,
   images: { remotePatterns: r2ImagePatterns() },
   // Sayfaların sabit kısmı önceden üretilir, "use cache" ile işaretli veriler önbellekten gelir;
   // yalnızca çerez okuyan parçalar (sepet) istek anında akar.
@@ -23,7 +25,7 @@ const nextConfig: NextConfig = {
   // Bu izin olmadan Next.js dev kaynaklarını engeller ve sayfadaki JavaScript telefonda çalışmaz.
   allowedDevOrigins: ["192.168.*.*", "10.*.*.*"],
   // Yönetimdeki Excel içe aktarma (actions/product-import.ts) dosyayı action ile yükler; varsayılan 1 MB sınırı 10 bin
-  // ürünlük dosyaya yetmez. Vercel istek sınırı 4,5 MB olduğundan bunun üstüne çıkılamaz.
+  // ürünlük dosyaya yetmez. Sunucu (Caddy) ayrıca sınır koymaz; arayüzdeki 4 MB uyarısıyla uyumlu tutulur.
   experimental: { serverActions: { bodySizeLimit: "4.5mb" } },
 };
 

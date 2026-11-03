@@ -48,6 +48,10 @@ export async function placeOrder(_prev: FormState, formData: FormData): Promise<
     note: text(formData, "note"),
   });
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Formu kontrol edin." };
+  // Ön bilgilendirme ve sözleşme onayı (Mesafeli Sözleşmeler Yönetmeliği m. 6); tarayıcıdaki required atlatılsa da aranır.
+  if (formData.get("sozlesme") !== "on") {
+    return { error: "Siparişi verebilmek için Ön Bilgilendirme Formu'nu ve Mesafeli Satış Sözleşmesi'ni onaylayın." };
+  }
 
   const cartId = await getCartId();
   if (!cartId) return { error: "Sepetiniz boş." };

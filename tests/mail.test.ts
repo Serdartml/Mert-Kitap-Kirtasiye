@@ -64,6 +64,15 @@ describe("e-posta şablonları", () => {
     expect(mail.html).toContain("/siparis/MK-261007-7HQ4KD");
   });
 
+  it("sipariş onayı ön bilgilendirme ve sözleşme metnini içerir (kalıcı veri saklayıcısı)", () => {
+    const mail = orderConfirmationMail(order);
+    for (const body of [mail.text, mail.html]) {
+      expect(body).toContain("Ön Bilgilendirme Formu");
+      expect(body).toContain("Mesafeli Satış Sözleşmesi");
+      expect(body).toContain("Cayma hakkı");
+    }
+  });
+
   it("kullanıcıdan gelen değerleri HTML'de kaçışlar", () => {
     const html = orderConfirmationMail(order).html;
     expect(html).not.toContain("<b>Veli</b>");
