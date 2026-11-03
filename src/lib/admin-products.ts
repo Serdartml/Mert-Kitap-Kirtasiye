@@ -12,6 +12,7 @@ export const productFilters = [
   { key: "onecikan", label: "Öne çıkan" },
   { key: "stoksuz", label: "Stokta yok" },
   { key: "azalan", label: "Stok azalıyor" },
+  { key: "gorselsiz", label: "Görseli yok" },
 ];
 
 const filterWhere: Record<string, Prisma.ProductWhereInput> = {
@@ -21,6 +22,7 @@ const filterWhere: Record<string, Prisma.ProductWhereInput> = {
   onecikan: { isFeatured: true },
   stoksuz: { stock: 0 },
   azalan: lowStockWhere,
+  gorselsiz: { images: { none: {} } },
 };
 
 export const isProductFilter = (key: string | undefined): key is string => !!key && key in filterWhere;

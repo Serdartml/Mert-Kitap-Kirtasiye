@@ -41,6 +41,9 @@ function cleanPrice(value: string | undefined): string {
   return /^[\d.,]{1,10}$/.test(text) && parsePriceToKurus(text) !== null ? text : "";
 }
 
+// Kategori sayfasındaki marka filtresi (CategoryProducts). Kapalı.
+const BRAND_FILTER_ENABLED = false;
+
 // Ürünleri kitap rafı olarak gösterilen ana kategori (BookShelf).
 const SHELF_ROOT_SLUG = "kultur-kitaplari";
 
@@ -170,10 +173,13 @@ async function CategoryProducts({ slug, rootSlug, categoryIds, searchParams }: C
   const query = await searchParams;
 
   const options = await getFilterOptions(categoryIds);
+  // Marka filtresi müşteriye kapalı: marka verisi henüz toptancı adlarıyla karışık (yönetimde ayıklanıyor).
+  // Açmak için BRAND_FILTER_ENABLED'ı true yapın; çekmece, adres parametresi ve sorgu hazır.
+  const brandOptions = BRAND_FILTER_ENABLED ? options.brands : [];
   // Seçenek yoksa (tek fiyat, marka yok) çekmece gösterilmez.
-  const hasFilters = options.brands.length > 0 || (options.minPriceKurus !== null && options.minPriceKurus !== options.maxPriceKurus);
+  const hasFilters = brandOptions.length > 0 || (options.minPriceKurus !== null && options.minPriceKurus !== options.maxPriceKurus);
   // Adresteki bilinmeyen markalar yok sayılır.
-  const knownBrands = new Set(options.brands.map((brand) => brand.slug));
+  const knownBrands = new Set(brandOptions.map((brand) => brand.slug));
 
   const state = {
     basePath: `/kategori/${slug}`,
@@ -208,7 +214,7 @@ async function CategoryProducts({ slug, rootSlug, categoryIds, searchParams }: C
       <SortBar
         state={state}
         total={total}
-        filters={hasFilters ? { brands: options.brands, priceRange: { min: options.minPriceKurus, max: options.maxPriceKurus } } : undefined}
+        filters={hasFilters ? { brands: brandOptions, priceRange: { min: options.minPriceKurus, max: options.maxPriceKurus } } : undefined}
       />
       {items.length > 0 ? (
         state.view === "raf" ? (

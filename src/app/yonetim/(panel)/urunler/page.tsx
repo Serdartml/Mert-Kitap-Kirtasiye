@@ -124,7 +124,7 @@ export default async function AdminProductsPage({ searchParams }: PageProps) {
           <span className="marker">Ürünler</span>
         </h1>
         <div className="flex flex-wrap gap-2">
-          <Link href="/yonetim/urunler/fotosuz" className="btn btn-outline">
+          <Link href={href({ filtre: "gorselsiz", sayfa: 1 })} className="btn btn-outline">
             <ImageIcon size={16} aria-hidden /> Fotoğrafsız ürünler
           </Link>
           <Link href="/yonetim/urunler/ice-aktar" className="btn btn-outline">
