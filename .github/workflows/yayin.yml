@@ -44,7 +44,8 @@ jobs:
         env:
           ENV_FILE: ${{ secrets.ENV_FILE }}
         run: |
-          printf '%s\n' "$ENV_FILE" > .env
+          # Tarayıcıdan girilen secret'larda satır sonu \r olabilir; değerlerin sonuna yapışmasın.
+          printf '%s\n' "$ENV_FILE" | tr -d '\r' > .env
           chmod 600 .env
 
       - name: Migration'lar (prisma migrate deploy)
@@ -82,8 +83,10 @@ jobs:
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           install -d -m 700 ~/.ssh
-          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/yayin
+          # Windows'tan kopyalanan anahtarda satır sonu \r kalırsa ssh "error in libcrypto" der; temizlenir.
+          printf '%s\n' "$SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/yayin
           chmod 600 ~/.ssh/yayin
+          ssh-keygen -y -f ~/.ssh/yayin > /dev/null || { echo "SSH_PRIVATE_KEY okunamadı: secret'ı BEGIN/END satırlarıyla birlikte eksiksiz girin." >&2; exit 1; }
           ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null
           SSH="ssh -i $HOME/.ssh/yayin deploy@$SSH_HOST"
 
