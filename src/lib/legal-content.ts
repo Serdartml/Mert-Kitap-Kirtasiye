@@ -9,12 +9,12 @@ export const legalReviewed = false;
 // Satıcının ticari bilgileri: dükkân sahibinden istenecek. Zorunlu olanlar boşken metinlerde
 // "[DOLDURULACAK: ...]" görünür; isteğe bağlı olanlar (oda, KEP) boşsa satır hiç çıkmaz.
 export const legalOwner = {
-  title: "" as string, // ticari unvan, vergi levhasındaki gibi (şahıs işletmesi: "Ad Soyad - Mert Kitap Kırtasiye")
-  ownerName: "" as string, // işletme sahibi / yetkili kişinin adı soyadı
-  taxOffice: "" as string, // vergi dairesi
-  taxNo: "" as string, // vergi kimlik numarası (şahıs işletmesinde T.C. kimlik no olabilir)
-  mersis: "" as string, // MERSİS numarası (şirketse / ticaret siciline kayıtlıysa)
-  tradeRegistry: "" as string, // ticaret sicil ya da esnaf ve sanatkâr sicil numarası
+  title: "Mert Mecmua Kitap Kırtasiye Ticaret Limited Şirketi" as string, // ticari unvan, vergi levhasındaki gibi
+  ownerName: "Gani Temel, Orhan Temel" as string, // şirket ortakları / yetkililer
+  taxOffice: "Bornova" as string, // vergi dairesi
+  taxNo: "6180919518" as string, // vergi kimlik numarası
+  mersis: "0618091951800001" as string, // MERSİS numarası
+  tradeRegistry: "277058" as string, // ticaret sicil numarası
   chamber: "" as string, // bağlı olunan oda (örn. İzmir Ticaret Odası ya da ilgili esnaf odası); isteğe bağlı
   kep: "" as string, // KEP adresi, varsa; isteğe bağlı
 };
@@ -22,7 +22,7 @@ export const legalOwner = {
 // Ticari bilgi alanları ve avukat çıktısında / testte görünen adları.
 export const legalOwnerFields: { key: keyof typeof legalOwner; label: string; required: boolean }[] = [
   { key: "title", label: "Ticari unvan", required: true },
-  { key: "ownerName", label: "İşletme sahibi / yetkili adı soyadı", required: true },
+  { key: "ownerName", label: "Şirket ortakları / yetkililer", required: true },
   { key: "taxOffice", label: "Vergi dairesi", required: true },
   { key: "taxNo", label: "Vergi kimlik numarası", required: true },
   { key: "mersis", label: "MERSİS numarası (şirketse)", required: false },
@@ -42,9 +42,10 @@ const fill = (value: string, label: string) => value || `[DOLDURULACAK: ${label}
 
 // ---------------------------------------------------------------------------------------------------------------
 // Satış modeli. Metinler hangi teslimat ve ödeme yollarının açık olduğuna göre üretilir.
-// - liveCommerce: sitede ŞU AN geçerli olan. Sitedeki sayfalar ve sipariş e-postası bunu kullanır. Kargo ya da online
+// - liveCommerce: sitede ŞU AN geçerli olan. Sitedeki sayfalar ve sipariş e-postası bunu kullanır. Adrese teslim ya da online
 //   ödeme koda eklenip açıldığında burası da true yapılmalı (metin sitenin gerçek işleyişini anlatmalı).
-// - plannedCommerce: hedeflenen model (İzmir içi kargo + PayTR ile online ödeme, mağazadan teslim ve mağazada ödeme
+// - plannedCommerce: hedeflenen model (İzmir merkez ilçelere mağazanın kendi kuryesiyle adrese teslim + PayTR ile online
+//   ödeme; mağazadan teslim ve mağazada ödeme
 //   de sürer). Avukata giden çıktı (`npm run yasal:cikti`) bunu kullanır.
 export interface CommerceMode {
   onlinePayment: boolean;
@@ -53,21 +54,21 @@ export interface CommerceMode {
 export const liveCommerce: CommerceMode = { onlinePayment: false, shipping: false };
 export const plannedCommerce: CommerceMode = { onlinePayment: true, shipping: true };
 
-// Kargo koşulları (işletme kararı). Boşken metinlerde "[DOLDURULACAK: ...]" görünür.
+// Adrese teslim koşulları (işletme kararı, 2026-11-09). Teslimatı kargo firması değil mağazanın kendi kuryesi yapar.
+// Boşken metinlerde "[DOLDURULACAK: ...]" görünür.
 export const shippingTerms = {
-  area: "İzmir il sınırları içindeki" as string, // gönderim yapılan bölge; metinde "yalnızca ... adreslere" diye geçer
-  carrier: "" as string, // anlaşmalı kargo firması (ör. "Yurtiçi Kargo")
-  fee: "" as string, // gönderim ücreti, TL, KDV dahil (ör. "75")
-  freeOver: "" as string, // bu tutar ve üzerindeki siparişlerde kargo ücretsiz, TL (ör. "750")
-  dispatchDays: "" as string, // ödeme onayından sonra kargoya teslim süresi, iş günü (ör. "2")
+  // Teslimat yapılan ilçeler (İzmir merkez ilçeleri); metinde "yalnızca İzmir'in ... ilçelerindeki adreslere" diye geçer.
+  districts: "Balçova, Bayraklı, Bornova, Buca, Çiğli, Gaziemir, Güzelbahçe, Karabağlar, Karşıyaka, Konak ve Narlıdere" as string,
+  fee: "65" as string, // teslimat ücreti, TL, KDV dahil
+  freeOver: "1000" as string, // bu tutar ve üzerindeki siparişlerde teslimat ücretsiz, TL
+  sameDayCutoff: "17:00" as string, // bu saate kadar verilen sipariş aynı gün, sonrakiler ertesi gün akşama kadar teslim edilir
 };
 
 export const shippingTermFields: { key: keyof typeof shippingTerms; label: string }[] = [
-  { key: "area", label: "Gönderim bölgesi" },
-  { key: "carrier", label: "Anlaşmalı kargo firması" },
-  { key: "fee", label: "Kargo ücreti (TL, KDV dahil)" },
-  { key: "freeOver", label: "Ücretsiz kargo alt sınırı (TL)" },
-  { key: "dispatchDays", label: "Kargoya teslim süresi (iş günü)" },
+  { key: "districts", label: "Teslimat yapılan ilçeler (İzmir)" },
+  { key: "fee", label: "Adrese teslim ücreti (TL, KDV dahil)" },
+  { key: "freeOver", label: "Ücretsiz teslimat alt sınırı (TL)" },
+  { key: "sameDayCutoff", label: "Aynı gün teslimat için son sipariş saati" },
 ];
 
 export function missingShippingInfo(): string[] {
@@ -80,12 +81,12 @@ export const paymentProvider = {
   short: "PayTR",
 };
 
-const carrierName = () => fill(shippingTerms.carrier, "kargo firması");
 const shippingFeeText = () =>
-  `Kargo ile gönderimde ${fill(shippingTerms.fee, "kargo ücreti")} TL (KDV dahil) teslimat ücreti alınır; ${fill(shippingTerms.freeOver, "ücretsiz kargo alt sınırı")} TL ve üzeri siparişlerde gönderim ücretsizdir. Teslimat ücreti sipariş özetinde ayrıca gösterilir ve toplam tutara eklenir.`;
+  `Adrese teslimde ${fill(shippingTerms.fee, "teslimat ücreti")} TL (KDV dahil) teslimat ücreti alınır; ${fill(shippingTerms.freeOver, "ücretsiz teslimat alt sınırı")} TL ve üzeri siparişlerde teslimat ücretsizdir. Teslimat ücreti sipariş özetinde ayrıca gösterilir ve toplam tutara eklenir.`;
 
 // Kişisel verilerin işlendiği altyapı sağlayıcıları (veri işleyen). Yeni bir servis eklenince buraya da eklenmeli;
-// KVKK ve gizlilik metinleri listeyi buradan alır. Ödeme kuruluşu ve kargo firması ayrıca `transferRecipients`'ta.
+// KVKK ve gizlilik metinleri listeyi buradan alır. Ödeme kuruluşu ayrıca `transferRecipients`'ta. Adrese teslimi mağazanın
+// kendi kuryesi yaptığı için teslimat bilgisi üçüncü bir firmaya aktarılmaz.
 export const dataProcessors = [
   { name: "Hetzner Online GmbH", country: "Almanya", purpose: "sitenin çalıştığı sunucu (barındırma)" },
   { name: "Neon", country: "veriler Almanya'daki (Frankfurt) veri merkezinde; şirket ABD merkezli", purpose: "veritabanı" },
@@ -101,13 +102,6 @@ export function transferRecipients(m: CommerceMode): { name: string; data: strin
       name: paymentProvider.name,
       data: "ad soyad, e-posta, telefon, adres, IP adresi, sipariş tutarı ve sipariş numarası",
       purpose: "online ödemenin alınması, iadelerin yapılması ve dolandırıcılığın önlenmesi",
-    });
-  }
-  if (m.shipping) {
-    list.push({
-      name: carrierName(),
-      data: "alıcının ad soyadı, telefon numarası ve teslimat adresi",
-      purpose: "kargonun teslim edilmesi ve iade gönderilerinin alınması",
     });
   }
   return list;
@@ -128,7 +122,7 @@ export function sellerLines(): string[] {
   const o = legalOwner;
   const lines = [
     `Unvan: ${fill(o.title, "ticari unvan")}`,
-    `İşletme sahibi / yetkili: ${fill(o.ownerName, "ad soyad")}`,
+    `Şirket ortakları / yetkililer: ${fill(o.ownerName, "ad soyad")}`,
     `Adres: ${site.address.full}`,
     `Telefon: ${site.phone}`,
     `E-posta: ${site.email}`,
@@ -186,7 +180,7 @@ function kvkk(m: CommerceMode): LegalDocument {
           "Kimlik ve iletişim: ad soyad, e-posta adresi, telefon numarası.",
           "Müşteri işlem: sipariş numarası, sipariş edilen ürünler, adet ve tutarlar, sipariş tarihi ve durumu, sipariş notunuz, favori ürünleriniz, sepet içeriği, ürün yorumlarınız ve puanlarınız.",
           m.shipping
-            ? "Adres: kargo ile gönderim seçtiğinizde teslimat adresi ve adres defterine kendi isteğinizle kaydettiğiniz adresler; kargo takip numarası ve teslim bilgisi."
+            ? "Adres: adrese teslim seçtiğinizde teslimat adresi ve adres defterine kendi isteğinizle kaydettiğiniz adresler; teslimatın yapıldığı zaman ve teslim alan kişinin adı."
             : "Adres: adres defterine kendi isteğinizle kaydettiğiniz adresler.",
           ...(m.onlinePayment
             ? [
@@ -201,13 +195,13 @@ function kvkk(m: CommerceMode): LegalDocument {
       {
         heading: "3. Kişisel veri toplamanın yöntemi",
         paragraphs: [
-          `Verileriniz, internet sitemizdeki üyelik, sipariş, adres, yorum ve iletişim formlarını doldurmanız ile siteyi kullanmanız sırasında otomatik yollarla (çerezler ve sunucu kayıtları) elektronik ortamda toplanır.${m.onlinePayment ? ` Online ödemenin sonucu (onay, ret, iade) ödeme kuruluşu ${paymentProvider.short} tarafından elektronik ortamda bize iletilir.` : ""}${m.shipping ? " Kargonun teslim durumu kargo firması tarafından bildirilir." : ""} Mağazada sipariş teslimi sırasında sözlü veya yazılı olarak da alınabilir.`,
+          `Verileriniz, internet sitemizdeki üyelik, sipariş, adres, yorum ve iletişim formlarını doldurmanız ile siteyi kullanmanız sırasında otomatik yollarla (çerezler ve sunucu kayıtları) elektronik ortamda toplanır.${m.onlinePayment ? ` Online ödemenin sonucu (onay, ret, iade) ödeme kuruluşu ${paymentProvider.short} tarafından elektronik ortamda bize iletilir.` : ""}${m.shipping ? " Adrese teslimatta teslim bilgisi kuryemiz tarafından kaydedilir." : ""} Mağazada sipariş teslimi sırasında sözlü veya yazılı olarak da alınabilir.`,
         ],
       },
       {
         heading: "4. İşleme amaçları ve hukuki sebepler",
         paragraphs: [
-          `Siparişin alınması, hazırlanması, ${m.shipping ? "kargo ile gönderilmesi veya mağazadan teslimi" : "mağazadan teslimi"}${m.onlinePayment ? ", ödemenin alınması" : ""}, iade ve değişim işlemleri ile sipariş durumu hakkında bilgilendirme: sözleşmenin kurulması veya ifasıyla doğrudan ilgili olması (KVKK m. 5/2-c).`,
+          `Siparişin alınması, hazırlanması, ${m.shipping ? "kuryemizle adrese teslimi veya mağazadan teslimi" : "mağazadan teslimi"}${m.onlinePayment ? ", ödemenin alınması" : ""}, iade ve değişim işlemleri ile sipariş durumu hakkında bilgilendirme: sözleşmenin kurulması veya ifasıyla doğrudan ilgili olması (KVKK m. 5/2-c).`,
           "Üyelik hesabının açılması ve yönetimi, favoriler, adres defteri ve ürün yorumları: sözleşmenin kurulması veya ifası (m. 5/2-c).",
           "Fatura düzenlenmesi, ticari defter ve belgelerin saklanması, yetkili kurumların taleplerinin karşılanması, mesafeli satış kayıtlarının tutulması: veri sorumlusunun hukuki yükümlülüğü (m. 5/2-ç).",
           "İletişim formundan gelen soru ve taleplerin yanıtlanması, olası uyuşmazlıklarda hakların korunması: bir hakkın tesisi, kullanılması veya korunması (m. 5/2-e) ve meşru menfaat (m. 5/2-f).",
@@ -224,6 +218,9 @@ function kvkk(m: CommerceMode): LegalDocument {
                 "Siparişinizin yerine getirilmesi için, sözleşmenin ifası (m. 5/2-c) kapsamında ve yalnızca gerekli olduğu ölçüde, Türkiye'de yerleşik aşağıdaki kuruluşlara aktarılır:",
                 ...recipients.map((r) => `${r.name}: ${r.data}; ${r.purpose} amacıyla.`),
               ]
+            : []),
+          ...(m.shipping
+            ? ["Adrese teslimat, kargo firmasıyla değil mağazamızın kendi kuryesiyle yapılır; teslimat bilgileriniz bu amaçla üçüncü bir firmaya aktarılmaz."]
             : []),
           "Sitenin çalışması için hizmet aldığımız ve verileri yalnızca bizim talimatımızla, hizmeti sunmak amacıyla işleyen altyapı sağlayıcılarına (veri işleyen) aktarılır:",
           ...dataProcessors.map((p) => `${p.name} (${p.country}): ${p.purpose}.`),
@@ -277,8 +274,8 @@ function gizlilik(m: CommerceMode): LegalDocument {
       {
         heading: "Bilgileri ne için kullanıyoruz",
         paragraphs: [
-          `Siparişinizi hazırlamak ${m.shipping ? "ve kargoyla göndermek ya da mağazada teslim etmek" : "ve teslim etmek"}, hazır olduğunda size haber vermek, hesabınızı yönetmek, sorularınızı yanıtlamak ve yasal yükümlülüklerimizi (fatura, kayıt saklama) yerine getirmek için.`,
-          `Size yalnızca işlemle ilgili e-postalar (sipariş onayı, sipariş durumu${m.shipping ? ", kargo bilgisi" : ""}, parola sıfırlama, e-posta doğrulama) gönderiyoruz; kampanya e-postası veya SMS göndermiyoruz.`,
+          `Siparişinizi hazırlamak ${m.shipping ? "ve kuryemizle adresinize ya da mağazada teslim etmek" : "ve teslim etmek"}, hazır olduğunda size haber vermek, hesabınızı yönetmek, sorularınızı yanıtlamak ve yasal yükümlülüklerimizi (fatura, kayıt saklama) yerine getirmek için.`,
+          `Size yalnızca işlemle ilgili e-postalar (sipariş onayı, sipariş durumu${m.shipping ? ", teslimat bilgisi" : ""}, parola sıfırlama, e-posta doğrulama) gönderiyoruz; kampanya e-postası veya SMS göndermiyoruz.`,
         ],
       },
       ...(m.onlinePayment
@@ -400,12 +397,12 @@ const stockShortText = (m: CommerceMode) =>
     ? "Siparişin tamamı veya bir kısmı stoktaki beklenmedik bir değişiklik nedeniyle karşılanamazsa satıcı, bunu öğrendiği tarihten itibaren üç gün içinde alıcıyı bilgilendirir ve ilgili ürünleri siparişten çıkarır. Bu ürünler için ödeme yapılmışsa bedel (tüm sipariş iptal ediliyorsa teslimat ücreti dahil) en geç on dört gün içinde ödemenin yapıldığı karta iade edilir."
     : "Ürünün tamamının veya bir kısmının temin edilememesi halinde satıcı, bunu öğrendiği tarihten itibaren üç gün içinde alıcıyı bilgilendirir ve ilgili kalemi siparişten çıkarır. Ödeme alınmadığından iade söz konusu olmaz; ödeme yapılmışsa bedel en geç on dört gün içinde iade edilir.";
 
-// Kargo ile teslimat.
+// Adrese teslim (mağazanın kendi kuryesiyle).
 const shippingDeliveryLines = (): string[] => [
-  `Kargo ile gönderim yalnızca ${shippingTerms.area} adreslere yapılır; bu bölge dışındaki adresler için sipariş verilemez.`,
-  `Kargo ile gönderilecek sipariş, ödemenin onaylanmasından itibaren en geç ${fill(shippingTerms.dispatchDays, "kargoya teslim süresi")} iş günü içinde ${carrierName()} ile kargoya verilir ve kargo takip numarası e-posta ile bildirilir. Teslimat, her durumda sipariş tarihinden itibaren yasal otuz günlük süreyi aşmaz.`,
-  "Ürün, alıcıya veya alıcının belirttiği kişiye (kargo firması dışında) teslim edilene kadar oluşan kayıp ve hasardan satıcı sorumludur. Paketi teslim alırken kontrol etmeniz, hasarlı görünen paketi kargo görevlisine tutanak düzenleterek teslim almanız önerilir; bu öneri, ayıplı ürün haklarınızı sınırlamaz.",
-  "Teslimat adresinde alıcıya ulaşılamazsa kargo firması bildirim bırakır; kargo firmasının şubesinde bekleme süresi içinde alınmayan gönderi satıcıya geri döner. Bu durumda alıcı bilgilendirilir ve isterse sipariş yeniden gönderilir ya da iptal edilerek ödenen tutar iade edilir.",
+  `Adrese teslim, kargo firmasıyla değil mağazamızın kendi kuryesiyle ve yalnızca İzmir'in ${fill(shippingTerms.districts, "teslimat ilçeleri")} ilçelerindeki adreslere yapılır; bu ilçeler dışındaki adresler için adrese teslim seçilemez.`,
+  `Teslimat haftanın her günü yapılır. Saat ${fill(shippingTerms.sameDayCutoff, "son sipariş saati")}'den önce verilen ve (online ödemede) ödemesi onaylanan siparişler aynı gün akşama kadar, bu saatten sonra verilenler ertesi gün akşama kadar teslim edilir. Stok, hava koşulları veya trafik gibi nedenlerle teslimat gecikecekse alıcı telefonla bilgilendirilir; teslimat her durumda sipariş tarihinden itibaren yasal otuz günlük süreyi aşmaz.`,
+  "Ürün, alıcıya veya alıcının belirttiği kişiye teslim edilene kadar oluşan kayıp ve hasardan satıcı sorumludur. Teslim sırasında paketi kontrol etmeniz önerilir; bu öneri, ayıplı ürün haklarınızı sınırlamaz.",
+  "Teslimat adresinde alıcıya veya belirttiği kişiye ulaşılamazsa kurye alıcıyı telefonla arar ve yeni bir teslimat zamanı belirlenir. Alıcıya ulaşılamazsa veya teslim alınmazsa alıcı bilgilendirilerek sipariş iptal edilebilir ve ödenen tutarın tamamı en geç on dört gün içinde iade edilir.",
 ];
 
 // Cayma halinde ürünün geri gönderilmesi ve iade masrafı. İade masrafı ile ilgili hüküm avukata ayrıca soruldu
@@ -413,7 +410,7 @@ const shippingDeliveryLines = (): string[] => [
 const returnShippingLines = (m: CommerceMode): string[] =>
   m.shipping
     ? [
-        `Ürün mağazamıza getirilerek ücretsiz olarak iade edilebilir. Kargo ile iade etmek isterseniz, cayma bildiriminiz üzerine size bildirilecek iade kodu ile anlaşmalı kargo firmamız ${carrierName()} aracılığıyla ücretsiz gönderebilirsiniz. Ürünü başka bir kargo firmasıyla gönderirseniz gönderim ücreti size aittir.`,
+        `Ürün mağazamıza getirilerek ücretsiz olarak iade edilebilir. Adrese teslim edilen ürünler için, cayma bildiriminizde istemeniz halinde ürün teslimat ilçelerimizdeki adresinizden kuryemiz tarafından ücretsiz olarak teslim alınır. Ürünü kargo firması gibi başka bir yolla gönderirseniz gönderim ücreti size aittir.`,
       ]
     : [];
 
@@ -432,7 +429,7 @@ function onBilgilendirme(m: CommerceMode): LegalDocument {
         "Siparişi tamamlarken iki ödeme yönteminden birini seçersiniz:",
         `Online ödeme: banka veya kredi kartı ile, lisanslı ödeme kuruluşu ${paymentProvider.name} altyapısı üzerinden ve 3D Secure doğrulamasıyla. Kart bilgileriniz satıcıya iletilmez ve satıcı tarafından saklanmaz. Ödeme onaylanmazsa sipariş oluşmaz.`,
         "Mağazada ödeme: yalnızca mağazadan teslim seçilen siparişlerde; ürünleri teslim alırken nakit veya banka/kredi kartı ile.",
-        ...(m.shipping ? ["Kargo ile gönderilen siparişlerde ödeme online yapılır; kapıda ödeme yoktur."] : []),
+        ...(m.shipping ? ["Adrese teslim siparişlerde ödeme online yapılır; kapıda ödeme yoktur."] : []),
         "“Siparişi Onayla” düğmesine basmanızla sipariş verilir ve siparişteki ürünler için ödeme yükümlülüğü altına girersiniz.",
       ]
     : [
@@ -463,7 +460,7 @@ function onBilgilendirme(m: CommerceMode): LegalDocument {
       {
         heading: "4. Teslimat",
         paragraphs: [
-          ...(m.shipping ? ["Siparişi tamamlarken kargo ile gönderim veya mağazadan teslim seçeneklerinden birini seçersiniz.", ...shippingDeliveryLines()] : []),
+          ...(m.shipping ? ["Siparişi tamamlarken adrese teslim veya mağazadan teslim seçeneklerinden birini seçersiniz.", ...shippingDeliveryLines()] : []),
           ...pickupLines,
           m.onlinePayment
             ? stockShortText(m)
@@ -473,10 +470,10 @@ function onBilgilendirme(m: CommerceMode): LegalDocument {
       {
         heading: "5. Cayma hakkı",
         paragraphs: [
-          `Ürünü ${m.shipping ? "size veya belirttiğiniz kişiye (kargo firması dışında) teslim edildiği" : "teslim aldığınız"} günden itibaren on dört (14) gün içinde hiçbir gerekçe göstermeksizin ve cezai şart ödemeksizin sözleşmeden cayma hakkınız vardır. Birden fazla ürün içeren siparişte süre, son ürünü teslim aldığınız gün başlar. Ürünü teslim almadan önce de cayma hakkınızı kullanabilirsiniz.`,
+          `Ürünü ${m.shipping ? "size veya belirttiğiniz kişiye teslim edildiği" : "teslim aldığınız"} günden itibaren on dört (14) gün içinde hiçbir gerekçe göstermeksizin ve cezai şart ödemeksizin sözleşmeden cayma hakkınız vardır. Birden fazla ürün içeren siparişte süre, son ürünü teslim aldığınız gün başlar. Ürünü teslim almadan önce de cayma hakkınızı kullanabilirsiniz.`,
           `Cayma bildiriminizi süre dolmadan ${site.address.full} adresine yazılı olarak, ${site.email} adresine e-posta ile veya ürünü mağazamıza getirerek yapabilirsiniz. Bildirimde ad soyad, sipariş numarası, cayılan ürünler ve tarih yer almalıdır.`,
           m.shipping
-            ? "Cayma bildiriminden itibaren on (10) gün içinde ürünü mağazamıza getirmeniz veya kargoya vermeniz gerekir."
+            ? "Cayma bildiriminden itibaren on (10) gün içinde ürünü mağazamıza getirmeniz veya kuryemize teslim etmeniz gerekir."
             : "Cayma bildiriminden itibaren on (10) gün içinde ürünü mağazamıza getirmeniz gerekir.",
           ...returnShippingLines(m),
           refundText(m),
@@ -507,7 +504,7 @@ function onBilgilendirme(m: CommerceMode): LegalDocument {
         heading: "8. Sözleşmenin kurulması ve saklanması",
         paragraphs: [
           m.onlinePayment || m.shipping
-            ? `Sipariş adımları: ürünleri sepete eklersiniz; sepette adetleri değiştirebilir veya ürünleri çıkarabilirsiniz; siparişi tamamlama sayfasında iletişim bilgilerinizi yazar, ${m.shipping ? "teslimat yöntemini (kargo ise teslimat adresini) " : ""}${m.onlinePayment ? "ve ödeme yöntemini " : ""}seçer, teslimat ücreti dahil sipariş özetini kontrol eder, bu formu ve Mesafeli Satış Sözleşmesi'ni onaylayıp “Siparişi Onayla” düğmesine basarsınız.${m.onlinePayment ? ` Online ödemede ardından ${paymentProvider.short}'nin güvenli ödeme sayfasında kart bilgilerinizi girip ödemeyi onaylarsınız.` : ""} Onaydan önce “Sepete dön” bağlantısıyla her bilgiyi düzeltebilirsiniz.`
+            ? `Sipariş adımları: ürünleri sepete eklersiniz; sepette adetleri değiştirebilir veya ürünleri çıkarabilirsiniz; siparişi tamamlama sayfasında iletişim bilgilerinizi yazar, ${m.shipping ? "teslimat yöntemini (adrese teslimde teslimat adresini) " : ""}${m.onlinePayment ? "ve ödeme yöntemini " : ""}seçer, teslimat ücreti dahil sipariş özetini kontrol eder, bu formu ve Mesafeli Satış Sözleşmesi'ni onaylayıp “Siparişi Onayla” düğmesine basarsınız.${m.onlinePayment ? ` Online ödemede ardından ${paymentProvider.short}'nin güvenli ödeme sayfasında kart bilgilerinizi girip ödemeyi onaylarsınız.` : ""} Onaydan önce “Sepete dön” bağlantısıyla her bilgiyi düzeltebilirsiniz.`
             : "Sipariş adımları: ürünleri sepete eklersiniz; sepette adetleri değiştirebilir veya ürünleri çıkarabilirsiniz; siparişi tamamlama sayfasında iletişim bilgilerinizi yazar, sipariş özetini kontrol eder, bu formu ve Mesafeli Satış Sözleşmesi'ni onaylayıp “Siparişi Onayla” düğmesine basarsınız. Onaydan önce “Sepete dön” bağlantısıyla her bilgiyi düzeltebilirsiniz.",
           "Sözleşme ve bu form Türkçe olarak kurulur. Sipariş kaydı satıcı tarafından saklanır; sipariş özeti, bu form ve sözleşme metni sipariş onayı e-postasıyla size gönderilir. Üye iseniz siparişlerinizi “Hesabım” sayfasından da görebilirsiniz.",
         ],
@@ -523,9 +520,9 @@ function mesafeliSatis(m: CommerceMode): LegalDocument {
   const paymentParagraphs = m.onlinePayment
     ? [
         `Alıcı, siparişte online ödeme veya (yalnızca mağazadan teslimde) mağazada ödeme yöntemlerinden birini seçer. Online ödeme, banka veya kredi kartı ile ${paymentProvider.name} altyapısı üzerinden 3D Secure doğrulamasıyla alınır; kart bilgileri satıcıya iletilmez. Online ödemesi onaylanmayan sipariş kurulmamış sayılır.`,
-        ...(m.shipping ? ["Kargo ile gönderilen siparişlerde ödeme online yapılır; kapıda ödeme yoktur."] : []),
+        ...(m.shipping ? ["Adrese teslim siparişlerde ödeme online yapılır; kapıda ödeme yoktur."] : []),
         "Mağazada ödemede ödeme, ürünlerin teslimi sırasında nakit veya banka/kredi kartı ile yapılır.",
-        `Ürünlerin faturası ${m.shipping ? "kargo ile gönderimde e-posta ile veya paketle birlikte, mağazadan teslimde " : ""}teslim sırasında düzenlenir ve alıcıya verilir.`,
+        `Ürünlerin faturası ${m.shipping ? "adrese teslimde e-posta ile veya paketle birlikte, mağazadan teslimde " : ""}teslim sırasında düzenlenir ve alıcıya verilir.`,
       ]
     : [
         "Ödeme, ürünlerin mağazadan teslimi sırasında nakit veya banka/kredi kartı ile yapılır. Siparişle birlikte internet üzerinden ödeme alınmaz.",
@@ -540,7 +537,7 @@ function mesafeliSatis(m: CommerceMode): LegalDocument {
       {
         heading: "2. Alıcı",
         paragraphs: [
-          `Sipariş formunda adı soyadı, telefon numarası${m.shipping ? ", e-posta adresi ve (kargo ile gönderimde) teslimat adresi" : " ve e-posta adresi"} yer alan kişidir. Alıcı bu bilgilerin doğru ve güncel olduğunu kabul eder; bilgilerin yanlış olmasından doğan gecikmelerden satıcı sorumlu değildir.`,
+          `Sipariş formunda adı soyadı, telefon numarası${m.shipping ? ", e-posta adresi ve (adrese teslimde) teslimat adresi" : " ve e-posta adresi"} yer alan kişidir. Alıcı bu bilgilerin doğru ve güncel olduğunu kabul eder; bilgilerin yanlış olmasından doğan gecikmelerden satıcı sorumlu değildir.`,
         ],
       },
       {
@@ -558,7 +555,7 @@ function mesafeliSatis(m: CommerceMode): LegalDocument {
       {
         heading: "5. Teslimat",
         paragraphs: [
-          ...(m.shipping ? ["Alıcı, siparişte kargo ile gönderim veya mağazadan teslim seçeneklerinden birini seçer.", ...shippingDeliveryLines()] : []),
+          ...(m.shipping ? ["Alıcı, siparişte adrese teslim veya mağazadan teslim seçeneklerinden birini seçer.", ...shippingDeliveryLines()] : []),
           `${m.shipping ? "Mağazadan teslim seçilen ürünler" : "Ürünler"} ${site.address.full} adresindeki mağazadan, çalışma saatlerinde (${hoursText()}) teslim edilir. Satıcı, siparişi en geç otuz gün içinde teslime hazır hale getirir ve alıcıyı telefon veya e-posta ile bilgilendirir.`,
           pickupCancelText(m),
           stockShortText(m),
@@ -568,10 +565,10 @@ function mesafeliSatis(m: CommerceMode): LegalDocument {
       {
         heading: "6. Cayma hakkı",
         paragraphs: [
-          `Alıcı, ürünün ${m.shipping ? "kendisine veya belirttiği kişiye (kargo firması dışında) teslim edildiği" : "teslim aldığı"} tarihten itibaren on dört gün içinde herhangi bir gerekçe göstermeksizin ve cezai şart ödemeksizin sözleşmeden cayma hakkına sahiptir. Birden fazla ürün içeren siparişte süre son ürünün teslimiyle başlar. Alıcı, teslimden önce de cayma hakkını kullanabilir.`,
+          `Alıcı, ürünün ${m.shipping ? "kendisine veya belirttiği kişiye teslim edildiği" : "teslim aldığı"} tarihten itibaren on dört gün içinde herhangi bir gerekçe göstermeksizin ve cezai şart ödemeksizin sözleşmeden cayma hakkına sahiptir. Birden fazla ürün içeren siparişte süre son ürünün teslimiyle başlar. Alıcı, teslimden önce de cayma hakkını kullanabilir.`,
           `Cayma bildirimi süre içinde ${site.address.full} adresine yazılı olarak, ${site.email} adresine e-posta ile veya ürün mağazaya getirilerek yapılır.`,
           m.shipping
-            ? "Alıcı, cayma bildiriminden itibaren on gün içinde ürünü mağazaya getirir veya kargoya verir."
+            ? "Alıcı, cayma bildiriminden itibaren on gün içinde ürünü mağazaya getirir veya kuryeye teslim eder."
             : m.onlinePayment
               ? "Alıcı, cayma bildiriminden itibaren on gün içinde ürünü mağazaya getirir."
               : "Alıcı, cayma bildiriminden itibaren on gün içinde ürünü mağazaya getirir. Satıcı, cayma bildiriminin kendisine ulaşmasından itibaren en geç on dört gün içinde, ödeme yapılmışsa bedeli alıcının ödemede kullandığı yöntemle iade eder.",
@@ -616,9 +613,9 @@ function iade(m: CommerceMode): LegalDocument {
   const howTo = m.shipping
     ? [
         `Mağazaya getirerek: ürünü faturasıyla birlikte mağazamıza (${site.address.full}) getirmeniz yeterlidir; bu, cayma bildirimi yerine de geçer. Ücretsizdir.`,
-        `Kargoyla: 14 gün içinde ${site.email} adresine sipariş numaranızla yazın. Size anlaşmalı kargo firmamız ${carrierName()} için bir iade kodu göndeririz; ürünü bildirimden itibaren 10 gün içinde bu kodla ücretsiz gönderebilirsiniz. Başka bir kargo firmasıyla gönderirseniz gönderim ücreti size aittir.`,
+        `Kuryeyle: adrese teslim aldığınız ürün için 14 gün içinde ${site.email} adresine ya da ${site.phone} numarasına sipariş numaranızla bildirin; kuryemiz ürünü bildirimden itibaren 10 gün içinde, uygun olduğunuz bir zamanda adresinizden ücretsiz teslim alır.`,
         m.onlinePayment
-          ? "İade tutarı (ürün bedeli ve varsa ödediğiniz kargo ücreti) en geç 14 gün içinde ödemeyi yaptığınız yöntemle iade edilir: online ödemede aynı karta, mağazada nakit ödemede nakit olarak. Karta yapılan iadenin hesabınıza yansıma süresi bankanıza bağlıdır."
+          ? "İade tutarı (ürün bedeli ve varsa ödediğiniz teslimat ücreti) en geç 14 gün içinde ödemeyi yaptığınız yöntemle iade edilir: online ödemede aynı karta, mağazada nakit ödemede nakit olarak. Karta yapılan iadenin hesabınıza yansıma süresi bankanıza bağlıdır."
           : "İade tutarı, ödemeyi yaptığınız yöntemle en geç 14 gün içinde ödenir.",
       ]
     : [
@@ -646,14 +643,14 @@ function iade(m: CommerceMode): LegalDocument {
         heading: "Değişim",
         paragraphs: [
           m.shipping
-            ? "Ürünü mağazamızda aynı koşullarla başka bir ürünle değiştirebilirsiniz. Fiyat farkı varsa mağazada tahsil edilir veya iade edilir. Kargo ile değişim için önce iade, ardından yeni sipariş yapılır."
+            ? "Ürünü mağazamızda aynı koşullarla başka bir ürünle değiştirebilirsiniz. Fiyat farkı varsa mağazada tahsil edilir veya iade edilir. Adrese teslim siparişlerde değişim için önce iade, ardından yeni sipariş yapılır."
             : "Ürünü aynı koşullarla başka bir ürünle değiştirebilirsiniz. Fiyat farkı varsa mağazada tahsil edilir veya iade edilir.",
         ],
       },
       {
         heading: "Hasarlı, eksik veya hatalı ürün",
         paragraphs: [
-          `Hasarlı, eksik, yanlış veya ayıplı bir ürün teslim aldıysanız bize ulaşın. Seçiminize göre ürünü ücretsiz değiştirir, onarır, bedelinden indirim yapar veya bedelini iade ederiz.${m.shipping ? " Bu durumda kargo masrafları bize aittir." : ""} Bu haklar 14 günlük süreyle sınırlı değildir; kanunda öngörülen süreler (genel olarak iki yıl) içinde kullanılabilir.`,
+          `Hasarlı, eksik, yanlış veya ayıplı bir ürün teslim aldıysanız bize ulaşın. Seçiminize göre ürünü ücretsiz değiştirir, onarır, bedelinden indirim yapar veya bedelini iade ederiz.${m.shipping ? " Bu durumda teslimat ve geri alma masrafları bize aittir." : ""} Bu haklar 14 günlük süreyle sınırlı değildir; kanunda öngörülen süreler (genel olarak iki yıl) içinde kullanılabilir.`,
         ],
       },
     ],

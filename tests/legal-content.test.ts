@@ -46,7 +46,9 @@ describe("yasal metinler", () => {
 
     const planned = JSON.stringify(getLegalDocument("on-bilgilendirme-formu", plannedCommerce));
     expect(planned).toContain("PayTR");
-    expect(planned).toContain("İzmir il sınırları içindeki adreslere");
+    expect(planned).toContain("kendi kuryesiyle");
+    expect(planned).toContain("Bornova");
+    expect(planned).not.toContain("[DOLDURULACAK");
     expect(planned).not.toContain("yapılmamaktadır");
     expect(JSON.stringify(getLegalDocument("kvkk", plannedCommerce))).toContain("PayTR Ödeme ve Elektronik Para Kuruluşu");
   });
