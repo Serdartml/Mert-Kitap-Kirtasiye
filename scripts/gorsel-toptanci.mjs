@@ -42,6 +42,8 @@ const env = Object.fromEntries(
 const cred = (key) => {
   let user = env[`${key}_USER`] ?? "";
   if (user.includes("@") || /kirtas/i.test(user.replace(/ı/g, "i"))) user = user.replace(/\s+/g, "").replace(/ı/g, "i");
+  // E-postada "@" önüne yanlışlıkla girmiş "/" (Yargı: "...kirtasiye/@hotmail.com")
+  if (user.includes("@")) user = user.replace(/\/+@/, "@");
   return { user, pass: env[`${key}_PASS`] ?? "" };
 };
 
@@ -435,7 +437,34 @@ SITES.timas = () => {
   };
 };
 
-const ORDER = ["emin", "hiz", "esen", "kadioglu", "mnk", "ozkol", "pastel", "redka", "rich", "timas"];
+SITES.yargi = () => {
+  // ProjeSoft altyapısı. Arama: /index.php?p=search&search=<barkod>; kart "kUrun", görsel images_kucuk/... (büyüğü images_buyuk/..., girişsiz).
+  // Kartta barkod yazmadığı için yalnızca TEK sonuç kabul edilir. Yalnızca Hazırlık Kitapları'ndaki Yargı ürünleri aranır.
+  const SITE = "https://www.yargidersarkadasim.com";
+  const sess = makeSession(async (page) => {
+    await typeLogin(page, `${SITE}/login.php`, "#cusername", "#cpassword", "#customer_login_submit", "YARGI");
+    if (/Giriş denemeniz başarısız/.test(await page.content())) throw new Error("Yargı girişi başarısız (şifre?)");
+  });
+  return {
+    concurrency: 2,
+    delay: 500,
+    where: { brand: { name: "Yargı" }, category: { OR: [{ slug: "hazirlik-kitaplari" }, { parent: { slug: "hazirlik-kitaplari" } }] } },
+    async search({ b }) {
+      const r = await sess.request(`${SITE}/index.php?p=search&search=${b}`, { check: (x) => !x.text.includes('name="cpassword"') });
+      const cards = r.text.split('class="kUrun"').slice(1);
+      if (cards.length === 0) return { s: "yok", neden: "yargıda ürün yok" };
+      if (cards.length > 1) return { s: "yok", neden: "birden çok sonuç", n: cards.length };
+      const src = cards[0].match(/class="kImgFirst"><img src="([^"]+)"/)?.[1];
+      const n = decode(r.text.split('class="kUrun"')[1].split('class="text-custom-50')[1]?.match(/<a[^>]*>([^<]*)</)?.[1]);
+      if (!src) return { s: "yok", n, neden: "görseli yok" };
+      const small = new URL(src, `${SITE}/`).href;
+      const buf = await firstImage([small.replace("/images_kucuk/", "/images_buyuk/"), small]);
+      return buf ? { s: "ok", buf, n } : { s: "yok", n, neden: "görsel inmedi" };
+    },
+  };
+};
+
+const ORDER = ["emin", "hiz", "esen", "kadioglu", "mnk", "ozkol", "pastel", "redka", "rich", "timas", "yargi"];
 // Sıraya alınmayanlar:
 //   bilgikare (kalitimdagitim.com.tr'ye yönleniyor, şifre hatalı), kida (şifre hatalı), unnamed/Yanıt (şifre hatalı),
 //   timon (girişte telefon/e-posta doğrulama kodu; girişsiz katalogda barkod yok), sinankuzucu (güvenlik kodu),
@@ -533,7 +562,19 @@ for (const site of sites) {
   const stateFile = trial ? `${DIR}/deneme-${site}-durum.jsonl` : `${DIR}/${site}-durum.jsonl`;
   mkdirSync(imgDir, { recursive: true });
 
-  const products = await db.product.findMany({ where: { images: { none: {} }, barcode: { not: null } }, select: { barcode: true, name: true } });
+  let adapter;
+  try {
+    adapter = SITES[site]();
+  } catch (e) {
+    console.log(`[${site}] başlatılamadı: ${e.message}`);
+    ozet.push({ site, hata: e.message });
+    continue;
+  }
+  // Site yalnızca belirli ürünlere bakıyorsa (adapter.where; örn. Yargı: Hazırlık Kitapları'ndaki Yargı markası)
+  const products = await db.product.findMany({
+    where: { images: { none: {} }, barcode: { not: null }, ...(adapter.where ?? {}) },
+    select: { barcode: true, name: true },
+  });
   const found = foundSoFar();
   const done = readState(stateFile);
   let todo = products
@@ -547,14 +588,6 @@ for (const site of sites) {
   }
   console.log(`\n===== ${site.toUpperCase()}: görselsiz ${products.length}, önceki sitelerde bulunan ${found.size}, bu sitede bakılacak ${todo.length}`);
 
-  let adapter;
-  try {
-    adapter = SITES[site]();
-  } catch (e) {
-    console.log(`[${site}] başlatılamadı: ${e.message}`);
-    ozet.push({ site, hata: e.message });
-    continue;
-  }
   const counts = { ok: 0, yok: 0, hata: 0 };
   let failStreak = 0;
   let next = 0;

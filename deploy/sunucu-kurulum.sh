@@ -59,7 +59,15 @@ PasswordAuthentication no
 KbdInteractiveAuthentication no
 PermitRootLogin prohibit-password
 EOF
-systemctl reload ssh || systemctl reload sshd
+# Ayarı dene; hatalıysa betik burada durur. Servis kapalıyken /run/sshd yoktur, sshd -t onu ister.
+install -d -m 755 /run/sshd
+sshd -t
+# Ubuntu 24.04'te ssh soket ile başlatılır; servis o an çalışmıyorsa ayar bir sonraki bağlantıda okunur.
+if systemctl is-active --quiet ssh; then
+  systemctl reload ssh
+elif systemctl is-active --quiet sshd; then
+  systemctl reload sshd
+fi
 
 echo "==> Güvenlik duvarı (22, 80, 443)"
 ufw default deny incoming

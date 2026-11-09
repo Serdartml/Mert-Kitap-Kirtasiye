@@ -137,7 +137,8 @@ her yayında otomatik uygulanır (yalnızca depoya girmiş `prisma/migrations`).
 1. **Alan adı:** .com.tr alan adını bir Türk kayıt firmasından alın. Kayıt firmasının panelinde ad sunucularını (nameserver)
    Cloudflare'in verdiği iki adresle değiştirin (Cloudflare ücretsiz plan > *Add a domain*). DNS artık Cloudflare'den yönetilir.
 2. **Sunucu:** Hetzner Cloud > yeni proje > *Add Server*: konum Nürnberg ya da Falkenstein (Neon Frankfurt'a yakın), Ubuntu 24.04,
-   4 GB RAM'li en küçük paylaşımlı x86 plan, kendi bilgisayarınızın SSH anahtarı. *Firewalls* ile 22, 80, 443 (TCP) ve 443 (UDP)
+   **CAX11** (Cost-optimized, Arm64, 4 GB RAM), kendi bilgisayarınızın SSH anahtarı. Sunucu ARM olduğu için iş akışı
+   imajı `ubuntu-24.04-arm` makinesinde `linux/arm64` olarak derler; x86 sunucuya geçilirse ikisi de geri alınmalı. *Firewalls* ile 22, 80, 443 (TCP) ve 443 (UDP)
    açık bir güvenlik duvarı ekleyin.
 3. **Yayın anahtarı** (GitHub Actions'ın sunucuya bağlanacağı anahtar; kendi bilgisayarınızda):
    `ssh-keygen -t ed25519 -f yayin-anahtari -C github-actions-yayin -N '""'` (PowerShell). `yayin-anahtari.pub` açık kısım,
