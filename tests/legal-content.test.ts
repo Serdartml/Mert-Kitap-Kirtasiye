@@ -65,6 +65,45 @@ describe("yasal metinler", () => {
     }
   });
 
+  it("iade şartı (ambalaj açılmamış, ürün hasarsız) her modelde yazılıdır; ayıplı üründe aranmaz", () => {
+    for (const [name, mode] of modes) {
+      for (const slug of ["on-bilgilendirme-formu", "mesafeli-satis-sozlesmesi", "iade-ve-degisim"]) {
+        const text = JSON.stringify(getLegalDocument(slug, mode));
+        expect(text, `${name}: ${slug}`).toContain("ambalajı açılmamış");
+        expect(text, `${name}: ${slug}`).toMatch(/yırtı/);
+      }
+    }
+  });
+
+  it("iade yalnızca mağazaya getirerek veya müşterinin kendi ödediği kargoyla yapılır; kurye iade almaz", () => {
+    for (const [name, mode] of modes) {
+      for (const slug of ["on-bilgilendirme-formu", "mesafeli-satis-sozlesmesi", "iade-ve-degisim"]) {
+        const text = JSON.stringify(getLegalDocument(slug, mode));
+        expect(text, `${name}: ${slug}`).toMatch(/kargo/i);
+        expect(text, `${name}: ${slug}`).toContain("karşı ödemeli");
+        expect(text, `${name}: ${slug}`).not.toMatch(/kurye(miz)?(e)? (tarafından )?(ücretsiz )?(teslim alır|teslim eder|teslim etmeniz)/);
+      }
+    }
+    expect(JSON.stringify(getLegalDocument("on-bilgilendirme-formu", plannedCommerce))).toContain("mağazanın kapanış saatine kadar");
+  });
+
+  it("adrese teslimde teslimat kodu var, ikinci teslimat denemesi yok", () => {
+    const planned = JSON.stringify(getLegalDocument("mesafeli-satis-sozlesmesi", plannedCommerce));
+    expect(planned).toContain("teslimat kodu");
+    expect(planned).toContain("ikinci bir teslimat denemesi yapılmaz");
+    expect(planned).not.toContain("yeni bir teslimat zamanı");
+    expect(planned).toContain("100 TL");
+  });
+
+  it("mesafeli satış sözleşmesinde mücbir sebep ve bildirim maddeleri vardır", () => {
+    for (const [name, mode] of modes) {
+      const headings = getLegalDocument("mesafeli-satis-sozlesmesi", mode)!.sections.map((s) => s.heading);
+      expect(headings, name).toContain("9. Mücbir sebep");
+      expect(headings, name).toContain("10. Bildirimler");
+      headings.forEach((h, i) => expect(h, name).toMatch(new RegExp(`^${i + 1}\\. `)));
+    }
+  });
+
   it("bilinmeyen sayfa için null döner", () => {
     expect(getLegalDocument("yok")).toBeNull();
   });

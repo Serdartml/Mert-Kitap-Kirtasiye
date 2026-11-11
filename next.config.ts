@@ -15,6 +15,10 @@ const nextConfig: NextConfig = {
   // Docker imajı (Dockerfile) .next/standalone'dan çalışır; yalnızca orada açılır, yerelde `next start` olduğu gibi kalır.
   output: process.env.NEXT_OUTPUT === "standalone" ? "standalone" : undefined,
   images: { remotePatterns: r2ImagePatterns() },
+  // Sipariş e-postasındaki sözleşme PDF'i (lib/legal-pdf.ts): pdfkit kendi font dosyalarını diskten okuduğu için
+  // paketlenmez; Türkçe karakterler için kullanılan Noto Sans fontları standalone çıktıya ayrıca eklenir.
+  serverExternalPackages: ["pdfkit"],
+  outputFileTracingIncludes: { "/*": ["src/fonts/*.ttf", "node_modules/pdfkit/js/data/**/*"] },
   // Sayfaların sabit kısmı önceden üretilir, "use cache" ile işaretli veriler önbellekten gelir;
   // yalnızca çerez okuyan parçalar (sepet) istek anında akar.
   cacheComponents: true,

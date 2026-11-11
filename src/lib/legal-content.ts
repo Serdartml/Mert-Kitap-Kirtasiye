@@ -59,9 +59,9 @@ export const plannedCommerce: CommerceMode = { onlinePayment: true, shipping: tr
 export const shippingTerms = {
   // Teslimat yapılan ilçeler (İzmir merkez ilçeleri); metinde "yalnızca İzmir'in ... ilçelerindeki adreslere" diye geçer.
   districts: "Balçova, Bayraklı, Bornova, Buca, Çiğli, Gaziemir, Güzelbahçe, Karabağlar, Karşıyaka, Konak ve Narlıdere" as string,
-  fee: "65" as string, // teslimat ücreti, TL, KDV dahil
+  fee: "100" as string, // teslimat ücreti, TL, KDV dahil
   freeOver: "1000" as string, // bu tutar ve üzerindeki siparişlerde teslimat ücretsiz, TL
-  sameDayCutoff: "17:00" as string, // bu saate kadar verilen sipariş aynı gün, sonrakiler ertesi gün akşama kadar teslim edilir
+  sameDayCutoff: "17:00" as string, // bu saate kadar verilen sipariş aynı gün, sonrakiler ertesi gün, mağazanın kapanış saatine kadar teslim edilir
 };
 
 export const shippingTermFields: { key: keyof typeof shippingTerms; label: string }[] = [
@@ -138,6 +138,8 @@ export function sellerLines(): string[] {
 
 const sellerName = () => legalOwner.title || site.name;
 const hoursText = () => site.hours.map((h) => `${h.days} ${h.time}`).join(", ");
+// Adrese teslimin son saati mağazanın kapanış saatidir (işletme kararı, 2026-11-11).
+const closingText = () => site.hours.map((h) => `${h.days} ${h.close}`).join(", ");
 
 // Hazır olarak bildirilen siparişin teslim alınması için tanınan süre (gün). İşletme kararıdır; değişirse metinler
 // kendiliğinden güncellenir.
@@ -400,19 +402,28 @@ const stockShortText = (m: CommerceMode) =>
 // Adrese teslim (mağazanın kendi kuryesiyle).
 const shippingDeliveryLines = (): string[] => [
   `Adrese teslim, kargo firmasıyla değil mağazamızın kendi kuryesiyle ve yalnızca İzmir'in ${fill(shippingTerms.districts, "teslimat ilçeleri")} ilçelerindeki adreslere yapılır; bu ilçeler dışındaki adresler için adrese teslim seçilemez.`,
-  `Teslimat haftanın her günü yapılır. Saat ${fill(shippingTerms.sameDayCutoff, "son sipariş saati")}'den önce verilen ve (online ödemede) ödemesi onaylanan siparişler aynı gün akşama kadar, bu saatten sonra verilenler ertesi gün akşama kadar teslim edilir. Stok, hava koşulları veya trafik gibi nedenlerle teslimat gecikecekse alıcı telefonla bilgilendirilir; teslimat her durumda sipariş tarihinden itibaren yasal otuz günlük süreyi aşmaz.`,
-  "Ürün, alıcıya veya alıcının belirttiği kişiye teslim edilene kadar oluşan kayıp ve hasardan satıcı sorumludur. Teslim sırasında paketi kontrol etmeniz önerilir; bu öneri, ayıplı ürün haklarınızı sınırlamaz.",
-  "Teslimat adresinde alıcıya veya belirttiği kişiye ulaşılamazsa kurye alıcıyı telefonla arar ve yeni bir teslimat zamanı belirlenir. Alıcıya ulaşılamazsa veya teslim alınmazsa alıcı bilgilendirilerek sipariş iptal edilebilir ve ödenen tutarın tamamı en geç on dört gün içinde iade edilir.",
+  `Teslimat haftanın her günü yapılır. Saat ${fill(shippingTerms.sameDayCutoff, "son sipariş saati")}'den önce verilen ve (online ödemede) ödemesi onaylanan siparişler aynı gün, bu saatten sonra verilenler ertesi gün, mağazanın kapanış saatine kadar (${closingText()}) teslim edilir. Stok, hava koşulları veya trafik gibi nedenlerle teslimat gecikecekse alıcı telefonla bilgilendirilir; teslimat her durumda sipariş tarihinden itibaren yasal otuz günlük süreyi aşmaz.`,
+  "Adrese teslim siparişlerde, sipariş yola çıktığında alıcının e-posta adresine bir teslimat kodu gönderilir. Kurye ürünü yalnızca bu kodu kendisine bildiren alıcıya veya alıcının kodu ilettiği kişiye teslim eder; kod bildirilmeden teslimat yapılmaz. Kodun doğru bildirilmesiyle ürün teslim edilmiş sayılır; alıcı kodu, ürünü teslim alacak kişi dışında kimseyle paylaşmamalıdır.",
+  "Ürün, alıcıya veya alıcının belirttiği kişiye teslim edilene kadar oluşan kayıp ve hasardan satıcı sorumludur. Teslim sırasında paketi kontrol etmeniz önerilir. Paket açıkça hasarlıysa teslim almayabilirsiniz; bu durumda ürün sağlamıyla değiştirilir veya dilerseniz bedeli iade edilir. Bu öneri, ayıplı ürün haklarınızı sınırlamaz.",
+  `Teslimat adresinde alıcıya veya belirttiği kişiye ulaşılamazsa kurye alıcıyı telefonla arar. Yine ulaşılamazsa ikinci bir teslimat denemesi yapılmaz: ürün mağazamıza geri götürülür ve alıcı telefon veya e-posta ile bilgilendirilir. Alıcı ürünü ${PICKUP_WAIT_DAYS} gün içinde mağazamızdan teslim alabilir; bu süre içinde teslim alınmazsa sipariş iptal edilir ve ödenen tutarın tamamı en geç on dört gün içinde ödemenin yapıldığı karta iade edilir.`,
 ];
 
-// Cayma halinde ürünün geri gönderilmesi ve iade masrafı. İade masrafı ile ilgili hüküm avukata ayrıca soruldu
-// (scripts/yasal-cikti.ts, reviewNotes).
-const returnShippingLines = (m: CommerceMode): string[] =>
-  m.shipping
-    ? [
-        `Ürün mağazamıza getirilerek ücretsiz olarak iade edilebilir. Adrese teslim edilen ürünler için, cayma bildiriminizde istemeniz halinde ürün teslimat ilçelerimizdeki adresinizden kuryemiz tarafından ücretsiz olarak teslim alınır. Ürünü kargo firması gibi başka bir yolla gönderirseniz gönderim ücreti size aittir.`,
-      ]
-    : [];
+// Cayma halinde ürünün geri gönderilmesi ve iade masrafı (işletme kararı, avukatla görüşüldü, 2026-11-11): ürün ya
+// mağazaya getirilir (ücretsiz) ya da müşteri kendi seçtiği kargoyla, ücretini kendisi ödeyerek mağazaya gönderir.
+// Kurye iade almaz.
+const returnShippingText = (m: CommerceMode) =>
+  `Ürün iki yolla iade edilebilir: mağazamıza getirilerek (ücretsiz) veya kargoyla ${site.address.full} adresine gönderilerek. Kargoyla gönderimde kargo firmasını alıcı seçer ve gönderim ücreti alıcıya aittir; satıcı ayrıca bir iade masrafı talep etmez, karşı ödemeli gönderileri kabul etmez.${m.shipping ? " Kuryeyle iade alınmaz." : ""}`;
+
+// Cayma bildiriminden sonra ürünün geri verilmesi için süre.
+const returnDeadlineText = (you: boolean) =>
+  you
+    ? "Cayma bildiriminden itibaren on (10) gün içinde ürünü mağazamıza getirmeniz veya kargoya vermeniz gerekir."
+    : "Alıcı, cayma bildiriminden itibaren on gün içinde ürünü mağazaya getirir veya kargoya verir.";
+
+// Cayma hakkıyla iade edilecek ürünün durumu (hukuki inceleme kararı, 2026-11: ambalaj açılmamış, ürün yırtık veya
+// hasarlı olmamalı). Ayıplı teslim edilen üründe aranmaz.
+const returnConditionText =
+  "Cayma hakkıyla iade edilecek ürünün ambalajı açılmamış olmalıdır. Ürün yırtılmamış, kirlenmemiş veya başka bir şekilde hasar görmemiş olmalı; faturası ve varsa aksesuarları ve birlikte verilen hediyeleriyle eksiksiz iade edilmelidir. Ürün hasarlı veya ayıplı teslim edildiyse bu şartlar aranmaz; bu durumda ayıplı ürün hakları geçerlidir.";
 
 // İade edilecek bedel.
 const refundText = (m: CommerceMode) =>
@@ -472,10 +483,9 @@ function onBilgilendirme(m: CommerceMode): LegalDocument {
         paragraphs: [
           `Ürünü ${m.shipping ? "size veya belirttiğiniz kişiye teslim edildiği" : "teslim aldığınız"} günden itibaren on dört (14) gün içinde hiçbir gerekçe göstermeksizin ve cezai şart ödemeksizin sözleşmeden cayma hakkınız vardır. Birden fazla ürün içeren siparişte süre, son ürünü teslim aldığınız gün başlar. Ürünü teslim almadan önce de cayma hakkınızı kullanabilirsiniz.`,
           `Cayma bildiriminizi süre dolmadan ${site.address.full} adresine yazılı olarak, ${site.email} adresine e-posta ile veya ürünü mağazamıza getirerek yapabilirsiniz. Bildirimde ad soyad, sipariş numarası, cayılan ürünler ve tarih yer almalıdır.`,
-          m.shipping
-            ? "Cayma bildiriminden itibaren on (10) gün içinde ürünü mağazamıza getirmeniz veya kuryemize teslim etmeniz gerekir."
-            : "Cayma bildiriminden itibaren on (10) gün içinde ürünü mağazamıza getirmeniz gerekir.",
-          ...returnShippingLines(m),
+          returnDeadlineText(true),
+          returnConditionText,
+          returnShippingText(m),
           refundText(m),
           "Ürünün niteliğini, özelliklerini ve işleyişini anlamak için gereken incelemenin ötesindeki kullanımlardan kaynaklanan değer kaybından sorumlu olursunuz.",
         ],
@@ -567,13 +577,12 @@ function mesafeliSatis(m: CommerceMode): LegalDocument {
         paragraphs: [
           `Alıcı, ürünün ${m.shipping ? "kendisine veya belirttiği kişiye teslim edildiği" : "teslim aldığı"} tarihten itibaren on dört gün içinde herhangi bir gerekçe göstermeksizin ve cezai şart ödemeksizin sözleşmeden cayma hakkına sahiptir. Birden fazla ürün içeren siparişte süre son ürünün teslimiyle başlar. Alıcı, teslimden önce de cayma hakkını kullanabilir.`,
           `Cayma bildirimi süre içinde ${site.address.full} adresine yazılı olarak, ${site.email} adresine e-posta ile veya ürün mağazaya getirilerek yapılır.`,
-          m.shipping
-            ? "Alıcı, cayma bildiriminden itibaren on gün içinde ürünü mağazaya getirir veya kuryeye teslim eder."
-            : m.onlinePayment
-              ? "Alıcı, cayma bildiriminden itibaren on gün içinde ürünü mağazaya getirir."
-              : "Alıcı, cayma bildiriminden itibaren on gün içinde ürünü mağazaya getirir. Satıcı, cayma bildiriminin kendisine ulaşmasından itibaren en geç on dört gün içinde, ödeme yapılmışsa bedeli alıcının ödemede kullandığı yöntemle iade eder.",
-          ...returnShippingLines(m),
-          ...(m.shipping || m.onlinePayment ? [refundText(m)] : []),
+          returnDeadlineText(false),
+          returnConditionText,
+          returnShippingText(m),
+          m.shipping || m.onlinePayment
+            ? refundText(m)
+            : "Satıcı, cayma bildiriminin kendisine ulaşmasından itibaren en geç on dört gün içinde, ödeme yapılmışsa bedeli alıcının ödemede kullandığı yöntemle iade eder.",
           "Alıcı, ürünün niteliğini, özelliklerini ve işleyişini anlamak için gereken incelemenin ötesindeki kullanımlardan kaynaklanan değer kaybından sorumludur.",
           "Ön Bilgilendirme Formu'nda sayılan ürünlerde (kişiye özel hazırlanan ürünler, ambalajı açılmış ses/görüntü kayıtları, yazılım ve bilgisayar sarf malzemeleri, hijyen nedeniyle iadesi uygun olmayan açılmış ürünler, süreli yayınlar) Mesafeli Sözleşmeler Yönetmeliği m. 15 uyarınca cayma hakkı kullanılamaz.",
         ],
@@ -585,19 +594,44 @@ function mesafeliSatis(m: CommerceMode): LegalDocument {
         ],
       },
       {
-        heading: "8. Kişisel veriler",
+        heading: "8. Tarafların diğer yükümlülükleri",
+        paragraphs: [
+          "Satıcı, ürünü sağlam, eksiksiz, siparişte belirtilen niteliklere uygun ve varsa garanti belgesi ile kullanım kılavuzuyla birlikte teslim eder. Satıcı, alıcının onayını almadan siparişteki ürün yerine başka bir ürün teslim etmez.",
+          "Sitede bir ürünün fiyatı teknik bir arıza veya yazım hatası nedeniyle açıkça hatalı gösterilmişse (ör. ürünün olağan fiyatının çok altında), satıcı alıcıyı derhal bilgilendirerek siparişin bu ürünle ilgili kısmını iptal edebilir. Bu durumda ödenen bedel en geç on dört gün içinde ödemenin yapıldığı yöntemle iade edilir.",
+          ...(m.onlinePayment
+            ? [
+                "Ürün bedelinin herhangi bir nedenle ödenmemesi veya banka ya da ödeme kuruluşu kayıtlarında iptal edilmesi halinde satıcının teslim yükümlülüğü sona erer. Ürün teslim edildikten sonra kartın yetkisiz kullanımı gibi alıcıdan kaynaklanan bir nedenle bedel satıcıya ödenmezse, alıcı ürünü en geç üç gün içinde, masrafı kendisine ait olmak üzere satıcıya iade eder.",
+              ]
+            : []),
+        ],
+      },
+      {
+        heading: "9. Mücbir sebep",
+        paragraphs: [
+          "Doğal afet, salgın hastalık, yangın, sel, savaş, terör, grev, genel elektrik veya internet kesintisi, resmi makamların kararları gibi tarafların kontrolü dışında gelişen ve önceden öngörülemeyen olaylar (mücbir sebep) nedeniyle yükümlülükler zamanında yerine getirilemezse, bundan etkilenen taraf diğer tarafa derhal bildirimde bulunur ve mücbir sebep süresince yükümlülükler askıya alınır.",
+          "Mücbir sebep otuz günden uzun sürerse alıcı sözleşmeyi feshedebilir; bu durumda ödenmiş bedel en geç on dört gün içinde iade edilir. Mücbir sebep, alıcının cayma ve ayıplı ürün haklarını ortadan kaldırmaz.",
+        ],
+      },
+      {
+        heading: "10. Bildirimler",
+        paragraphs: [
+          "Satıcının alıcıya yapacağı bildirimler, alıcının siparişte verdiği e-posta adresine veya telefon numarasına yapılır. Alıcının satıcıya bildirimleri, 1. maddedeki adres, e-posta veya telefon üzerinden yapılır. Taraflar iletişim bilgilerindeki değişikliği bildirmedikçe bu bilgilere yapılan bildirimler geçerlidir.",
+        ],
+      },
+      {
+        heading: "11. Kişisel veriler",
         paragraphs: [
           "Alıcının kişisel verileri, KVKK Aydınlatma Metni'nde açıklanan amaçlarla ve 6698 sayılı Kanun'a uygun olarak işlenir.",
         ],
       },
       {
-        heading: "9. Uyuşmazlıkların çözümü",
+        heading: "12. Uyuşmazlıkların çözümü",
         paragraphs: [
           "Bu sözleşmeden doğan uyuşmazlıklarda, her yıl Ticaret Bakanlığınca ilan edilen parasal sınırlar dahilinde alıcının yerleşim yerindeki veya tüketici işleminin yapıldığı yerdeki Tüketici Hakem Heyetleri, bu sınırları aşan uyuşmazlıklarda kanunda öngörülen arabuluculuk sürecinin ardından Tüketici Mahkemeleri yetkilidir.",
         ],
       },
       {
-        heading: "10. Yürürlük",
+        heading: "13. Yürürlük",
         paragraphs: [
           "Sözleşme, alıcının sipariş sayfasında bu sözleşmeyi ve Ön Bilgilendirme Formu'nu onaylayıp “Siparişi Onayla” düğmesine basmasıyla kurulur. Sözleşme metni ve sipariş özeti sipariş onayı e-postasıyla alıcıya gönderilir ve satıcı tarafından en az üç yıl saklanır.",
         ],
@@ -613,13 +647,14 @@ function iade(m: CommerceMode): LegalDocument {
   const howTo = m.shipping
     ? [
         `Mağazaya getirerek: ürünü faturasıyla birlikte mağazamıza (${site.address.full}) getirmeniz yeterlidir; bu, cayma bildirimi yerine de geçer. Ücretsizdir.`,
-        `Kuryeyle: adrese teslim aldığınız ürün için 14 gün içinde ${site.email} adresine ya da ${site.phone} numarasına sipariş numaranızla bildirin; kuryemiz ürünü bildirimden itibaren 10 gün içinde, uygun olduğunuz bir zamanda adresinizden ücretsiz teslim alır.`,
+        `Kargoyla: 14 gün içinde ${site.email} adresine ya da ${site.phone} numarasına sipariş numaranızla bildirin ve ürünü bildirimden itibaren 10 gün içinde, faturasıyla birlikte, dilediğiniz kargo firmasıyla ${site.address.full} adresine gönderin. Kargo ücreti size aittir; karşı ödemeli gönderiler kabul edilmez. Kuryemiz iade almaz.`,
         m.onlinePayment
           ? "İade tutarı (ürün bedeli ve varsa ödediğiniz teslimat ücreti) en geç 14 gün içinde ödemeyi yaptığınız yöntemle iade edilir: online ödemede aynı karta, mağazada nakit ödemede nakit olarak. Karta yapılan iadenin hesabınıza yansıma süresi bankanıza bağlıdır."
           : "İade tutarı, ödemeyi yaptığınız yöntemle en geç 14 gün içinde ödenir.",
       ]
     : [
-        `Ürünü faturasıyla birlikte mağazamıza (${site.address.full}) getirmeniz yeterlidir; bu, cayma bildirimi yerine de geçer. Ürünü hemen getiremeyecekseniz 14 gün içinde ${site.email} adresine sipariş numaranızla yazın ve ürünü bildirimden itibaren 10 gün içinde getirin.`,
+        `Mağazaya getirerek: ürünü faturasıyla birlikte mağazamıza (${site.address.full}) getirmeniz yeterlidir; bu, cayma bildirimi yerine de geçer. Ürünü hemen getiremeyecekseniz 14 gün içinde ${site.email} adresine sipariş numaranızla yazın ve ürünü bildirimden itibaren 10 gün içinde getirin. Ücretsizdir.`,
+        `Kargoyla: 14 gün içinde ${site.email} adresine ya da ${site.phone} numarasına sipariş numaranızla bildirin ve ürünü bildirimden itibaren 10 gün içinde, faturasıyla birlikte, dilediğiniz kargo firmasıyla mağaza adresimize gönderin. Kargo ücreti size aittir; karşı ödemeli gönderiler kabul edilmez.`,
         "Ödeme mağazada yapıldığından iade tutarı, ödemeyi yaptığınız yöntemle (nakit ise nakit, kart ise aynı karta) en geç 14 gün içinde ödenir; mağazada genellikle hemen ödenir.",
       ];
 
@@ -629,7 +664,16 @@ function iade(m: CommerceMode): LegalDocument {
       {
         heading: "İade süresi",
         paragraphs: [
-          "Ürünü teslim aldığınız günden itibaren 14 gün içinde, hiçbir gerekçe göstermeden iade edebilirsiniz (cayma hakkı). Ürünü yalnızca incelemek için açmanız iade hakkınızı ortadan kaldırmaz; ancak olağan incelemenin ötesindeki kullanımdan doğan değer kaybından sorumlu olursunuz.",
+          "Ürünü teslim aldığınız günden itibaren 14 gün içinde, hiçbir gerekçe göstermeden iade edebilirsiniz (cayma hakkı).",
+        ],
+      },
+      {
+        heading: "İade şartları",
+        paragraphs: [
+          "Ürünün ambalajı açılmamış olmalıdır.",
+          "Ürün yırtık, kirli veya hasarlı olmamalıdır.",
+          "Ürün faturasıyla ve varsa aksesuarları ve birlikte verilen hediyeleriyle eksiksiz getirilmelidir.",
+          "Ürün size hasarlı veya hatalı teslim edildiyse bu şartlar aranmaz; aşağıdaki “Hasarlı, eksik veya hatalı ürün” bölümüne bakın.",
         ],
       },
       { heading: "Nasıl iade ederim?", paragraphs: howTo },

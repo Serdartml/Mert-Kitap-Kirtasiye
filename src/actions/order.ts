@@ -9,6 +9,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { getCartId } from "@/lib/cart";
 import { CATALOG_TAG } from "@/lib/catalog";
 import { db } from "@/lib/db";
+import { orderLegalAttachment } from "@/lib/legal-pdf";
 import { adminNotifyAddress, sendMail } from "@/lib/mail";
 import { newOrderAdminMail, orderConfirmationMail } from "@/lib/mail-templates";
 import { PICKUP_PAYMENT } from "@/lib/order-status";
@@ -127,9 +128,14 @@ export async function placeOrder(_prev: FormState, formData: FormData): Promise<
   updateTag(CATALOG_TAG);
   revalidatePath("/", "layout");
   // Müşteriye onay, mağazaya bildirim. Gönderim yanıtı geciktirmez ve hatası siparişi etkilemez.
+  // Onay e-postasına sözleşme metinleri PDF olarak da eklenir; PDF üretilemezse e-posta eksiz gider (metin gövdede de var).
   after(async () => {
+    const attachment = await orderLegalAttachment(order).catch((error) => {
+      console.error("[sözleşme PDF] Üretilemedi:", error);
+      return null;
+    });
     await Promise.all([
-      sendMail(orderConfirmationMail(order)),
+      sendMail({ ...orderConfirmationMail(order), ...(attachment ? { attachments: [attachment] } : {}) }),
       sendMail(newOrderAdminMail(adminNotifyAddress(), order)),
     ]);
   });

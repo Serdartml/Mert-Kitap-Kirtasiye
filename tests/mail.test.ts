@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { orderLegalAttachment } from "@/lib/legal-pdf";
 import { sendMail } from "@/lib/mail";
 import { emailVerificationMail, newContactAdminMail, orderConfirmationMail, passwordResetMail } from "@/lib/mail-templates";
 
@@ -32,6 +33,10 @@ describe("sendMail", () => {
     expect(url).toBe("https://api.resend.com/emails");
     expect(init.headers.Authorization).toBe("Bearer re_test");
     expect(JSON.parse(init.body)).toMatchObject({ to: ["a@b.com"], subject: "Konu" });
+    expect(JSON.parse(init.body)).not.toHaveProperty("attachments");
+
+    await sendMail({ ...message, attachments: [{ filename: "a.pdf", content: "QUJD" }] });
+    expect(JSON.parse(fetchMock.mock.calls[1][1].body).attachments).toEqual([{ filename: "a.pdf", content: "QUJD" }]);
   });
 
   it("sağlayıcı hata dönse ya da ağ kopsa da fırlatmaz", async () => {
@@ -82,6 +87,15 @@ describe("e-posta şablonları", () => {
     const contact = newContactAdminMail("m@x.com", { name: "<script>x</script>", email: "a@b.com", message: "<img src=x>" });
     expect(contact.html).not.toContain("<script>");
     expect(contact.html).not.toContain("<img");
+  });
+
+  it("sözleşme PDF'i üretilir ve Türkçe font gömülüdür", async () => {
+    const attachment = await orderLegalAttachment(order);
+    expect(attachment.filename).toBe("MK-261007-7HQ4KD-sozlesme.pdf");
+    const pdf = Buffer.from(attachment.content, "base64");
+    expect(pdf.subarray(0, 5).toString()).toBe("%PDF-");
+    expect(pdf.toString("latin1")).toContain("NotoSans");
+    expect(pdf.length).toBeGreaterThan(10_000);
   });
 
   it("parola sıfırlama bağlantısı token'ı adres olarak kodlar", () => {

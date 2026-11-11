@@ -5,11 +5,18 @@ import { site } from "./site";
 // sunucu konsoluna yazılır: geliştirmede akış anahtarsız denenebilir.
 // Gönderim hatası asla isteği düşürmez; sipariş / mesaj zaten kaydedilmiştir.
 
+// Resend eki: içerik base64.
+export interface MailAttachment {
+  filename: string;
+  content: string;
+}
+
 export interface MailMessage {
   to: string;
   subject: string;
   text: string;
   html: string;
+  attachments?: MailAttachment[];
 }
 
 const FROM = process.env.MAIL_FROM || `${site.shortName} <onboarding@resend.dev>`;
@@ -36,6 +43,7 @@ export async function sendMail(message: MailMessage): Promise<boolean> {
         subject: message.subject,
         text: message.text,
         html: message.html,
+        ...(message.attachments?.length ? { attachments: message.attachments } : {}),
       }),
     });
     if (!response.ok) {
