@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, MapPin, MessageCircle, PackageSearch, Phone } from "lucide-react";
 import LiveShowcase, { type ShowcaseTab } from "@/components/LiveShowcase";
+import DiscoverCategories, { type DiscoverCategory } from "@/components/DiscoverCategories";
 import HowItWorks from "@/components/HowItWorks";
 import OrderTrackBox from "@/components/OrderTrackBox";
 import OpenStatus from "@/components/OpenStatus";
@@ -61,7 +62,7 @@ function ProductSection({
 export default async function HomePage() {
   const [categories, featuredGroups, discounted, newest] = await Promise.all([
     getNavCategories(),
-    getFeaturedByRoot(8),
+    getFeaturedByRoot(10),
     getDiscountedProducts(),
     getNewestProducts(8),
   ]);
@@ -71,6 +72,12 @@ export default async function HomePage() {
     label: group.name,
     content: <ShowcaseCards products={group.products} />,
   }));
+
+  // Keşfet: menü sırasındaki ana kategoriler; görsel, kategorinin vitrinindeki ilk üründen gelir.
+  const discoverCategories: DiscoverCategory[] = categories.flatMap((category) => {
+    const image = featuredGroups.find((group) => group.slug === category.slug)?.products[0]?.images[0];
+    return image ? [{ slug: category.slug, name: category.name, subcategories: category.children.slice(0, 3).map((child) => child.name), image: { url: image.url } }] : [];
+  });
 
   const whatsappLink = whatsappHref("Merhaba, bilgi almak istiyorum.");
 
@@ -116,9 +123,9 @@ export default async function HomePage() {
                 <Scribble variant="underline" className="scribble-scroll absolute -bottom-2 left-0 h-2.5 w-full" />
               </span>{" "}
               ürünler
-              <span className="ml-2 align-middle font-hand text-xl font-bold text-white/60 md:text-2xl">{discounted.length} ürün</span>
+              <span className="ml-2 align-middle font-hand text-xl font-bold text-white/60 md:text-2xl">sizin için seçtik</span>
             </h2>
-            {/* Tüm indirimli ürünler, kategoriler karışık sırada. */}
+            {/* En fazla 20 görselli ürün: her sınıftan, farklı yayınevlerinden. */}
             <ProductGrid products={discounted} />
           </div>
         </section>
@@ -202,6 +209,8 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+
+      <DiscoverCategories categories={discoverCategories} />
     </>
   );
 }

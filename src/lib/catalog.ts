@@ -5,6 +5,8 @@ import { db } from "./db";
 import { interleaveBy } from "./interleave";
 import { averageRating, reviewerName } from "./reviews";
 import { matchesAllTokens, searchProductIds } from "./search";
+import { foldTr } from "./search-fold";
+import { gradeKey, pickDiverse } from "./showcase-picks";
 
 // 2, 4 ve 5 sütunlu ızgaralarda son satır yarım kalmasın diye 20.
 export const PAGE_SIZE = 20;
@@ -349,8 +351,9 @@ export async function getFeaturedProducts(take = 8) {
   });
 }
 
-// Vitrin için: her ana kategorinin (alt kategorileriyle) öne çıkan ürünleri. Öne çıkanı olmayan kategori listede yer almaz.
-export async function getFeaturedByRoot(take = 8) {
+// Vitrin için: her ana kategorinin (alt kategorileriyle) görselli ve stoktaki öne çıkan ürünleri, en değerli ürün önde.
+// Öne çıkanı olmayan kategori listede yer almaz.
+export async function getFeaturedByRoot(take = 10) {
   "use cache";
   cacheLife("minutes");
   cacheTag(CATALOG_TAG);
@@ -365,9 +368,9 @@ export async function getFeaturedByRoot(take = 8) {
       slug: root.slug,
       name: root.name,
       products: await db.product.findMany({
-        where: { isActive: true, isFeatured: true, categoryId: { in: [root.id, ...root.children.map((child) => child.id)] } },
+        where: { isActive: true, isFeatured: true, stock: { gt: 0 }, images: { some: {} }, categoryId: { in: [root.id, ...root.children.map((child) => child.id)] } },
         include: productCardInclude,
-        orderBy: { createdAt: "desc" },
+        orderBy: [{ priceKurus: "desc" }, { id: "asc" }],
         take,
       }),
     })),
@@ -375,20 +378,22 @@ export async function getFeaturedByRoot(take = 8) {
   return groups.filter((group) => group.products.length > 0);
 }
 
-// Tüm indirimli ürünler (en fazla `take`), ana kategorilere göre karışık sırada: aynı kategorinin ürünleri arka arkaya
-// gelmez (lib/interleave). Kategori içinde en son güncellenen önce gelir.
-export async function getDiscountedProducts(take = 80) {
+// Ana sayfa indirim seçkisi: yalnızca görselli ve stoktaki ürünler, en fazla `take` adet. Her sınıftan ve mümkün olduğunca
+// farklı yayınevlerinden seçilir (lib/showcase-picks); sonra aynı ana kategori arka arkaya gelmesin diye karıştırılır.
+export async function getDiscountedProducts(take = 20) {
   "use cache";
   cacheLife("minutes");
   cacheTag(CATALOG_TAG);
 
   const products = await db.product.findMany({
-    where: { isActive: true, compareAtKurus: { not: null } },
-    include: productCardInclude,
-    orderBy: { updatedAt: "desc" },
-    take,
+    where: { isActive: true, stock: { gt: 0 }, compareAtKurus: { not: null }, images: { some: {} } },
+    include: { ...productCardInclude, brand: { select: { name: true } } },
+    orderBy: [{ priceKurus: "desc" }, { id: "asc" }],
   });
-  return interleaveBy(products, (product) => product.category.parent?.slug ?? product.category.slug);
+  const picked = pickDiverse(products, take, (product) => gradeKey(product.name), (product) => foldTr(product.brand?.name ?? product.name.split(" ")[0]));
+  // Marka/toptancı adı vitrin verisine taşınmaz.
+  const cards: ProductCardData[] = picked.map((product) => ({ ...product, brand: undefined }));
+  return interleaveBy(cards, (product) => product.category.parent?.slug ?? product.category.slug);
 }
 
 export async function getNewestProducts(take = 8) {
