@@ -69,7 +69,7 @@ interface BulkSelectProps {
   // Filtreye uyan tüm ürünlerin sayısı (sayfa sayısından büyük olabilir).
   total: number;
   // "Tüm sonuçları seç" için: sunucu aynı filtreyle listeyi yeniden kurar.
-  filter: { q: string; kategori: string; filtre: string };
+  filter: { q: string; kategori: string; filtre: string; fiyat: string };
   // Silme tamamlandıktan sonraki sayfada true: saklanan seçim temizlenir.
   reset: boolean;
   deleteAction: (formData: FormData) => void | Promise<void>;
@@ -87,7 +87,7 @@ export default function BulkSelect({ pageIds, total, filter, reset, deleteAction
   const [operation, setOperation] = useState<(typeof EDIT_OPERATIONS)[number]["value"]>("one-cikar");
   const operationConfig = EDIT_OPERATIONS.find((item) => item.value === operation)!;
   const stored = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
-  const signature = `${filter.q}|${filter.kategori}|${filter.filtre}`;
+  const signature = `${filter.q}|${filter.kategori}|${filter.filtre}|${filter.fiyat}`;
   const allMatching = stored.all !== "" && stored.all === signature;
 
   useEffect(() => {
@@ -134,6 +134,7 @@ export default function BulkSelect({ pageIds, total, filter, reset, deleteAction
             <input type="hidden" name="q" value={filter.q} />
             <input type="hidden" name="kategori" value={filter.kategori} />
             <input type="hidden" name="filtre" value={filter.filtre} />
+            <input type="hidden" name="fiyat" value={filter.fiyat} />
           </>
         ) : (
           stored.ids.map((id) => <input key={id} type="hidden" name="ids" value={id} />)

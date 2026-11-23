@@ -286,10 +286,31 @@ export interface ExistingProduct {
   priceKurus: number;
   compareAtKurus: number | null;
   costKurus: number | null;
+  sourcePriceKurus?: number | null;
   stock: number;
   isActive: boolean;
   categoryId: string;
   brandId: string | null;
+}
+
+// Dosyadaki satış fiyatını sitedeki fiyat ve indirimle birleştirir. Karşılaştırma son dosya fiyatıyla yapılır; böylece:
+// - dosya fiyatı değişmediyse sitedeki fiyat ve indirim olduğu gibi kalır (elle verilen indirim ezilmez),
+// - değiştiyse indirim oranı korunarak yeni fiyata taşınır (%15 indirim, yeni fiyatta da %15),
+// - indirimli fiyat alış fiyatının altına düşmez; alışa çekilince indirim kalmıyorsa indirim kaldırılır.
+export function reconcilePrice(
+  current: { priceKurus: number; compareAtKurus: number | null; sourcePriceKurus?: number | null },
+  filePriceKurus: number,
+  costKurus: number | null,
+): { priceKurus: number; compareAtKurus: number | null } {
+  const baseline = current.sourcePriceKurus ?? current.compareAtKurus ?? current.priceKurus;
+  if (filePriceKurus === baseline) return { priceKurus: current.priceKurus, compareAtKurus: current.compareAtKurus };
+  if (current.compareAtKurus === null || current.compareAtKurus <= current.priceKurus) {
+    return { priceKurus: filePriceKurus, compareAtKurus: null };
+  }
+  let priceKurus = Math.round(filePriceKurus * (current.priceKurus / current.compareAtKurus));
+  if (costKurus && priceKurus < costKurus) priceKurus = costKurus;
+  if (priceKurus >= filePriceKurus) return { priceKurus: filePriceKurus, compareAtKurus: null };
+  return { priceKurus, compareAtKurus: filePriceKurus };
 }
 
 export interface CategoryRef {
@@ -316,6 +337,7 @@ export interface PlannedCreate {
   priceKurus: number;
   compareAtKurus: number | null;
   costKurus: number | null;
+  sourcePriceKurus?: number | null;
   stock: number;
   isActive: boolean;
   category: CategoryTarget;
@@ -333,6 +355,8 @@ export interface PlannedUpdate {
   priceKurus: number;
   compareAtKurus: number | null;
   costKurus: number | null;
+  // Son dosya fiyatı; boşsa mevcut değer korunur.
+  sourcePriceKurus?: number | null;
   stock: number;
   isActive: boolean;
   category: CategoryTarget;
@@ -362,10 +386,14 @@ export interface PlanInput {
   // Ürün id -> açık siparişlerin ayırdığı adet.
   reserved: Map<string, number>;
   options: ImportOptions;
+  // Siteden çıkarılmış ürünler: dosyada görünseler de yeniden eklenmez.
+  excluded?: { sku: string; barcode: string | null }[];
 }
 
 export function planImport(input: PlanInput, parseErrors: RowIssue[] = [], parseWarnings: RowIssue[] = []): ImportPlan {
   const { rows, existing, categories, brands, reserved, options } = input;
+  const excludedSkus = new Set((input.excluded ?? []).map((item) => item.sku));
+  const excludedBarcodes = new Set((input.excluded ?? []).flatMap((item) => (item.barcode ? [item.barcode] : [])));
   const errors = [...parseErrors];
   const warnings = [...parseWarnings];
   const creates: PlannedCreate[] = [];
@@ -442,7 +470,14 @@ export function planImport(input: PlanInput, parseErrors: RowIssue[] = [], parse
         changes.push(`stok ${found.stock} → ${stock}`);
         next.stock = stock;
       }
-      if (row.priceKurus !== null && row.priceKurus !== found.priceKurus) {
+      if (row.priceKurus !== null && row.compareAtKurus === undefined && row.priceKurus > 0) {
+        // Dosyada eski fiyat sütunu yok: sitedeki indirim korunur.
+        const priced = reconcilePrice(found, row.priceKurus, row.costKurus ?? found.costKurus);
+        if (priced.priceKurus !== found.priceKurus) changes.push(`fiyat ${found.priceKurus / 100} → ${priced.priceKurus / 100}`);
+        if (priced.compareAtKurus !== found.compareAtKurus) changes.push("eski fiyat");
+        next.priceKurus = priced.priceKurus;
+        next.compareAtKurus = priced.compareAtKurus;
+      } else if (row.priceKurus !== null && row.priceKurus !== found.priceKurus) {
         changes.push(`fiyat ${found.priceKurus / 100} → ${row.priceKurus / 100}`);
         next.priceKurus = row.priceKurus;
       }
@@ -513,6 +548,7 @@ export function planImport(input: PlanInput, parseErrors: RowIssue[] = [], parse
         priceKurus: next.priceKurus,
         compareAtKurus: next.compareAtKurus,
         costKurus: next.costKurus,
+        sourcePriceKurus: row.priceKurus && row.priceKurus > 0 ? row.priceKurus : null,
         stock: next.stock,
         isActive: next.isActive,
         category: next.categoryTarget,
@@ -524,6 +560,10 @@ export function planImport(input: PlanInput, parseErrors: RowIssue[] = [], parse
     }
 
     // ----- Dosyada olup katalogda olmayan ürün -----
+    if ((row.sku && excludedSkus.has(row.sku)) || (row.barcode && excludedBarcodes.has(row.barcode))) {
+      fail("Bu ürün siteden çıkarılmıştı; yeniden eklenmedi.");
+      continue;
+    }
     if (options.mode === "stok") {
       fail("Katalogda bulunamadı (stok/fiyat güncellemesinde yeni ürün eklenmez).");
       continue;
@@ -568,6 +608,7 @@ export function planImport(input: PlanInput, parseErrors: RowIssue[] = [], parse
       priceKurus: row.priceKurus,
       compareAtKurus: row.compareAtKurus ?? null,
       costKurus: row.costKurus,
+      sourcePriceKurus: row.priceKurus,
       stock: row.stock ?? 0,
       isActive: row.isActive ?? true,
       category: resolved.target,

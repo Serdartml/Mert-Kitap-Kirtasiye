@@ -471,29 +471,6 @@ html[data-welcome="play"] .welcome-surface {
   transition: background-color 0.25s ease-out;
 }
 
-/*
-  Kitap rafı (BookShelf). Her satır --shelf-row yüksekliğindedir; raf tahtası, satırın altındaki
-  10px'lik şerit olarak zemin deseniyle çizilir, böylece kitaplar kaç satıra sarılırsa sarılsın
-  her satırın altında bir raf olur.
-*/
-.bookshelf {
-  --shelf-row: 14rem;
-  background-image: linear-gradient(
-    to bottom,
-    transparent calc(var(--shelf-row) - 10px),
-    var(--color-ink) calc(var(--shelf-row) - 10px)
-  );
-  background-size: 100% var(--shelf-row);
-}
-
-.dark .bookshelf {
-  background-image: linear-gradient(
-    to bottom,
-    transparent calc(var(--shelf-row) - 10px),
-    #8a8a8a calc(var(--shelf-row) - 10px)
-  );
-}
-
 /* Tema değişiminde dairesel açılma efekti ThemeToggle içinden çizilir; varsayılan geçiş kapatılır. */
 ::view-transition-old(root),
 ::view-transition-new(root) {

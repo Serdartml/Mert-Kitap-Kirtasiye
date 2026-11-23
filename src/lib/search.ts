@@ -11,19 +11,19 @@ const MAX_MATCHES = 2000;
 
 // Aramayla eşleşen aktif ürünlerin id'leri, en alakalıdan başlayarak:
 //   0 ad ya da stok kodu aramayla birebir aynı (ya da barkod), 1 ad aramayla başlıyor, 2 adda bir kelime aramayla başlıyor,
-//   3 tüm kelimeler adda geçiyor, 4 kelimeler açıklamada / stok kodunda geçiyor. Eşitlikte öne çıkanlar, sonra ada göre.
-// Çok kelimeli aramada her kelime ad, açıklama ya da stok kodunda geçmeli (sıra önemsiz: "kalem dolma" = "dolma kalem").
+//   3 tüm kelimeler adda geçiyor, 4 kelimeler stok kodunda geçiyor. Eşitlikte öne çıkanlar, sonra ada göre.
+// Çok kelimeli aramada her kelime ad ya da stok kodunda geçmeli (sıra önemsiz: "kalem dolma" = "dolma kalem").
+// Açıklama aranmaz: otomatik açıklamalardaki genel kelimeler ilgisiz ürünleri sonuçlara taşır.
 export async function searchProductIds(query: string, limit = MAX_MATCHES): Promise<string[]> {
   const tokens = searchTokens(query);
   if (tokens.length === 0) return [];
 
   const phrase = tokens.join(" ");
   const name = Prisma.raw(foldSql('p."name"'));
-  const description = Prisma.raw(foldSql('p."description"'));
   const sku = Prisma.raw(foldSql('p."sku"'));
   const like = (token: string) => `%${escapeLike(token)}%`;
 
-  const anywhere = tokens.map((token) => Prisma.sql`(${name} LIKE ${like(token)} ESCAPE '!' OR ${description} LIKE ${like(token)} ESCAPE '!' OR ${sku} LIKE ${like(token)} ESCAPE '!')`);
+  const anywhere = tokens.map((token) => Prisma.sql`(${name} LIKE ${like(token)} ESCAPE '!' OR ${sku} LIKE ${like(token)} ESCAPE '!')`);
   const inName = tokens.map((token) => Prisma.sql`${name} LIKE ${like(token)} ESCAPE '!'`);
 
   const rows = await db.$queryRaw<{ id: string }[]>`

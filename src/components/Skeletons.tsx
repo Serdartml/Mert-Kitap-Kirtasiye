@@ -64,34 +64,6 @@ export function ProductListSkeleton() {
   );
 }
 
-// Raf görünümlü kategori (kültür kitapları) için: sıralama çubuğu + rafta sırayla çizilen kitap sırtları.
-// Kart ızgarası yer tutucusu burada kullanılmaz; yoksa önce kartlar çizilip sonra raf gelir.
-// Ölçüler BookShelf ile aynıdır (yükseklik 9-12rem, genişlik 2.5-3.4rem).
-const shelfSpines = [10.5, 12, 9.75, 11.25, 9, 12, 10.5, 9.75];
-
-export function ShelfListSkeleton() {
-  return (
-    <div role="status" aria-label="Kitaplar yükleniyor" data-shelf-skeleton>
-      <div className="mb-4 flex gap-2">
-        <Bar className="h-8 w-16 sm:mr-auto" />
-        {Array.from({ length: 3 }, (_, i) => (
-          <Bar key={i} className="h-8 w-24 rounded-full" />
-        ))}
-      </div>
-      {/* Tek satır: dar ekrana sığmayan sırtlar kırpılır, ikinci raf açılıp sayfayı uzatmaz. */}
-      <div className="bookshelf flex items-end gap-x-1 overflow-hidden px-3 sm:gap-x-1.5 sm:px-10 lg:px-16" aria-hidden>
-        {shelfSpines.map((height, i) => (
-          <div key={i} className="flex h-[var(--shelf-row)] items-end pb-[10px]">
-            <div style={{ height: `${height}rem`, width: `${2.5 + (i % 4) * 0.3}rem` }}>
-              <SketchBox className="size-full" delay={i * 0.1} rx={3} />
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 // Arama sayfası: başlık da veriyle birlikte geldiği için o da yer tutucu.
 export function ListingSkeleton() {
   return (

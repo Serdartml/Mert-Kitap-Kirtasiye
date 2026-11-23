@@ -139,6 +139,9 @@ model Product {
   // Alış (maliyet) fiyatı, kuruş. GİZLİ: lib/db.ts bu alanı varsayılan olarak hiçbir sorguda döndürmez (global omit);
   // yalnızca yönetim sayfaları `omit: { costKurus: false }` ile açıkça ister.
   costKurus      Int?
+  // Stok programının (Turna) son haftalık dosyada verdiği satış fiyatı. Sitedeki indirim bu değerin üstüne kurulur:
+  // dosyadaki fiyat değişmedikçe sitedeki fiyat ve indirim korunur (lib/product-import.ts, reconcilePrice).
+  sourcePriceKurus Int?
   stock          Int     @default(0)
   isActive       Boolean @default(true)
   isFeatured     Boolean @default(false)
@@ -164,6 +167,19 @@ model Product {
   @@index([brandId])
   @@index([isActive, isFeatured])
   @@index([isActive, createdAt])
+}
+
+// Siteden çıkarılmış ürünler: haftalık stok dosyasında yeniden görünseler de eklenmez. Ürün silinince kaydedilir,
+// aynı stok koduyla elle yeniden eklenirse kayıt kalkar.
+model ExcludedProduct {
+  id        String   @id @default(cuid())
+  sku       String   @unique
+  barcode   String?
+  name      String
+  reason    String
+  createdAt DateTime @default(now())
+
+  @@index([barcode])
 }
 
 model ProductImage {
@@ -239,13 +255,25 @@ model Order {
   paymentRef      String?
   note            String?
 
-  items     OrderItem[]
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
+  items        OrderItem[]
+  deliveryCode OrderDeliveryCode?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
 
   @@index([userId, createdAt])
   @@index([status])
   @@index([createdAt])
+}
+
+// Teslimat doğrulama kodu. Sipariş sorgularına karışmasın diye ayrı tablodadır: yönetim ekranı kodu göstermez,
+// kurye kodu müşteriden öğrenir. Müşteri kodu e-postada ve kendi sipariş sayfasında görür.
+model OrderDeliveryCode {
+  orderId  String    @id
+  order    Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  code     String
+  attempts Int       @default(0)
+  sentAt   DateTime  @default(now())
+  usedAt   DateTime?
 }
 
 model OrderItem {

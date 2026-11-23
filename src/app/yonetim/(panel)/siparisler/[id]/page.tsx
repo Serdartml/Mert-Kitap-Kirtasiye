@@ -3,10 +3,13 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Phone } from "lucide-react";
 import { setOrderStatus } from "@/actions/admin";
+import { confirmDeliveryCode, sendDeliveryCode } from "@/actions/delivery";
 import ConfirmButton from "@/components/admin/ConfirmButton";
 import StatusNote from "@/components/admin/StatusNote";
 import { OrderItems, OrderStatusBadge } from "@/components/OrderParts";
 import { requireAdmin } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { MAX_DELIVERY_CODE_ATTEMPTS } from "@/lib/delivery-code";
 import { closedStatuses, formatOrderDate, nextStatuses, orderStatusLabels } from "@/lib/order-status";
 import { getAdminOrder } from "@/lib/orders";
 
@@ -27,6 +30,8 @@ export default async function AdminOrderPage({ params, searchParams }: PageProps
   const order = await getAdminOrder(id);
   if (!order) notFound();
 
+  // Kodun kendisi seçilmez: yönetim ekranında görünmemeli, kurye müşteriden öğrenir.
+  const deliveryCode = await db.orderDeliveryCode.findUnique({ where: { orderId: order.id }, select: { sentAt: true, attempts: true, usedAt: true } });
   const canCancel = !closedStatuses.includes(order.status) && order.status !== "DELIVERED";
   const phoneHref = `tel:${order.phone.replace(/[^\d+]/g, "")}`;
 
@@ -82,6 +87,26 @@ export default async function AdminOrderPage({ params, searchParams }: PageProps
               </div>
             )}
           </section>
+
+          {order.status === "SHIPPED" && (
+            <section className="rounded-xl border border-neutral-200 bg-raised p-4 text-sm">
+              <h2 className="font-extrabold">Teslimat kodu</h2>
+              <p className="mt-2 text-neutral-600">
+                {deliveryCode && !deliveryCode.usedAt
+                  ? `Kod gönderildi: ${formatOrderDate(deliveryCode.sentAt)}. Kalan deneme: ${Math.max(0, MAX_DELIVERY_CODE_ATTEMPTS - deliveryCode.attempts)}.`
+                  : "Kod, müşterinin e-postasına ve sipariş sayfasına gider. Burada gösterilmez."}
+              </p>
+              {deliveryCode && !deliveryCode.usedAt && (
+                <form action={confirmDeliveryCode.bind(null, order.id)} className="mt-3 flex gap-2">
+                  <input name="code" required inputMode="numeric" autoComplete="off" maxLength={7} placeholder="6 haneli kod" aria-label="Müşterinin söylediği kod" className="field min-w-0 flex-1" />
+                  <button type="submit" className="btn btn-primary shrink-0">Doğrula</button>
+                </form>
+              )}
+              <form action={sendDeliveryCode.bind(null, order.id)} className="mt-2">
+                <button type="submit" className="btn btn-outline w-full py-2.5">{deliveryCode ? "Yeni kod gönder" : "Kodu gönder"}</button>
+              </form>
+            </section>
+          )}
 
           <section className="rounded-xl border border-neutral-200 bg-raised p-4 text-sm">
             <h2 className="font-extrabold">Müşteri</h2>

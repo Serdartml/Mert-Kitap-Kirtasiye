@@ -108,10 +108,11 @@ async function load(formData: FormData): Promise<Loaded | { error: string }> {
 // Dosya satırlarını güncel katalogla karşılaştırır.
 async function buildPlan({ data, mapping, options }: Loaded): Promise<ImportPlan> {
   const parsed = parseRows(data, mapping, options);
-  const [existing, categories, brands, reservedRows] = await Promise.all([
+  const [existing, excluded, categories, brands, reservedRows] = await Promise.all([
     db.product.findMany({
-      select: { id: true, sku: true, barcode: true, slug: true, name: true, description: true, priceKurus: true, compareAtKurus: true, costKurus: true, stock: true, isActive: true, categoryId: true, brandId: true },
+      select: { id: true, sku: true, barcode: true, slug: true, name: true, description: true, priceKurus: true, compareAtKurus: true, costKurus: true, sourcePriceKurus: true, stock: true, isActive: true, categoryId: true, brandId: true },
     }),
+    db.excludedProduct.findMany({ select: { sku: true, barcode: true } }),
     db.category.findMany({ select: { id: true, name: true, parentId: true } }),
     db.brand.findMany({ select: { id: true, name: true } }),
     options.subtractReserved
@@ -123,7 +124,7 @@ async function buildPlan({ data, mapping, options }: Loaded): Promise<ImportPlan
       : Promise.resolve([]),
   ]);
   const reserved = new Map(reservedRows.flatMap((row) => (row.productId ? [[row.productId, row._sum.quantity ?? 0] as const] : [])));
-  return planImport({ rows: parsed.rows, existing, categories, brands, reserved, options }, parsed.errors, parsed.warnings);
+  return planImport({ rows: parsed.rows, existing, excluded, categories, brands, reserved, options }, parsed.errors, parsed.warnings);
 }
 
 export async function previewImport(formData: FormData): Promise<PreviewResult> {

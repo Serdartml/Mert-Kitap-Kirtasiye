@@ -13,6 +13,8 @@ import {
   FILTER_COOKIE,
   filtersCookieValue,
   isProductFilter,
+  maxPriceParam,
+  parseMaxPrice,
   parseProductSort,
   parseSavedFilters,
   productFilters as filters,
@@ -32,7 +34,7 @@ export const metadata: Metadata = { title: "Ürünler" };
 
 const PAGE_SIZE = 25;
 interface PageProps {
-  searchParams: Promise<{ q?: string; kategori?: string; filtre?: string; sayfa?: string; sirala?: string; durum?: string; adet?: string }>;
+  searchParams: Promise<{ q?: string; kategori?: string; filtre?: string; fiyat?: string; sayfa?: string; sirala?: string; durum?: string; adet?: string }>;
 }
 
 // Oturum arkasındaki yönetim sayfası: Next'in "anında gezinme" denetiminden çıkarıldı (README, Yönetim paneli).
@@ -43,6 +45,9 @@ export default async function AdminProductsPage({ searchParams }: PageProps) {
 
   const params = await searchParams;
   const q = (params.q ?? "").trim().slice(0, 100);
+  // Fiyat üst sınırı yalnızca adresten gelir (çerezde hatırlanmaz: unutulup sonraki toplu işlemi daraltmasın).
+  const maxPriceKurus = parseMaxPrice(params.fiyat);
+  const maxPrice = maxPriceParam(maxPriceKurus);
   const page = Math.max(1, Number.parseInt(params.sayfa ?? "1", 10) || 1);
   const cookieStore = await cookies();
   // Süzgeç ve kategori: adreste "filtre" ya da "kategori" varsa (boş olsa bile) seçim oradandır; yoksa çerezde hatırlanan kullanılır.
@@ -66,7 +71,7 @@ export default async function AdminProductsPage({ searchParams }: PageProps) {
   const categoryExists = categories.some((category) => category.id === requestedCategory || category.children.some((child) => child.id === requestedCategory));
   const categoryId = categoryExists ? requestedCategory : "";
 
-  const where = productListWhere({ q, categoryId, filter }, categories);
+  const where = productListWhere({ q, categoryId, filter, maxPriceKurus }, categories);
 
   const [items, total] = await Promise.all([
     db.product.findMany({
@@ -82,9 +87,10 @@ export default async function AdminProductsPage({ searchParams }: PageProps) {
   const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   const href = (overrides: Record<string, string | number>) => {
-    const next = { q, kategori: categoryId, filtre: filter, sirala: sortValue, sayfa: page, ...overrides };
+    const next = { q, kategori: categoryId, filtre: filter, fiyat: maxPrice, sirala: sortValue, sayfa: page, ...overrides };
     const query = new URLSearchParams();
     if (next.q) query.set("q", String(next.q));
+    if (next.fiyat) query.set("fiyat", String(next.fiyat));
     // Boş olsa da yazılır: "Tümü" seçimi hatırlanan süzgeci temizlesin diye adres seçimi açıkça taşır.
     query.set("kategori", String(next.kategori));
     query.set("filtre", String(next.filtre));
@@ -171,6 +177,18 @@ export default async function AdminProductsPage({ searchParams }: PageProps) {
             </optgroup>
           ))}
         </select>
+        <label className="flex min-w-0 flex-1 items-center gap-2 text-sm font-bold sm:flex-none">
+          <span className="whitespace-nowrap">Fiyat en çok</span>
+          <input
+            name="fiyat"
+            inputMode="decimal"
+            defaultValue={maxPrice}
+            placeholder="örn. 20"
+            aria-label="Fiyat üst sınırı (TL)"
+            className="field w-24 min-w-0"
+          />
+          <span>TL</span>
+        </label>
         <button type="submit" className="btn btn-dark">Ara</button>
       </form>
 
@@ -197,7 +215,7 @@ export default async function AdminProductsPage({ searchParams }: PageProps) {
       <BulkSelect
         pageIds={items.map((product) => product.id)}
         total={total}
-        filter={{ q, kategori: categoryId, filtre: filter }}
+        filter={{ q, kategori: categoryId, filtre: filter, fiyat: maxPrice }}
         reset={params.durum === "toplu-silindi"}
         deleteAction={deleteProducts}
         editAction={editProducts}

@@ -124,6 +124,21 @@ export function orderStatusMail(order: MailOrder, status: OrderStatus): MailMess
   };
 }
 
+// Müşteriye: teslimat doğrulama kodu. Kod yalnızca ürünü teslim alacak kişiyle paylaşılır.
+export function deliveryCodeMail(order: Pick<MailOrder, "orderNo" | "fullName" | "email">, code: string): MailMessage {
+  const link = absolute(`/siparis/${order.orderNo}`);
+  const note = "Ürünü teslim alırken bu kodu görevliye söyleyin. Kod söylendiğinde ürün teslim edilmiş sayılır; ürünü teslim alacak kişi dışında kimseyle paylaşmayın.";
+  return {
+    to: order.email,
+    subject: `Teslimat kodunuz - ${order.orderNo}`,
+    text: `Merhaba ${order.fullName},\n\n${order.orderNo} numaralı siparişinizin teslimat kodu: ${code}\n\n${note}\n\nSipariş durumu: ${link}\n\n${site.name}\n${site.phone}`,
+    html: layout(
+      "Teslimat kodunuz",
+      `<p>Merhaba ${esc(order.fullName)},</p><p><strong>${esc(order.orderNo)}</strong> numaralı siparişinizin teslimat kodu:</p><p style="font-size:30px;font-weight:bold;letter-spacing:6px;margin:16px 0">${esc(code)}</p><p>${esc(note)}</p>${button(link, "Siparişimi gör")}`,
+    ),
+  };
+}
+
 // Yönetici bildirimi: iletişim formundan yeni mesaj.
 export function newContactAdminMail(to: string, message: { name: string; email: string; message: string }): MailMessage {
   return {

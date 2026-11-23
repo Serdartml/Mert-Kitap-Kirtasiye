@@ -1,10 +1,10 @@
 import { site } from "@/lib/site";
 
-// Yasal metinlerin TASLAĞIDIR. Bir avukat / hukuk danışmanı onaylayana kadar `legalReviewed` false kalır:
-// sayfalarda "taslak" uyarısı görünür ve arama motorlarına kapalıdır (bilgi/[slug]/page.tsx).
-// Onaydan sonra true yapın. Avukata gidecek çıktı: `npm run yasal:cikti` (scripts/yasal-cikti.ts).
+// Yasal metinler avukat onayından geçti (2026-11). Metinlerde esaslı değişiklik yapılırsa yeniden inceletin ve bu süre
+// için `legalReviewed` değerini false yapın: sayfalarda "taslak" uyarısı görünür (bilgi/[slug]/page.tsx).
+// Avukata gidecek çıktı: `npm run yasal:cikti` (scripts/yasal-cikti.ts).
 // `legalReviewed = true` iken zorunlu ticari bilgilerden biri boşsa test kırılır (tests/legal-content.test.ts).
-export const legalReviewed = false;
+export const legalReviewed = true;
 
 // Satıcının ticari bilgileri: dükkân sahibinden istenecek. Zorunlu olanlar boşken metinlerde
 // "[DOLDURULACAK: ...]" görünür; isteğe bağlı olanlar (oda, KEP) boşsa satır hiç çıkmaz.

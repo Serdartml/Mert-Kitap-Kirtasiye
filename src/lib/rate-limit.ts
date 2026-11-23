@@ -33,6 +33,9 @@ export const LIMITS = {
   // E-posta doğrulama: bağlantıyı yeniden isteme (üye başına, e-posta kutusu doldurulmasın) ve token deneme.
   verifyResendUser: { max: 3, windowSeconds: 60 * 60 },
   verifyUseIp: { max: 20, windowSeconds: 15 * 60 },
+  // Sipariş verme: sipariş stoğu ayırdığı için bot, misafir siparişleriyle ürünleri tüketemesin.
+  orderIp: { max: 10, windowSeconds: 60 * 60 },
+  orderEmail: { max: 6, windowSeconds: 60 * 60 },
 } satisfies Record<string, Limit>;
 
 // Sayacı atomik artırır (tek SQL), pencere dolmuşsa yeniden başlatır. İzin verildi mi ve kaç saniye

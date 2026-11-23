@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { filtersCookieValue, isProductFilter, parseProductSort, parseSavedFilters, productListWhere, productOrderBy, sortParam } from "@/lib/admin-products";
+import { filtersCookieValue, isProductFilter, maxPriceParam, parseMaxPrice, parseProductSort, parseSavedFilters, productListWhere, productOrderBy, sortParam } from "@/lib/admin-products";
 
 describe("sıralama", () => {
   it("adres parametresini okur, geçersizi yok sayar", () => {
@@ -58,5 +58,20 @@ describe("productListWhere", () => {
     expect(isProductFilter("pasif")).toBe(true);
     expect(isProductFilter("rastgele")).toBe(false);
     expect(isProductFilter(undefined)).toBe(false);
+  });
+});
+
+describe("fiyat üst sınırı", () => {
+  it("TL değerini kuruşa çevirir, geçersizi yok sayar", () => {
+    expect(parseMaxPrice("20")).toBe(2000);
+    expect(parseMaxPrice("49,90")).toBe(4990);
+    expect(parseMaxPrice(" 15.5 TL")).toBe(1550);
+    for (const bad of [undefined, "", "abc", "-5", "1,234", "10,999"]) expect(parseMaxPrice(bad), String(bad)).toBeNull();
+    expect(maxPriceParam(4990)).toBe("49,9");
+    expect(maxPriceParam(null)).toBe("");
+  });
+
+  it("görselsiz süzgeciyle birlikte uygulanır", () => {
+    expect(productListWhere({ q: "", categoryId: "", filter: "gorselsiz", maxPriceKurus: 2000 }, roots)).toEqual({ images: { none: {} }, priceKurus: { lte: 2000 } });
   });
 });

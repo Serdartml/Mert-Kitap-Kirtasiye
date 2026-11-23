@@ -6,6 +6,7 @@ import { MapPin, Phone } from "lucide-react";
 import { OrderItems, OrderStatusBadge } from "@/components/OrderParts";
 import { PanelSkeleton } from "@/components/Skeletons";
 import { getCurrentUser } from "@/lib/auth";
+import { db } from "@/lib/db";
 import { formatOrderDate, orderStatusNotes } from "@/lib/order-status";
 import { getOrderForViewer } from "@/lib/orders";
 import { site } from "@/lib/site";
@@ -35,6 +36,9 @@ async function OrderContent({ params }: PageProps) {
   if (!order) notFound();
 
   const user = await getCurrentUser();
+  // Bu sayfayı yalnızca siparişin sahibi görür (getOrderForViewer); kod yalnızca teslimat aşamasında gösterilir.
+  const deliveryCode =
+    order.status === "SHIPPED" ? await db.orderDeliveryCode.findFirst({ where: { orderId: order.id, usedAt: null }, select: { code: true } }) : null;
 
   return (
     <div className="container-page max-w-3xl py-6 md:py-10">
@@ -57,6 +61,14 @@ async function OrderContent({ params }: PageProps) {
           <span className="text-ink/70">{formatOrderDate(order.createdAt)}</span>
         </p>
       </div>
+
+      {deliveryCode && (
+        <section className="mt-6 rounded-xl border-2 border-fg p-4 text-sm">
+          <h2 className="font-extrabold">Teslimat kodunuz</h2>
+          <p className="mt-2 text-3xl font-extrabold tracking-[0.3em]">{deliveryCode.code}</p>
+          <p className="mt-2 text-neutral-600">Ürünü teslim alırken bu kodu görevliye söyleyin. Teslim alacak kişi dışında kimseyle paylaşmayın.</p>
+        </section>
+      )}
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2">
         <section className="rounded-xl border border-neutral-200 p-4 text-sm">

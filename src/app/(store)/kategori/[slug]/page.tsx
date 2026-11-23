@@ -2,13 +2,12 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import BookShelf from "@/components/BookShelf";
 import Breadcrumbs, { type Crumb } from "@/components/Breadcrumbs";
 import CategoryArt from "@/components/CategoryArt";
 import EmptyState from "@/components/EmptyState";
 import { Pagination, SortBar } from "@/components/ListingControls";
 import ProductGrid from "@/components/ProductGrid";
-import { ProductListSkeleton, ShelfListSkeleton } from "@/components/Skeletons";
+import { ProductListSkeleton } from "@/components/Skeletons";
 import {
   countCategoryProducts,
   getAllCategorySlugs,
@@ -28,7 +27,6 @@ interface PageProps {
     sirala?: string;
     sayfa?: string;
     stok?: string;
-    gorunum?: string;
     marka?: string | string[];
     min?: string;
     max?: string;
@@ -43,9 +41,6 @@ function cleanPrice(value: string | undefined): string {
 
 // Kategori sayfasındaki marka filtresi (CategoryProducts). Kapalı.
 const BRAND_FILTER_ENABLED = false;
-
-// Ürünleri kitap rafı olarak gösterilen ana kategori (BookShelf).
-const SHELF_ROOT_SLUG = "kultur-kitaplari";
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
@@ -149,7 +144,7 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
       </nav>
 
       <div className="mt-5">
-        <Suspense fallback={root.slug === SHELF_ROOT_SLUG ? <ShelfListSkeleton /> : <ProductListSkeleton />}>
+        <Suspense fallback={<ProductListSkeleton />}>
           <CategoryProducts
             slug={category.slug}
             rootSlug={root.slug}
@@ -186,8 +181,6 @@ async function CategoryProducts({ slug, rootSlug, categoryIds, searchParams }: C
     sort: parseSort(query.sirala),
     inStockOnly: query.stok === "1",
     page: parsePage(query.sayfa),
-    // Raf görünümü yalnızca kitap kategorisinde sunulur ve orada varsayılandır.
-    view: rootSlug === SHELF_ROOT_SLUG ? (query.gorunum === "liste" ? ("liste" as const) : ("raf" as const)) : undefined,
     brands: parseBrands(query.marka).filter((brand) => knownBrands.has(brand)),
     min: cleanPrice(query.min),
     max: cleanPrice(query.max),
@@ -217,11 +210,7 @@ async function CategoryProducts({ slug, rootSlug, categoryIds, searchParams }: C
         filters={hasFilters ? { brands: brandOptions, priceRange: { min: options.minPriceKurus, max: options.maxPriceKurus } } : undefined}
       />
       {items.length > 0 ? (
-        state.view === "raf" ? (
-          <BookShelf products={items} />
-        ) : (
-          <ProductGrid products={items} dense />
-        )
+        <ProductGrid products={items} dense />
       ) : (
         <EmptyState
           rootSlug={rootSlug}

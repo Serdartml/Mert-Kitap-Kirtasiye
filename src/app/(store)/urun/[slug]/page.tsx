@@ -43,7 +43,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   if (!product || !product.isActive) return {};
   return {
     title: product.name,
-    description: product.description ?? undefined,
+    // Arama sonucu özeti için yalnızca ilk paragraf; özellik listesi sayfada görünür.
+    description: product.description?.split("\n")[0] || undefined,
     alternates: { canonical: `/urun/${product.slug}` },
   };
 }

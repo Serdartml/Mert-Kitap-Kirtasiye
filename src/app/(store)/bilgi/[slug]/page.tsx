@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import { PanelSkeleton } from "@/components/Skeletons";
+import { isIndexable } from "@/lib/indexing";
 import { getLegalDocument, legalReviewed } from "@/lib/legal-content";
 import { infoPages } from "@/lib/site";
 
@@ -17,8 +18,8 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
   const page = infoPages.find((p) => p.slug === slug);
-  // Metinler hukuki onay alana kadar (legalReviewed) arama motorlarına kapalı.
-  return page ? { title: page.title, robots: { index: legalReviewed } } : {};
+  // Sayfanın robots değeri kök düzenin noindex'ini ezer: site arama motorlarına kapalıyken bu sayfalar da kapalı kalmalı.
+  return page ? { title: page.title, robots: { index: legalReviewed && isIndexable() } } : {};
 }
 
 // params adres verisidir; ortak kabuğa girmesin diye okunması <Suspense> içindeki bileşene bırakıldı.

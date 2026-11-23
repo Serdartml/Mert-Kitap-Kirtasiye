@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, LayoutGrid, LibraryBig } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import FilterDrawer from "./FilterDrawer";
 import { sortOptions, type SortKey } from "@/lib/catalog";
 
@@ -9,8 +9,6 @@ export interface ListingState {
   sort: SortKey;
   inStockOnly: boolean;
   page: number;
-  // Yalnızca raf görünümü olan kategorilerde verilir (kültür kitapları); varsayılanı "raf".
-  view?: "raf" | "liste";
   // Filtre çekmecesi (yalnızca kategori sayfasında): seçili markalar ve fiyat aralığı (kullanıcının yazdığı metin).
   brands?: string[];
   min?: string;
@@ -23,11 +21,10 @@ export interface ListingFilters {
   priceRange: { min: number | null; max: number | null };
 }
 
-function buildHref(state: ListingState, overrides: Partial<Pick<ListingState, "sort" | "inStockOnly" | "page" | "view" | "brands" | "min" | "max">>) {
+function buildHref(state: ListingState, overrides: Partial<Pick<ListingState, "sort" | "inStockOnly" | "page" | "brands" | "min" | "max">>) {
   const next = { ...state, ...overrides };
   const params = new URLSearchParams();
   if (next.query) params.set("q", next.query);
-  if (next.view === "liste") params.set("gorunum", "liste");
   if (next.sort !== "onerilen") params.set("sirala", next.sort);
   if (next.inStockOnly) params.set("stok", "1");
   for (const brand of next.brands ?? []) params.append("marka", brand);
@@ -38,16 +35,10 @@ function buildHref(state: ListingState, overrides: Partial<Pick<ListingState, "s
   return qs ? `${next.basePath}?${qs}` : next.basePath;
 }
 
-const viewOptions = [
-  { key: "raf", label: "Raf", icon: LibraryBig },
-  { key: "liste", label: "Liste", icon: LayoutGrid },
-] as const;
-
 export function SortBar({ state, total, filters }: { state: ListingState; total: number; filters?: ListingFilters }) {
-  // Çekmecede korunacak parametreler: sıralama, görünüm ve stok seçimi filtre gönderilince kaybolmasın.
+  // Çekmecede korunacak parametreler: sıralama ve stok seçimi filtre gönderilince kaybolmasın.
   const preserved: Record<string, string> = {};
   if (state.sort !== "onerilen") preserved.sirala = state.sort;
-  if (state.view === "liste") preserved.gorunum = "liste";
   if (state.inStockOnly) preserved.stok = "1";
 
   return (
@@ -70,22 +61,6 @@ export function SortBar({ state, total, filters }: { state: ListingState; total:
           max={state.max ?? ""}
           priceRange={filters.priceRange}
         />
-      )}
-      {state.view && (
-        <div className="flex shrink-0 overflow-hidden rounded-full border border-neutral-300" role="group" aria-label="Görünüm">
-          {viewOptions.map((option) => (
-            <Link
-              key={option.key}
-              href={buildHref(state, { view: option.key })}
-              aria-current={state.view === option.key ? "true" : undefined}
-              className={`flex items-center gap-1.5 whitespace-nowrap px-3.5 py-2 text-xs font-bold sm:px-3 sm:py-1.5 ${
-                state.view === option.key ? "bg-fg text-surface" : "hover:bg-neutral-100"
-              }`}
-            >
-              <option.icon size={14} aria-hidden /> {option.label}
-            </Link>
-          ))}
-        </div>
       )}
       <Link
         href={buildHref(state, { inStockOnly: !state.inStockOnly, page: 1 })}

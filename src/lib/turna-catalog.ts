@@ -79,6 +79,17 @@ export function editionOf(name: string): Edition {
   return ANY_YEAR.test(name) ? "eski" : "tarihsiz";
 }
 
+// Ajanda ve takvimler de yalnızca güncel dönemle satılır. Yılsız (zamansız) olanlar geçerlidir; "24/25" gibi kısa dönemler
+// yalnızca ardışık yıllarsa dönem sayılır ("17/24" bir ölçü olabilir).
+const AGENDA_CURRENT = /(?<!\d)(?:20)?26\s*[-/]\s*(?:20)?2[78](?!\d)|(?<!\d)202[78](?!\d)/;
+const AGENDA_OLD_YEAR = /(?<!\d)(?:19\d{2}|20[01]\d|202[0-6])(?!\d)/;
+
+export function agendaIsOutdated(name: string): boolean {
+  if (AGENDA_CURRENT.test(name)) return false;
+  if (AGENDA_OLD_YEAR.test(name)) return true;
+  return [...name.matchAll(/(?<!\d)(\d{2})\s*\/\s*(\d{2})(?!\d)/g)].some(([, from, to]) => Number(to) === Number(from) + 1 && Number(from) >= 10 && Number(from) <= 25);
+}
+
 // ---------- Ad ayrıştırma ----------
 
 export interface ParsedName {

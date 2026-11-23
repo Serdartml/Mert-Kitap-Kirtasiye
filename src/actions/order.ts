@@ -14,6 +14,7 @@ import { adminNotifyAddress, sendMail } from "@/lib/mail";
 import { newOrderAdminMail, orderConfirmationMail } from "@/lib/mail-templates";
 import { PICKUP_PAYMENT } from "@/lib/order-status";
 import { generateOrderNo, rememberGuestOrder } from "@/lib/orders";
+import { checkLimits, clientIp, LIMITS } from "@/lib/rate-limit";
 import { site } from "@/lib/site";
 
 export interface FormState {
@@ -58,6 +59,12 @@ export async function placeOrder(_prev: FormState, formData: FormData): Promise<
   if (!cartId) return { error: "Sepetiniz boş." };
   const user = await getCurrentUser();
   const { fullName, email, phone, note } = parsed.data;
+
+  const blocked = await checkLimits([
+    { key: `order-ip:${await clientIp()}`, limit: LIMITS.orderIp },
+    { key: `order-email:${email}`, limit: LIMITS.orderEmail },
+  ]);
+  if (blocked) return { error: blocked };
 
   let order: Prisma.OrderGetPayload<{ include: { items: true } }>;
   try {

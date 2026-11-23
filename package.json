@@ -28,7 +28,9 @@
     "gorsel:ek": "node scripts/gorsel-ek.mjs",
     "gorsel:ek-yukle": "node scripts/gorsel-ek-yukle.mjs",
     "gorsel:r2": "node scripts/gorsel-r2-yukle.mjs",
-    "gorsel:ara": "node scripts/gorsel-ara.mjs"
+    "gorsel:ara": "node scripts/gorsel-ara.mjs",
+    "gorsel:yeni": "node scripts/gorsel-yeni.mjs",
+    "aciklama:yaz": "tsx --env-file=.env scripts/aciklama-yaz.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

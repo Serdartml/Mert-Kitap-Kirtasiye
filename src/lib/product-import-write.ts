@@ -72,6 +72,7 @@ export async function writePlan(tx: Prisma.TransactionClient, plan: ImportPlan):
       priceKurus: create.priceKurus,
       compareAtKurus: create.compareAtKurus,
       costKurus: create.costKurus,
+      sourcePriceKurus: create.sourcePriceKurus ?? null,
       stock: create.stock,
       isActive: create.isActive,
       categoryId: await categoryFor(create.category),
@@ -87,15 +88,16 @@ export async function writePlan(tx: Prisma.TransactionClient, plan: ImportPlan):
       const categoryId = await categoryFor(update.category);
       const brand = update.brandName ? brandId(update.brandName) : update.brandId;
       values.push(
-        Prisma.sql`(${update.id}::text, ${update.name}::text, ${update.description}::text, ${update.priceKurus}::int, ${update.compareAtKurus}::int, ${update.costKurus}::int, ${update.stock}::int, ${update.isActive}::boolean, ${categoryId}::text, ${brand}::text, ${update.barcode}::text)`,
+        Prisma.sql`(${update.id}::text, ${update.name}::text, ${update.description}::text, ${update.priceKurus}::int, ${update.compareAtKurus}::int, ${update.costKurus}::int, ${update.sourcePriceKurus ?? null}::int, ${update.stock}::int, ${update.isActive}::boolean, ${categoryId}::text, ${brand}::text, ${update.barcode}::text)`,
       );
     }
     await tx.$executeRaw`
       UPDATE "Product" AS p SET
         "name" = v."name", "description" = v."description", "priceKurus" = v."priceKurus",
-        "compareAtKurus" = v."compareAtKurus", "costKurus" = v."costKurus", "stock" = v."stock", "isActive" = v."isActive",
+        "compareAtKurus" = v."compareAtKurus", "costKurus" = v."costKurus",
+        "sourcePriceKurus" = COALESCE(v."sourcePriceKurus", p."sourcePriceKurus"), "stock" = v."stock", "isActive" = v."isActive",
         "categoryId" = v."categoryId", "brandId" = v."brandId", "barcode" = v."barcode", "updatedAt" = now()
-      FROM (VALUES ${Prisma.join(values)}) AS v("id", "name", "description", "priceKurus", "compareAtKurus", "costKurus", "stock", "isActive", "categoryId", "brandId", "barcode")
+      FROM (VALUES ${Prisma.join(values)}) AS v("id", "name", "description", "priceKurus", "compareAtKurus", "costKurus", "sourcePriceKurus", "stock", "isActive", "categoryId", "brandId", "barcode")
       WHERE p."id" = v."id"`;
   }
   return { newCategoryCount };

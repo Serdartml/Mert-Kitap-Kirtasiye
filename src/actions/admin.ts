@@ -8,7 +8,7 @@ import { after } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/auth";
 import { brandBackQuery } from "@/lib/admin-brands";
-import { isProductFilter, productListWhere } from "@/lib/admin-products";
+import { isProductFilter, parseMaxPrice, productListWhere } from "@/lib/admin-products";
 import { CATALOG_TAG } from "@/lib/catalog";
 import { db } from "@/lib/db";
 import { sendMail } from "@/lib/mail";
@@ -121,6 +121,8 @@ export async function saveProduct(_prev: FormState, formData: FormData): Promise
       const product = id
         ? await tx.product.update({ where: { id }, data })
         : await tx.product.create({ data });
+      // Silinmiş bir ürün elle yeniden eklendiyse artık haftalık dosyada engellenmesin.
+      await tx.excludedProduct.deleteMany({ where: { OR: [{ sku: product.sku }, ...(product.barcode ? [{ barcode: product.barcode }] : [])] } });
       await tx.productAttribute.deleteMany({ where: { productId: product.id } });
       if (attributeRows.length > 0) {
         await tx.productAttribute.createMany({
@@ -141,9 +143,26 @@ export async function saveProduct(_prev: FormState, formData: FormData): Promise
 export async function deleteProduct(id: string): Promise<void> {
   await requireAdmin();
   // Sipariş kalemleri ürüne bağlıysa bağ kopar (şemada SetNull), sipariş kaydı bozulmaz.
-  await db.product.delete({ where: { id } });
+  await deleteAndRemember({ id });
   updateTag(CATALOG_TAG);
   redirect("/yonetim/urunler?durum=silindi");
+}
+
+// Silinen ürünler kaydedilir: haftalık Turna dosyasında yeniden görünseler de siteye geri eklenmez.
+async function deleteAndRemember(where: Prisma.ProductWhereInput): Promise<number> {
+  return db.$transaction(
+    async (tx) => {
+      const rows = await tx.product.findMany({ where, select: { sku: true, barcode: true, name: true } });
+      for (let index = 0; index < rows.length; index += 1000) {
+        await tx.excludedProduct.createMany({
+          data: rows.slice(index, index + 1000).map((row) => ({ ...row, reason: "Yönetimden silindi" })),
+          skipDuplicates: true,
+        });
+      }
+      return (await tx.product.deleteMany({ where })).count;
+    },
+    { timeout: 55_000, maxWait: 10_000 },
+  );
 }
 
 const MAX_BULK_IDS = 5000;
@@ -154,7 +173,10 @@ async function bulkTargetWhere(formData: FormData): Promise<Prisma.ProductWhereI
   if (text(formData, "scope") === "all") {
     const roots = await db.category.findMany({ where: { parentId: null }, select: { id: true, children: { select: { id: true } } } });
     const filter = text(formData, "filtre");
-    return productListWhere({ q: text(formData, "q").slice(0, 100), categoryId: text(formData, "kategori"), filter: isProductFilter(filter) ? filter : "" }, roots);
+    return productListWhere(
+      { q: text(formData, "q").slice(0, 100), categoryId: text(formData, "kategori"), filter: isProductFilter(filter) ? filter : "", maxPriceKurus: parseMaxPrice(text(formData, "fiyat")) },
+      roots,
+    );
   }
   const ids = [...new Set(formData.getAll("ids").map(String).filter((id) => id.length > 0 && id.length <= 40))];
   if (ids.length === 0) redirect("/yonetim/urunler");
@@ -168,7 +190,7 @@ export async function deleteProducts(formData: FormData): Promise<void> {
   await requireAdmin();
   const where = await bulkTargetWhere(formData);
 
-  const { count } = await db.product.deleteMany({ where });
+  const count = await deleteAndRemember(where);
   updateTag(CATALOG_TAG);
   redirect(`/yonetim/urunler?durum=toplu-silindi&adet=${count}`);
 }

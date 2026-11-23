@@ -81,10 +81,22 @@ export function productOrderBy(sort: ProductSort | null): Prisma.ProductOrderByW
   return sort.column === "ad" ? [primary, { id: "asc" }] : [primary, { name: "asc" }, { id: "asc" }];
 }
 
+// Fiyat üst sınırı (adreste "fiyat=49,90" gibi TL). Geçersiz ya da boşsa null: sınır yok.
+export function parseMaxPrice(value: string | undefined): number | null {
+  const normalized = (value ?? "").trim().replace(/\s|₺|tl/gi, "").replace(",", ".");
+  if (!/^\d{1,7}(\.\d{1,2})?$/.test(normalized)) return null;
+  return Math.round(Number(normalized) * 100);
+}
+
+// Kuruşu adres/alan değerine çevirir: 5000 → "50", 4990 → "49,9".
+export const maxPriceParam = (kurus: number | null) => (kurus == null ? "" : String(kurus / 100).replace(".", ","));
+
 export interface ProductListFilter {
   q: string;
   categoryId: string;
   filter: string;
+  // Kuruş; bu fiyat ve altındaki ürünler (KDV dahil satış fiyatı).
+  maxPriceKurus?: number | null;
 }
 
 interface RootCategory {
@@ -92,7 +104,7 @@ interface RootCategory {
   children: { id: string }[];
 }
 
-export function productListWhere({ q, categoryId, filter }: ProductListFilter, rootCategories: RootCategory[]): Prisma.ProductWhereInput {
+export function productListWhere({ q, categoryId, filter, maxPriceKurus }: ProductListFilter, rootCategories: RootCategory[]): Prisma.ProductWhereInput {
   // Ana kategori seçilirse alt kategorilerindeki ürünler de gelir.
   const selectedRoot = rootCategories.find((category) => category.id === categoryId);
   const categoryIds = selectedRoot ? [selectedRoot.id, ...selectedRoot.children.map((child) => child.id)] : categoryId ? [categoryId] : null;
@@ -100,6 +112,7 @@ export function productListWhere({ q, categoryId, filter }: ProductListFilter, r
   return {
     ...(filter && filterWhere[filter] ? filterWhere[filter] : {}),
     ...(categoryIds ? { categoryId: { in: categoryIds } } : {}),
+    ...(maxPriceKurus != null ? { priceKurus: { lte: maxPriceKurus } } : {}),
     ...(q
       ? {
           OR: [
