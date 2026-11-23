@@ -9,13 +9,13 @@ export interface DiscoverCategory {
   image: { url: string };
 }
 
-// Ana sayfanın alt bölümü: ana kategoriler, her biri kendi vitrin ürününün görseliyle. Görsel süs amaçlıdır (alt boş);
+// Ana sayfada rakam bandının altındaki bölüm: ana kategoriler, her biri kendi vitrin ürününün görseliyle. Görsel süs amaçlıdır (alt boş);
 // bağlantının adı kategori adıdır.
 export default function DiscoverCategories({ categories }: { categories: DiscoverCategory[] }) {
   if (categories.length === 0) return null;
 
   return (
-    <section className="container-page mt-12 md:mt-16" aria-labelledby="kesfet">
+    <section className="container-page mt-8 md:mt-12" aria-labelledby="kesfet">
       <div className="mb-5 md:mb-7">
         <h2 id="kesfet" className="text-2xl font-extrabold tracking-tight md:text-3xl">
           Keşfet

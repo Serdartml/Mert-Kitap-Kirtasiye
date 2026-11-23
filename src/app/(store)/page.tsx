@@ -108,7 +108,10 @@ export default async function HomePage() {
         </dl>
       </section>
 
-      {/* Süs şeridi: rakam bandı ile kampanya bandı arasında ayraç. */}
+      {/* Keşfet: rakam bandının hemen altında görselli ana kategoriler. */}
+      <DiscoverCategories categories={discoverCategories} />
+
+      {/* Süs şeridi: Keşfet ile kampanya bandı arasında ayraç. */}
       <PatternStrip className="mt-10 md:mt-14" />
 
       {/* Kampanya bandı: kenarları yırtık kâğıt gibi dişli */}
@@ -209,8 +212,6 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
-
-      <DiscoverCategories categories={discoverCategories} />
     </>
   );
 }
