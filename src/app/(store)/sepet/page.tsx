@@ -128,8 +128,8 @@ async function CartContent() {
               <dd className="font-bold">{formatPrice(subtotalKurus)}</dd>
             </div>
             <div className="flex justify-between">
-              <dt className="text-neutral-600">Kargo</dt>
-              <dd className="text-neutral-500">Ödeme adımında hesaplanır</dd>
+              <dt className="text-neutral-600">Teslimat</dt>
+              <dd className="text-right text-neutral-500">Mağazadan ücretsiz; İzmir içi kurye ödeme adımında</dd>
             </div>
             {discountKurus > 0 && (
               <div className="flex justify-between gap-3">

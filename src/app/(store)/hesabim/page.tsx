@@ -70,7 +70,7 @@ async function AccountContent({ searchParams }: PageProps) {
                 <Link href={`/siparis/${order.orderNo}`} className="block p-4 hover:bg-neutral-50">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <p className="font-extrabold">{order.orderNo}</p>
-                    <OrderStatusBadge status={order.status} />
+                    <OrderStatusBadge status={order.status} deliveryMethod={order.deliveryMethod} />
                   </div>
                   <p className="mt-1 text-xs text-neutral-500">{formatOrderDate(order.createdAt)}</p>
                   <p className="mt-2 line-clamp-2 text-sm text-neutral-600">{order.items.map((item) => item.name).join(", ")}</p>

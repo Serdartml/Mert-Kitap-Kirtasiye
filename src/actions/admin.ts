@@ -12,7 +12,9 @@ import { isProductFilter, parseMaxPrice, productListWhere } from "@/lib/admin-pr
 import { CATALOG_TAG } from "@/lib/catalog";
 import { db } from "@/lib/db";
 import { sendMail } from "@/lib/mail";
-import { orderStatusMail } from "@/lib/mail-templates";
+import { deliveryCodeMail, orderStatusMail } from "@/lib/mail-templates";
+import { COURIER_DELIVERY } from "@/lib/delivery";
+import { generateDeliveryCode } from "@/lib/delivery-code";
 import { closedStatuses, nextStatuses } from "@/lib/order-status";
 import { deleteObject, keyFromUrl, r2Config, uploadObject } from "@/lib/r2";
 import { parsePriceToKurus, slugify } from "@/lib/slug";
@@ -425,8 +427,10 @@ export async function setOrderStatus(id: string, status: OrderStatus): Promise<v
   const order = await db.order.findUnique({ where: { id }, include: { items: true } });
   if (!order) redirect("/yonetim/siparisler");
 
+  const courier = order.deliveryMethod === COURIER_DELIVERY;
   const allowed = status === "CANCELLED" ? !closedStatuses.includes(order.status) && order.status !== "DELIVERED" : nextStatuses[order.status].includes(status);
-  if (!allowed) redirect(`/yonetim/siparisler/${id}?durum=gecersiz`);
+  // Kurye siparişi "teslim edildi"ye yalnızca müşterinin teslimat koduyla geçer (actions/delivery.ts): teslimin kanıtı.
+  if (!allowed || (courier && status === "DELIVERED")) redirect(`/yonetim/siparisler/${id}?durum=gecersiz`);
 
   let changed = false;
   await db.$transaction(async (tx) => {
@@ -442,6 +446,17 @@ export async function setOrderStatus(id: string, status: OrderStatus): Promise<v
   });
 
   if (status === "CANCELLED") updateTag(CATALOG_TAG);
+  // Kurye yola çıktı: teslimat kodu üretilir ve durum e-postası yerine kodlu e-posta gider (kod sipariş sayfasında da görünür).
+  if (changed && courier && status === "SHIPPED") {
+    const code = generateDeliveryCode();
+    await db.orderDeliveryCode.upsert({
+      where: { orderId: id },
+      create: { orderId: id, code },
+      update: { code, attempts: 0, sentAt: new Date(), usedAt: null },
+    });
+    after(() => sendMail(deliveryCodeMail(order, code)));
+    redirect(`/yonetim/siparisler/${id}?durum=kod-gonderildi`);
+  }
   // Müşteriye durum bildirimi (hazırlanıyor / teslime hazır / iptal). Gönderim yanıtı geciktirmez.
   // Ödemesi tamamlanmamış sipariş müşteriye hiç onaylanmadı: iptali için e-posta gitmez.
   if (changed && status !== "DELIVERED" && order.status !== "AWAITING_PAYMENT") {

@@ -3,9 +3,8 @@ import type { OrderStatus } from "@prisma/client";
 // Sipariş durumlarının müşteriye ve yönetim paneline görünen adları. İstemci bileşenleri de kullanır;
 // bu yüzden "server-only" değildir.
 //
-// Şimdilik tek teslimat yöntemi var: mağazadan teslim, ödeme mağazada. Bu yüzden SHIPPED "teslime hazır"
-// anlamında kullanılır. Kargo ve online ödeme eklendiğinde Order'a teslimat yöntemi alanı gelmeli ve
-// etiketler ona göre ayrılmalı.
+// SHIPPED, mağazadan teslimde "teslime hazır", kuryeyle teslimde "yolda" anlamındadır: müşteriye görünen metin için
+// statusLabel / statusNote teslimat yöntemine göre seçer (lib/delivery.ts).
 
 export const PICKUP_PAYMENT = "magazada";
 // Kartla online ödeme (lib/paytr.ts). Sipariş AWAITING_PAYMENT ile açılır, PayTR bildirimiyle PAID olur.
@@ -38,6 +37,20 @@ export const orderStatusNotes: Record<OrderStatus, string> = {
   CANCELLED: "Bu sipariş iptal edildi.",
   REFUNDED: "Bu siparişin ücreti iade edildi.",
 };
+
+// Kuryeyle teslimde (deliveryMethod "kurye", lib/delivery.ts) SHIPPED "yolda" demektir.
+const courierLabels: Partial<Record<OrderStatus, string>> = { SHIPPED: "Yolda" };
+const courierNotes: Partial<Record<OrderStatus, string>> = {
+  SHIPPED: "Siparişiniz kuryemizle yola çıktı. Teslim alırken teslimat kodunuzu kuryeye söyleyin.",
+};
+
+export function statusLabel(status: OrderStatus, deliveryMethod?: string | null): string {
+  return (deliveryMethod === "kurye" && courierLabels[status]) || orderStatusLabels[status];
+}
+
+export function statusNote(status: OrderStatus, deliveryMethod?: string | null): string {
+  return (deliveryMethod === "kurye" && courierNotes[status]) || orderStatusNotes[status];
+}
 
 // Stoğu geri verilmiş, kapanmış durumlar.
 export const closedStatuses: OrderStatus[] = ["CANCELLED", "REFUNDED"];

@@ -1,3 +1,4 @@
+import { COURIER_DISTRICTS, COURIER_FEE_KURUS, COURIER_FREE_OVER_KURUS, SAME_DAY_CUTOFF } from "@/lib/delivery";
 import { site } from "@/lib/site";
 
 // Yasal metinler avukat onayından geçti (2026-11). Metinlerde esaslı değişiklik yapılırsa yeniden inceletin ve bu süre
@@ -51,18 +52,19 @@ export interface CommerceMode {
   onlinePayment: boolean;
   shipping: boolean;
 }
-// Kartla ödeme (PayTR) 2026-11-27'de açıldı; adrese teslim henüz kodlanmadı.
-export const liveCommerce: CommerceMode = { onlinePayment: true, shipping: false };
+// Kartla ödeme (PayTR) ve kuryeyle kapına teslim 2026-11-27'de açıldı: canlı ile hedef model artık aynı.
+export const liveCommerce: CommerceMode = { onlinePayment: true, shipping: true };
 export const plannedCommerce: CommerceMode = { onlinePayment: true, shipping: true };
 
 // Adrese teslim koşulları (işletme kararı, 2026-11-09). Teslimatı kargo firması değil mağazanın kendi kuryesi yapar.
 // Boşken metinlerde "[DOLDURULACAK: ...]" görünür.
+// Değerler sitenin uyguladığı kurallardan gelir (lib/delivery.ts): metin ile ödeme sayfası ayrışamaz.
 export const shippingTerms = {
   // Teslimat yapılan ilçeler (İzmir merkez ilçeleri); metinde "yalnızca İzmir'in ... ilçelerindeki adreslere" diye geçer.
-  districts: "Balçova, Bayraklı, Bornova, Buca, Çiğli, Gaziemir, Güzelbahçe, Karabağlar, Karşıyaka, Konak ve Narlıdere" as string,
-  fee: "100" as string, // teslimat ücreti, TL, KDV dahil
-  freeOver: "1000" as string, // bu tutar ve üzerindeki siparişlerde teslimat ücretsiz, TL
-  sameDayCutoff: "17:00" as string, // bu saate kadar verilen sipariş aynı gün, sonrakiler ertesi gün, mağazanın kapanış saatine kadar teslim edilir
+  districts: `${COURIER_DISTRICTS.slice(0, -1).join(", ")} ve ${COURIER_DISTRICTS[COURIER_DISTRICTS.length - 1]}` as string,
+  fee: String(COURIER_FEE_KURUS / 100) as string, // teslimat ücreti, TL, KDV dahil
+  freeOver: String(COURIER_FREE_OVER_KURUS / 100) as string, // bu tutar ve üzerindeki siparişlerde teslimat ücretsiz, TL
+  sameDayCutoff: SAME_DAY_CUTOFF as string, // bu saate kadar verilen sipariş aynı gün, sonrakiler ertesi gün, mağazanın kapanış saatine kadar teslim edilir
 };
 
 export const shippingTermFields: { key: keyof typeof shippingTerms; label: string }[] = [

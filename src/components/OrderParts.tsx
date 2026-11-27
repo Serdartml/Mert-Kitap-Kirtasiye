@@ -1,16 +1,18 @@
 import Link from "next/link";
 import type { OrderStatus } from "@prisma/client";
 import { ORDER_DISCOUNT_LABEL, orderDiscountKurus } from "@/lib/campaign";
+import { COURIER_DELIVERY } from "@/lib/delivery";
 import { formatPrice } from "@/lib/format";
-import { orderStatusLabels, orderStatusTone } from "@/lib/order-status";
+import { orderStatusTone, statusLabel } from "@/lib/order-status";
 import type { OrderData } from "@/lib/orders";
 
 // Sipariş sayfalarının (müşteri ve yönetim) ortak parçaları.
 
-export function OrderStatusBadge({ status }: { status: OrderStatus }) {
+// deliveryMethod: kuryeyle teslimde SHIPPED "Yolda" yazar (lib/order-status.ts, statusLabel).
+export function OrderStatusBadge({ status, deliveryMethod }: { status: OrderStatus; deliveryMethod?: string | null }) {
   return (
     <span className={`inline-block whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-extrabold ${orderStatusTone[status]}`}>
-      {orderStatusLabels[status]}
+      {statusLabel(status, deliveryMethod)}
     </span>
   );
 }
@@ -18,6 +20,7 @@ export function OrderStatusBadge({ status }: { status: OrderStatus }) {
 // Kalemler ve toplam. linkProducts: ürün hâlâ yayındaysa adı ürün sayfasına bağlanır.
 export function OrderItems({ order, linkProducts = true }: { order: OrderData; linkProducts?: boolean }) {
   const discountKurus = orderDiscountKurus(order);
+  const courier = order.deliveryMethod === COURIER_DELIVERY;
   return (
     <div className="rounded-xl border border-neutral-200">
       <ul className="divide-y divide-neutral-200 text-sm">
@@ -40,16 +43,16 @@ export function OrderItems({ order, linkProducts = true }: { order: OrderData; l
         ))}
       </ul>
       <dl className="space-y-2 border-t border-neutral-200 p-3 text-sm sm:p-4">
-        {(order.shippingKurus > 0 || discountKurus > 0) && (
+        {(courier || discountKurus > 0) && (
           <div className="flex justify-between">
             <dt className="text-neutral-600">Ara toplam</dt>
             <dd className="font-bold">{formatPrice(order.subtotalKurus)}</dd>
           </div>
         )}
-        {order.shippingKurus > 0 && (
+        {courier && (
           <div className="flex justify-between">
-            <dt className="text-neutral-600">Kargo</dt>
-            <dd className="font-bold">{formatPrice(order.shippingKurus)}</dd>
+            <dt className="text-neutral-600">Kurye ile teslim</dt>
+            <dd className="font-bold">{order.shippingKurus > 0 ? formatPrice(order.shippingKurus) : "Ücretsiz"}</dd>
           </div>
         )}
         {discountKurus > 0 && (

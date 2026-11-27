@@ -10,7 +10,9 @@ import { OrderItems, OrderStatusBadge } from "@/components/OrderParts";
 import { requireAdmin } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { MAX_DELIVERY_CODE_ATTEMPTS } from "@/lib/delivery-code";
-import { CARD_PAYMENT, closedStatuses, formatOrderDate, nextStatuses, orderStatusLabels } from "@/lib/order-status";
+import { COURIER_DELIVERY, courierEstimate } from "@/lib/delivery";
+import { formatPrice } from "@/lib/format";
+import { CARD_PAYMENT, closedStatuses, formatOrderDate, nextStatuses, statusLabel } from "@/lib/order-status";
 import { getAdminOrder } from "@/lib/orders";
 
 export const metadata: Metadata = { title: "Sipariş" };
@@ -34,6 +36,7 @@ export default async function AdminOrderPage({ params, searchParams }: PageProps
   const deliveryCode = await db.orderDeliveryCode.findUnique({ where: { orderId: order.id }, select: { sentAt: true, attempts: true, usedAt: true } });
   const canCancel = !closedStatuses.includes(order.status) && order.status !== "DELIVERED";
   const phoneHref = `tel:${order.phone.replace(/[^\d+]/g, "")}`;
+  const courier = order.deliveryMethod === COURIER_DELIVERY;
   // Kartla ödenmiş (bildirimi gelmiş) sipariş: iptalde para iadesi PayTR panelinden ayrıca yapılmalı.
   const cardPaid = order.paymentProvider === CARD_PAYMENT && Boolean(order.paymentRef);
   const paymentText =
@@ -54,7 +57,7 @@ export default async function AdminOrderPage({ params, searchParams }: PageProps
         <h1 className="text-2xl font-extrabold">
           <span className="marker">{order.orderNo}</span>
         </h1>
-        <OrderStatusBadge status={order.status} />
+        <OrderStatusBadge status={order.status} deliveryMethod={order.deliveryMethod} />
       </div>
 
       <StatusNote status={durum} />
@@ -77,13 +80,19 @@ export default async function AdminOrderPage({ params, searchParams }: PageProps
               <p className="mt-2 text-neutral-500">Bu sipariş kapandı; durumu değiştirilemez.</p>
             ) : (
               <div className="mt-3 flex flex-col gap-2">
-                {nextStatuses[order.status].map((status) => (
-                  <form key={status} action={setOrderStatus.bind(null, order.id, status)}>
-                    <button type="submit" className="btn btn-primary w-full py-2.5">
-                      {orderStatusLabels[status]} olarak işaretle
-                    </button>
-                  </form>
-                ))}
+                {/* Kurye siparişi "teslim edildi"ye yalnızca müşterinin teslimat koduyla geçer (aşağıda). */}
+                {nextStatuses[order.status]
+                  .filter((status) => !(courier && status === "DELIVERED"))
+                  .map((status) => (
+                    <form key={status} action={setOrderStatus.bind(null, order.id, status)}>
+                      <button type="submit" className="btn btn-primary w-full py-2.5">
+                        {courier && status === "SHIPPED" ? "Kuryeye verildi (yolda) olarak işaretle" : `${statusLabel(status, order.deliveryMethod)} olarak işaretle`}
+                      </button>
+                    </form>
+                  ))}
+                {courier && order.status !== "SHIPPED" && nextStatuses[order.status].includes("SHIPPED") && (
+                  <p className="text-xs text-neutral-500">&ldquo;Yolda&rdquo; işaretlenince teslimat kodu müşteriye e-postayla kendiliğinden gider.</p>
+                )}
                 {canCancel && (
                   <form action={setOrderStatus.bind(null, order.id, "CANCELLED")}>
                     <ConfirmButton
@@ -131,7 +140,26 @@ export default async function AdminOrderPage({ params, searchParams }: PageProps
 
           <section className="rounded-xl border border-neutral-200 bg-raised p-4 text-sm">
             <h2 className="font-extrabold">Teslimat ve ödeme</h2>
-            <p className="mt-2">{order.shipLine}</p>
+            {courier ? (
+              <>
+                <p className="mt-2 font-semibold">İzmir içi kurye ile teslim · {order.shippingKurus > 0 ? formatPrice(order.shippingKurus) : "ücretsiz"}</p>
+                <p className="mt-1 break-words">
+                  {order.shipLine}, {order.shipDistrict} / {order.shipCity}
+                  {order.shipPostalCode ? ` ${order.shipPostalCode}` : ""}
+                </p>
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${order.shipLine}, ${order.shipDistrict}, ${order.shipCity}`)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-outline mt-2 w-full py-2.5"
+                >
+                  Haritada aç
+                </a>
+                <p className="mt-2 text-xs text-neutral-500">Hedef: {courierEstimate(order.createdAt).text} (sipariş saatine göre).</p>
+              </>
+            ) : (
+              <p className="mt-2">{order.shipLine}</p>
+            )}
             <p className="text-neutral-600">{paymentText}</p>
             {cardPaid && (order.status === "CANCELLED" || order.status === "REFUNDED") && (
               <p className="mt-2 rounded-lg bg-red-50 p-2 text-xs font-semibold text-red-800 dark:bg-red-950 dark:text-red-300">

@@ -6,7 +6,8 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import OrderTrackBox from "@/components/OrderTrackBox";
 import { OrderStatusBadge } from "@/components/OrderParts";
 import { findOrderForTracking, normalizeOrderNo, type TrackedOrder } from "@/lib/order-tracking";
-import { formatOrderDate, orderStatusNotes } from "@/lib/order-status";
+import { COURIER_DELIVERY } from "@/lib/delivery";
+import { formatOrderDate, statusNote } from "@/lib/order-status";
 import { getOrderForViewer } from "@/lib/orders";
 import { checkLimits, clientIp, LIMITS } from "@/lib/rate-limit";
 import { site } from "@/lib/site";
@@ -109,6 +110,7 @@ const steps = [
 function OrderStatusCard({ order, owner }: { order: TrackedOrder; owner: boolean }) {
   const closed = order.status === "CANCELLED" || order.status === "REFUNDED";
   const current = steps.findIndex((step) => (step.statuses as readonly string[]).includes(order.status));
+  const courier = order.deliveryMethod === COURIER_DELIVERY;
 
   return (
     <section aria-label="Sipariş durumu" className="mt-5 overflow-hidden rounded-2xl border border-neutral-200 bg-raised">
@@ -117,9 +119,9 @@ function OrderStatusCard({ order, owner }: { order: TrackedOrder; owner: boolean
           Sipariş no: {order.orderNo}
         </p>
         <p className="mt-3 flex flex-wrap items-center gap-2">
-          <OrderStatusBadge status={order.status} />
+          <OrderStatusBadge status={order.status} deliveryMethod={order.deliveryMethod} />
         </p>
-        <p className="mt-2 text-sm font-medium text-ink/80 sm:text-base">{orderStatusNotes[order.status]}</p>
+        <p className="mt-2 text-sm font-medium text-ink/80 sm:text-base">{statusNote(order.status, order.deliveryMethod)}</p>
       </div>
 
       <div className="p-4 sm:p-6">
@@ -151,7 +153,9 @@ function OrderStatusCard({ order, owner }: { order: TrackedOrder; owner: boolean
                     {done ? <Check size={16} strokeWidth={3} /> : index + 1}
                   </span>
                   <span className="min-w-0 pt-1">
-                    <span className={`block text-sm font-extrabold ${done || active ? "" : "text-neutral-400"}`}>{step.label}</span>
+                    <span className={`block text-sm font-extrabold ${done || active ? "" : "text-neutral-400"}`}>
+                      {courier && step.label === "Teslime hazır" ? "Yolda (kuryede)" : step.label}
+                    </span>
                     {active && <span className="block text-xs text-neutral-600">Son güncelleme: {formatOrderDate(order.updatedAt)}</span>}
                   </span>
                   <span className="sr-only">{done ? " (tamamlandı)" : active ? " (şu an bu aşamada)" : " (bekliyor)"}</span>
@@ -163,7 +167,7 @@ function OrderStatusCard({ order, owner }: { order: TrackedOrder; owner: boolean
 
         <p className="mt-5 text-xs text-neutral-500">Sipariş tarihi: {formatOrderDate(order.createdAt)}</p>
 
-        {order.status === "SHIPPED" && (
+        {order.status === "SHIPPED" && !courier && (
           <a
             href={site.mapsUrl}
             target="_blank"

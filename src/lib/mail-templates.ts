@@ -2,7 +2,8 @@ import "server-only";
 import { ORDER_DISCOUNT_LABEL, orderDiscountKurus } from "./campaign";
 import { formatPrice } from "./format";
 import type { MailMessage } from "./mail";
-import { CARD_PAYMENT, formatOrderDate, orderStatusLabels, orderStatusNotes, paymentMethodLabels } from "./order-status";
+import { COURIER_DELIVERY, courierEstimate } from "./delivery";
+import { CARD_PAYMENT, formatOrderDate, paymentMethodLabels, statusLabel, statusNote } from "./order-status";
 import { getLegalDocument, legalDocumentText } from "./legal-content";
 import { infoPageTitle, site } from "./site";
 import type { OrderStatus } from "@prisma/client";
@@ -43,11 +44,21 @@ export interface MailOrder {
   createdAt: Date;
   status: OrderStatus;
   paymentProvider: string | null;
+  deliveryMethod: string;
+  shipLine: string;
+  shipDistrict: string;
+  shipCity: string;
   items: { name: string; quantity: number; unitPriceKurus: number }[];
 }
 
-// Teslimat ve ödeme cümlesi: kartla ödenmiş siparişte ödeme alınmıştır, diğerinde mağazada yapılır.
+const isCourier = (order: Pick<MailOrder, "deliveryMethod">) => order.deliveryMethod === COURIER_DELIVERY;
+const courierAddress = (order: MailOrder) => `${order.shipLine}, ${order.shipDistrict} / ${order.shipCity}`;
+
+// Teslimat ve ödeme cümlesi: kurye ile teslimde adres ve tahmini zaman; kartla ödenmiş siparişte ödeme alınmıştır.
 function paymentSentence(order: MailOrder): string {
+  if (isCourier(order)) {
+    return `Ödemeniz kartla alındı. Siparişiniz İzmir içi kuryemizle şu adrese teslim edilecek: ${courierAddress(order)}. Tahmini teslim: ${courierEstimate(order.createdAt).text}. Kurye yola çıkınca teslimat kodunuzu e-postayla göndereceğiz.`;
+  }
   return order.paymentProvider === CARD_PAYMENT
     ? "Ödemeniz kartla alındı. Siparişiniz mağazamızdan teslim edilir; hazır olduğunda size haber vereceğiz."
     : "Siparişiniz mağazamızdan teslim edilir, ödeme teslim sırasında mağazada yapılır. Hazır olduğunda size haber vereceğiz.";
@@ -119,7 +130,7 @@ export function orderConfirmationMail(order: MailOrder): MailMessage {
 // Yönetici bildirimi: yeni sipariş. warning: dikkat gerektiren durum (örn. iptal edilmiş siparişe gelen ödeme).
 export function newOrderAdminMail(to: string, order: MailOrder, warning?: string): MailMessage {
   const link = absolute(`/yonetim/siparisler`);
-  const payment = paymentMethodLabels[order.paymentProvider ?? ""] ?? "Mağazada ödeme";
+  const payment = `${paymentMethodLabels[order.paymentProvider ?? ""] ?? "Mağazada ödeme"} · ${isCourier(order) ? `KURYE: ${courierAddress(order)}` : "Mağazadan teslim"}`;
   return {
     to,
     subject: `${warning ? "DİKKAT: " : ""}Yeni sipariş ${order.orderNo} - ${formatPrice(order.totalKurus)}`,
@@ -134,8 +145,8 @@ export function newOrderAdminMail(to: string, order: MailOrder, warning?: string
 // Müşteriye: sipariş durumu değişti (hazırlanıyor, teslime hazır, iptal...).
 export function orderStatusMail(order: MailOrder, status: OrderStatus): MailMessage {
   const link = absolute(`/siparis/${order.orderNo}`);
-  const label = orderStatusLabels[status];
-  const note = orderStatusNotes[status];
+  const label = statusLabel(status, order.deliveryMethod);
+  const note = statusNote(status, order.deliveryMethod);
   return {
     to: order.email,
     subject: `Siparişiniz: ${label} - ${order.orderNo}`,

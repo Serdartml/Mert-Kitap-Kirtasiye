@@ -243,7 +243,10 @@ model Order {
   fullName String
   phone    String
 
-  // Adres, sipariş anındaki haliyle kopyalanır.
+  // "magaza" (mağazadan teslim) ya da "kurye" (İzmir içi kapına teslim); lib/delivery.ts.
+  deliveryMethod String @default("magaza")
+
+  // Adres, sipariş anındaki haliyle kopyalanır. Mağazadan teslimde mağazanın adresi yazılır.
   shipCity       String
   shipDistrict   String
   shipLine       String

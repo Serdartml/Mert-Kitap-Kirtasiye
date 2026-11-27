@@ -5,6 +5,7 @@ import { OrderStatusBadge } from "@/components/OrderParts";
 import { requireAdmin } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { formatPrice } from "@/lib/format";
+import { COURIER_DELIVERY } from "@/lib/delivery";
 import { formatOrderDate, orderStatusLabels } from "@/lib/order-status";
 
 export const metadata: Metadata = { title: "Siparişler" };
@@ -39,7 +40,7 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams: 
       <h1 className="text-2xl font-extrabold">
         <span className="marker">Siparişler</span>
       </h1>
-      <p className="mt-2 text-sm text-neutral-600">Son 100 sipariş. Şimdilik bütün siparişler mağazadan teslim; ödeme mağazada ya da kartla online.</p>
+      <p className="mt-2 text-sm text-neutral-600">Son 100 sipariş. &ldquo;Kurye&rdquo; etiketli olanlar İzmir içi kurye ile teslim edilir (ödemesi kartla alınmıştır); diğerleri mağazadan teslim.</p>
 
       <ul className="mt-5 flex flex-wrap gap-2">
         {filters.map((filter) => (
@@ -70,7 +71,12 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams: 
                   <p className="font-extrabold">
                     {order.orderNo} <span className="font-semibold text-neutral-500">· {order.fullName}</span>
                   </p>
-                  <OrderStatusBadge status={order.status} />
+                  <span className="flex flex-wrap items-center gap-1.5">
+                    {order.deliveryMethod === COURIER_DELIVERY && (
+                      <span className="inline-block whitespace-nowrap rounded-full border border-fg px-2.5 py-1 text-xs font-extrabold">Kurye · {order.shipDistrict}</span>
+                    )}
+                    <OrderStatusBadge status={order.status} deliveryMethod={order.deliveryMethod} />
+                  </span>
                 </div>
                 <p className="mt-1 flex flex-wrap justify-between gap-x-2 gap-y-1 text-sm text-neutral-600">
                   <span>{formatOrderDate(order.createdAt)}</span>

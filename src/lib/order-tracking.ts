@@ -17,6 +17,7 @@ export function normalizeOrderNo(input: string): string | null {
 export interface TrackedOrder {
   orderNo: string;
   status: OrderStatus;
+  deliveryMethod: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -24,6 +25,6 @@ export interface TrackedOrder {
 export async function findOrderForTracking(orderNo: string): Promise<TrackedOrder | null> {
   return db.order.findUnique({
     where: { orderNo },
-    select: { orderNo: true, status: true, createdAt: true, updatedAt: true },
+    select: { orderNo: true, status: true, deliveryMethod: true, createdAt: true, updatedAt: true },
   });
 }

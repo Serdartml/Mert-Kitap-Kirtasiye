@@ -10,6 +10,8 @@ import { campaignHintFor } from "@/lib/campaign-server";
 import { PanelSkeleton } from "@/components/Skeletons";
 import { getCurrentUser } from "@/lib/auth";
 import { cartTotals, getCart } from "@/lib/cart";
+import { db } from "@/lib/db";
+import { COURIER_CITY, courierEstimate, courierFeeKurus, isCourierDistrict } from "@/lib/delivery";
 import { formatPrice } from "@/lib/format";
 import { isCardPaymentEnabled } from "@/lib/paytr";
 import { site } from "@/lib/site";
@@ -19,8 +21,8 @@ export const metadata: Metadata = {
   robots: { index: false },
 };
 
-// Teslimat şimdilik yalnızca mağazadan; ödeme mağazada ya da kartla (PayTR) (actions/order.ts, placeOrder).
-// Adrese teslim kodlandığında seçeneği burada açılacak.
+// Teslimat: mağazadan ya da İzmir içi kurye ile (lib/delivery.ts). Ödeme: mağazada (yalnızca mağazadan teslimde) ya da
+// kartla, PayTR (actions/order.ts, placeOrder).
 interface PageProps {
   searchParams: Promise<{ odeme?: string }>;
 }
@@ -45,6 +47,18 @@ async function CheckoutContent({ searchParams }: PageProps) {
   const totalKurus = subtotalKurus - discountKurus;
   // Stokta kalmayan ya da satıştan kalkan ürün varsa sipariş verilemez; müşteri sepete yönlendirilir.
   const blocked = cart.items.filter((item) => !item.product.isActive || item.quantity > item.product.stock);
+  // Üyenin kayıtlı adreslerinden yalnızca kuryenin gittiği İzmir ilçelerindekiler (varsayılan adres önce).
+  const savedAddresses = user
+    ? (
+        await db.address.findMany({
+          where: { userId: user.id },
+          orderBy: [{ isDefault: "desc" }, { createdAt: "desc" }],
+          select: { id: true, title: true, city: true, district: true, line: true, postalCode: true },
+        })
+      )
+        .filter((a) => a.city.trim().toLocaleLowerCase("tr") === COURIER_CITY.toLocaleLowerCase("tr") && isCourierDistrict(a.district.trim()))
+        .map((a) => ({ id: a.id, title: a.title, district: a.district.trim(), line: a.line, postalCode: a.postalCode }))
+    : [];
 
   return (
     <div className="container-page py-6 md:py-8">
@@ -86,8 +100,11 @@ async function CheckoutContent({ searchParams }: PageProps) {
             <CheckoutForm
               defaults={{ fullName: user?.name ?? "", email: user?.email ?? "", phone: user?.phone ?? "" }}
               pickup={{ address: site.address.full, hours: site.hours.map((row) => `${row.days}: ${row.time}`) }}
-              totalLabel={formatPrice(totalKurus)}
+              subtotalKurus={subtotalKurus}
+              discountKurus={discountKurus}
               cardPayment={isCardPaymentEnabled()}
+              courierEstimate={courierEstimate(new Date()).text}
+              savedAddresses={savedAddresses}
             />
           )}
         </div>
@@ -110,7 +127,7 @@ async function CheckoutContent({ searchParams }: PageProps) {
           <dl className="mt-2 space-y-2 border-t border-neutral-200 pt-3 text-sm">
             <div className="flex justify-between">
               <dt className="text-neutral-600">Teslimat</dt>
-              <dd className="font-bold">Mağazadan, ücretsiz</dd>
+              <dd className="text-right font-bold">{courierFeeKurus(subtotalKurus) > 0 ? `Mağazadan ücretsiz; kurye ile ${formatPrice(courierFeeKurus(subtotalKurus))}` : "Ücretsiz"}</dd>
             </div>
             {discountKurus > 0 && (
               <div className="flex justify-between gap-3">
@@ -119,7 +136,7 @@ async function CheckoutContent({ searchParams }: PageProps) {
               </div>
             )}
             <div className="flex justify-between text-base">
-              <dt className="font-extrabold">Toplam</dt>
+              <dt className="font-extrabold">Toplam{courierFeeKurus(subtotalKurus) > 0 ? " (teslimat hariç)" : ""}</dt>
               <dd className="font-extrabold">{formatPrice(totalKurus)}</dd>
             </div>
           </dl>

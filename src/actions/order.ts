@@ -8,6 +8,7 @@ import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth";
 import { welcomeDiscountKurus } from "@/lib/campaign";
 import { getCartId } from "@/lib/cart";
+import { COURIER_CITY, COURIER_DELIVERY, COURIER_DISTRICTS, courierFeeKurus, isCourierDistrict, PICKUP_DELIVERY } from "@/lib/delivery";
 import { CATALOG_TAG } from "@/lib/catalog";
 import { db } from "@/lib/db";
 import { sendOrderPlacedMails } from "@/lib/order-mail";
@@ -34,11 +35,19 @@ const checkoutSchema = z.object({
   note: z.string().max(500, "Notunuz en fazla 500 karakter olabilir."),
 });
 
+// İzmir içi kurye ile teslimde adres. Yalnızca kuryenin gittiği ilçeler kabul edilir (lib/delivery.ts).
+const courierAddressSchema = z.object({
+  district: z.string().refine(isCourierDistrict, `Kurye ile teslimat yalnızca İzmir'in şu ilçelerine yapılır: ${COURIER_DISTRICTS.join(", ")}.`),
+  line: z.string().min(10, "Açık adresinizi mahalle, sokak, bina ve daire numarasıyla yazın.").max(250, "Adres en fazla 250 karakter olabilir."),
+  postalCode: z.string().regex(/^(\d{5})?$/, "Posta kodu 5 haneli olmalı (isteğe bağlı)."),
+});
+
 // İşlemin (transaction) içinden müşteriye gösterilecek bir nedenle çıkmak için.
 class CheckoutError extends Error {}
 
-// Sipariş verir. Teslimat şimdilik yalnızca mağazadan; ödeme iki yoldan:
-// - Mağazada ödeme: sipariş PENDING ile açılır, sepet boşalır, e-postalar hemen gider.
+// Sipariş verir. Teslimat iki yoldan: mağazadan teslim ya da İzmir içi kurye ile teslim (lib/delivery.ts; yalnızca belirli
+// ilçeler, ücret ürün toplamına göre, ödeme yalnızca kartla: kapıda ödeme yok). Ödeme iki yoldan:
+// - Mağazada ödeme (yalnızca mağazadan teslimde): sipariş PENDING ile açılır, sepet boşalır, e-postalar hemen gider.
 // - Kartla ödeme (PayTR, lib/paytr.ts): sipariş AWAITING_PAYMENT ile açılır, sepet ödeme onaylanana kadar durur, müşteri
 //   ödeme sayfasına gider. E-postalar ödeme bildirimi gelince gider (api/paytr/bildirim).
 //
@@ -56,8 +65,22 @@ export async function placeOrder(_prev: FormState, formData: FormData): Promise<
   if (formData.get("sozlesme") !== "on") {
     return { error: "Siparişi verebilmek için Ön Bilgilendirme Formu'nu ve Mesafeli Satış Sözleşmesi'ni onaylayın." };
   }
+  const courier = formData.get("teslimat") === COURIER_DELIVERY;
   const payByCard = formData.get("odeme") === "kart";
-  if (payByCard && !isCardPaymentEnabled()) return { error: "Kartla ödeme şu an kullanılamıyor. Lütfen mağazada ödemeyi seçin." };
+  if (courier && !payByCard) return { error: "Kurye ile teslimde ödeme online, kartla yapılır; kapıda ödeme yoktur." };
+  if (payByCard && !isCardPaymentEnabled()) {
+    return { error: courier ? "Kurye ile teslim şu an kullanılamıyor. Lütfen mağazadan teslimi seçin." : "Kartla ödeme şu an kullanılamıyor. Lütfen mağazada ödemeyi seçin." };
+  }
+  let address: z.infer<typeof courierAddressSchema> | null = null;
+  if (courier) {
+    const parsedAddress = courierAddressSchema.safeParse({
+      district: text(formData, "district"),
+      line: text(formData, "line"),
+      postalCode: text(formData, "postalCode"),
+    });
+    if (!parsedAddress.success) return { error: parsedAddress.error.issues[0]?.message ?? "Adresinizi kontrol edin." };
+    address = parsedAddress.data;
+  }
 
   const cartId = await getCartId();
   if (!cartId) return { error: "Sepetiniz boş." };
@@ -105,6 +128,8 @@ export async function placeOrder(_prev: FormState, formData: FormData): Promise<
         user ? { userId: user.id, emails: [user.email, email], phones: [user.phone ?? "", phone] } : null,
         subtotalKurus,
       );
+      // Kurye ücreti ürün toplamına (indirimden önce) göre: 1.000 TL ve üzeri ücretsiz.
+      const shippingKurus = address ? courierFeeKurus(subtotalKurus) : 0;
       const created = await tx.order.create({
         data: {
           orderNo: generateOrderNo(),
@@ -112,13 +137,15 @@ export async function placeOrder(_prev: FormState, formData: FormData): Promise<
           email,
           fullName,
           phone,
+          deliveryMethod: address ? COURIER_DELIVERY : PICKUP_DELIVERY,
           // Mağazadan teslimde adres alanlarına mağazanın adresi yazılır.
-          shipCity: site.address.city,
-          shipDistrict: site.address.district,
-          shipLine: `Mağazadan teslim: ${site.address.line}`,
+          shipCity: address ? COURIER_CITY : site.address.city,
+          shipDistrict: address ? address.district : site.address.district,
+          shipLine: address ? address.line : `Mağazadan teslim: ${site.address.line}`,
+          shipPostalCode: address?.postalCode || null,
           subtotalKurus,
-          shippingKurus: 0,
-          totalKurus: subtotalKurus - discountKurus,
+          shippingKurus,
+          totalKurus: subtotalKurus + shippingKurus - discountKurus,
           status: payByCard ? "AWAITING_PAYMENT" : "PENDING",
           paymentProvider: payByCard ? CARD_PAYMENT : PICKUP_PAYMENT,
           cartId: payByCard ? cartId : null,

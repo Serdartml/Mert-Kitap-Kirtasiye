@@ -9,7 +9,8 @@ import PaymentPendingRefresh from "@/components/PaymentPendingRefresh";
 import { PanelSkeleton } from "@/components/Skeletons";
 import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { CARD_PAYMENT, formatOrderDate, orderStatusNotes } from "@/lib/order-status";
+import { COURIER_DELIVERY, courierEstimate } from "@/lib/delivery";
+import { CARD_PAYMENT, formatOrderDate, statusNote } from "@/lib/order-status";
 import { getOrderForViewer } from "@/lib/orders";
 import { site } from "@/lib/site";
 
@@ -39,6 +40,7 @@ async function OrderContent({ params, searchParams }: PageProps) {
   const order = await getOrderForViewer(orderNo);
   if (!order) notFound();
   const paidByCard = order.paymentProvider === CARD_PAYMENT;
+  const courier = order.deliveryMethod === COURIER_DELIVERY;
   // Ödeme sayfasından dönüldü ama PayTR'nin bildirimi henüz gelmedi: "kontrol ediliyor" gösterilir, sayfa kendini yeniler.
   const checkingPayment = order.status === "AWAITING_PAYMENT" && odeme === "tamam";
   const justPlaced = order.status === "PENDING" || (order.status === "PAID" && odeme === "tamam");
@@ -68,13 +70,13 @@ async function OrderContent({ params, searchParams }: PageProps) {
           )}
         </h1>
         <p className="mt-2 text-sm font-medium text-ink/80 sm:text-base">
-          {checkingPayment ? "Ödeme kuruluşundan onay bekleniyor; bu birkaç saniye sürebilir. Sayfa kendiliğinden yenilenecek." : orderStatusNotes[order.status]}
+          {checkingPayment ? "Ödeme kuruluşundan onay bekleniyor; bu birkaç saniye sürebilir. Sayfa kendiliğinden yenilenecek." : statusNote(order.status, order.deliveryMethod)}
         </p>
         {order.status === "AWAITING_PAYMENT" && !checkingPayment && (
           <Link href={`/odeme/kart/${order.orderNo}`} className="btn btn-dark mt-4">Ödemeye devam et</Link>
         )}
         <p className="mt-3 flex flex-wrap items-center gap-2 text-sm font-medium">
-          <OrderStatusBadge status={order.status} />
+          <OrderStatusBadge status={order.status} deliveryMethod={order.deliveryMethod} />
           <span className="text-ink/70">{formatOrderDate(order.createdAt)}</span>
         </p>
       </div>
@@ -83,23 +85,42 @@ async function OrderContent({ params, searchParams }: PageProps) {
         <section className="mt-6 rounded-xl border-2 border-fg p-4 text-sm">
           <h2 className="font-extrabold">Teslimat kodunuz</h2>
           <p className="mt-2 text-3xl font-extrabold tracking-[0.3em]">{deliveryCode.code}</p>
-          <p className="mt-2 text-neutral-600">Ürünü teslim alırken bu kodu görevliye söyleyin. Teslim alacak kişi dışında kimseyle paylaşmayın.</p>
+          <p className="mt-2 text-neutral-600">Ürünü teslim alırken bu kodu {courier ? "kuryeye" : "görevliye"} söyleyin. Teslim alacak kişi dışında kimseyle paylaşmayın.</p>
         </section>
       )}
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2">
         <section className="rounded-xl border border-neutral-200 p-4 text-sm">
-          <h2 className="font-extrabold">Teslimat: mağazadan</h2>
-          <a href={site.mapsUrl} target="_blank" rel="noopener noreferrer" className="mt-2 flex items-start gap-2 hover:underline">
-            <MapPin size={16} className="mt-0.5 shrink-0" /> {site.address.full}
-          </a>
-          <ul className="mt-2 text-neutral-600">
-            {site.hours.map((row) => (
-              <li key={row.days}>
-                {row.days}: {row.time}
-              </li>
-            ))}
-          </ul>
+          {courier ? (
+            <>
+              <h2 className="font-extrabold">Teslimat: İzmir içi kurye ile</h2>
+              <p className="mt-2 flex items-start gap-2">
+                <MapPin size={16} className="mt-0.5 shrink-0" />
+                <span className="min-w-0 break-words">
+                  {order.shipLine}, {order.shipDistrict} / {order.shipCity}
+                  {order.shipPostalCode ? ` ${order.shipPostalCode}` : ""}
+                </span>
+              </p>
+              {(order.status === "PAID" || order.status === "PREPARING") && (
+                <p className="mt-2 font-semibold">Tahmini teslim: {courierEstimate(order.createdAt).text}.</p>
+              )}
+              <p className="mt-2 text-neutral-600">Kuryemiz teslimatta telefonla arar. Teslim alırken teslimat kodunuzu kuryeye söylersiniz.</p>
+            </>
+          ) : (
+            <>
+              <h2 className="font-extrabold">Teslimat: mağazadan</h2>
+              <a href={site.mapsUrl} target="_blank" rel="noopener noreferrer" className="mt-2 flex items-start gap-2 hover:underline">
+                <MapPin size={16} className="mt-0.5 shrink-0" /> {site.address.full}
+              </a>
+              <ul className="mt-2 text-neutral-600">
+                {site.hours.map((row) => (
+                  <li key={row.days}>
+                    {row.days}: {row.time}
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
           <p className="mt-2 text-neutral-600">
             {!paidByCard
               ? "Ödemeyi teslim alırken mağazada yaparsınız."

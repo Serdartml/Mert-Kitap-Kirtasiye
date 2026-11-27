@@ -60,6 +60,10 @@ const order = {
   createdAt: new Date("2026-10-07T10:00:00Z"),
   status: "PENDING" as const,
   paymentProvider: "magazada" as string | null,
+  deliveryMethod: "magaza",
+  shipLine: "Mağazadan teslim",
+  shipDistrict: "Bornova",
+  shipCity: "İzmir",
   items: [{ name: 'Kalem "Pro" & Silgi', quantity: 2, unitPriceKurus: 6250 }],
 };
 
