@@ -10,7 +10,7 @@ import { OrderItems, OrderStatusBadge } from "@/components/OrderParts";
 import { requireAdmin } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { MAX_DELIVERY_CODE_ATTEMPTS } from "@/lib/delivery-code";
-import { closedStatuses, formatOrderDate, nextStatuses, orderStatusLabels } from "@/lib/order-status";
+import { CARD_PAYMENT, closedStatuses, formatOrderDate, nextStatuses, orderStatusLabels } from "@/lib/order-status";
 import { getAdminOrder } from "@/lib/orders";
 
 export const metadata: Metadata = { title: "Sipariş" };
@@ -34,6 +34,16 @@ export default async function AdminOrderPage({ params, searchParams }: PageProps
   const deliveryCode = await db.orderDeliveryCode.findUnique({ where: { orderId: order.id }, select: { sentAt: true, attempts: true, usedAt: true } });
   const canCancel = !closedStatuses.includes(order.status) && order.status !== "DELIVERED";
   const phoneHref = `tel:${order.phone.replace(/[^\d+]/g, "")}`;
+  // Kartla ödenmiş (bildirimi gelmiş) sipariş: iptalde para iadesi PayTR panelinden ayrıca yapılmalı.
+  const cardPaid = order.paymentProvider === CARD_PAYMENT && Boolean(order.paymentRef);
+  const paymentText =
+    order.paymentProvider !== CARD_PAYMENT
+      ? "Ödeme mağazada alınacak."
+      : order.status === "AWAITING_PAYMENT"
+        ? "Kartla ödeme bekleniyor: müşteri henüz ödemeyi tamamlamadı. Hazırlamayın; ödeme gelmezse sipariş kendiliğinden iptal olur."
+        : cardPaid
+          ? "Kartla online ödendi (PayTR)."
+          : "Kartla ödeme tamamlanmadı.";
 
   return (
     <>
@@ -77,7 +87,7 @@ export default async function AdminOrderPage({ params, searchParams }: PageProps
                 {canCancel && (
                   <form action={setOrderStatus.bind(null, order.id, "CANCELLED")}>
                     <ConfirmButton
-                      message={`${order.orderNo} iptal edilecek ve ürünlerin stoğu geri verilecek. Bu işlem geri alınamaz. Emin misiniz?`}
+                      message={`${order.orderNo} iptal edilecek ve ürünlerin stoğu geri verilecek. Bu işlem geri alınamaz.${cardPaid ? " Müşteri kartla ödedi: para iadesini PayTR panelinden ayrıca yapmanız gerekir." : ""} Emin misiniz?`}
                       className="btn w-full border border-red-300 py-2.5 text-red-700 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950"
                     >
                       Siparişi iptal et
@@ -122,7 +132,12 @@ export default async function AdminOrderPage({ params, searchParams }: PageProps
           <section className="rounded-xl border border-neutral-200 bg-raised p-4 text-sm">
             <h2 className="font-extrabold">Teslimat ve ödeme</h2>
             <p className="mt-2">{order.shipLine}</p>
-            <p className="text-neutral-600">Ödeme mağazada alınacak.</p>
+            <p className="text-neutral-600">{paymentText}</p>
+            {cardPaid && (order.status === "CANCELLED" || order.status === "REFUNDED") && (
+              <p className="mt-2 rounded-lg bg-red-50 p-2 text-xs font-semibold text-red-800 dark:bg-red-950 dark:text-red-300">
+                Kartla ödenmiş sipariş iptal edildi: para iadesini PayTR panelinden yaptığınızdan emin olun.
+              </p>
+            )}
             <p className="mt-2 text-xs text-neutral-500">Sipariş: {formatOrderDate(order.createdAt)}</p>
             <p className="text-xs text-neutral-500">Son güncelleme: {formatOrderDate(order.updatedAt)}</p>
           </section>

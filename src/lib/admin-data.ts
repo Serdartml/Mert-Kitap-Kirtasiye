@@ -3,7 +3,7 @@ import { db } from "./db";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 // İptal ve iade edilen siparişler satış sayılmaz.
-const NOT_SALES = ["CANCELLED", "REFUNDED"] as const;
+const NOT_SALES = ["AWAITING_PAYMENT", "CANCELLED", "REFUNDED"] as const;
 
 export interface DailyOrderStat {
   label: string;

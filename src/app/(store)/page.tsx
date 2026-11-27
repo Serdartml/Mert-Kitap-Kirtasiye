@@ -12,6 +12,7 @@ import ShowcaseCard from "@/components/ShowcaseCard";
 import SchoolListCards from "@/components/SchoolListCards";
 import SectionEdge from "@/components/SectionEdge";
 import ShowcaseMarquee from "@/components/ShowcaseMarquee";
+import WelcomeCampaignBanner from "@/components/WelcomeCampaignBanner";
 import { getDiscountedProducts, getFeaturedByRoot, getNavCategories, getNewestProducts, type ProductCardData } from "@/lib/catalog";
 import { site, stats, whatsappHref } from "@/lib/site";
 
@@ -107,6 +108,9 @@ export default async function HomePage() {
           ))}
         </dl>
       </section>
+
+      {/* Hoş geldin kampanyası: üye ol, ilk siparişte indirim (lib/campaign.ts). */}
+      <WelcomeCampaignBanner className="mt-6 md:mt-10" />
 
       {/* Keşfet: rakam bandının hemen altında görselli ana kategoriler. */}
       <DiscoverCategories categories={discoverCategories} />

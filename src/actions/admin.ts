@@ -443,7 +443,8 @@ export async function setOrderStatus(id: string, status: OrderStatus): Promise<v
 
   if (status === "CANCELLED") updateTag(CATALOG_TAG);
   // Müşteriye durum bildirimi (hazırlanıyor / teslime hazır / iptal). Gönderim yanıtı geciktirmez.
-  if (changed && status !== "DELIVERED") {
+  // Ödemesi tamamlanmamış sipariş müşteriye hiç onaylanmadı: iptali için e-posta gitmez.
+  if (changed && status !== "DELIVERED" && order.status !== "AWAITING_PAYMENT") {
     const mail = orderStatusMail({ ...order, status }, status);
     after(() => sendMail(mail));
   }

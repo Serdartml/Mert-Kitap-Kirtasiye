@@ -5,7 +5,11 @@ import { PanelSkeleton } from "@/components/Skeletons";
 import { Minus, Plus, Trash2 } from "lucide-react";
 import { EmptyCaseArt } from "@/components/SceneArt";
 import { removeCartItem, setCartItemQuantity } from "@/actions/cart";
+import CampaignHintBox from "@/components/CampaignHintBox";
 import ProductVisual from "@/components/ProductVisual";
+import { getCurrentUser } from "@/lib/auth";
+import { ORDER_DISCOUNT_LABEL } from "@/lib/campaign";
+import { campaignHintFor } from "@/lib/campaign-server";
 import { cartTotals, getCart } from "@/lib/cart";
 import { formatPrice } from "@/lib/format";
 
@@ -24,7 +28,7 @@ export default function CartPage() {
 
 // Sepet çerezden okunur ve hiç önbelleğe alınmaz.
 async function CartContent() {
-  const cart = await getCart();
+  const [cart, user] = await Promise.all([getCart(), getCurrentUser()]);
   const { subtotalKurus, count } = cartTotals(cart);
 
   if (!cart || cart.items.length === 0) {
@@ -45,6 +49,10 @@ async function CartContent() {
       </div>
     );
   }
+
+  // Hoş geldin indirimi (lib/campaign.ts): tutar siparişte sunucuda kesinleşir.
+  const hint = await campaignHintFor(user, subtotalKurus);
+  const discountKurus = hint?.kind === "applied" ? hint.discountKurus : 0;
 
   return (
     <div className="container-page py-8">
@@ -123,11 +131,18 @@ async function CartContent() {
               <dt className="text-neutral-600">Kargo</dt>
               <dd className="text-neutral-500">Ödeme adımında hesaplanır</dd>
             </div>
+            {discountKurus > 0 && (
+              <div className="flex justify-between gap-3">
+                <dt className="text-neutral-600">{ORDER_DISCOUNT_LABEL}</dt>
+                <dd className="shrink-0 font-bold text-green-700 dark:text-green-400">−{formatPrice(discountKurus)}</dd>
+              </div>
+            )}
             <div className="flex justify-between border-t border-neutral-200 pt-3 text-base">
               <dt className="font-extrabold">Toplam</dt>
-              <dd className="font-extrabold">{formatPrice(subtotalKurus)}</dd>
+              <dd className="font-extrabold">{formatPrice(subtotalKurus - discountKurus)}</dd>
             </div>
           </dl>
+          <CampaignHintBox hint={hint} next="/sepet" />
           <Link href="/odeme" className="btn btn-primary mt-5 w-full">Siparişi Tamamla</Link>
           <Link href="/" className="btn btn-outline mt-2 w-full">Alışverişe Devam Et</Link>
         </aside>

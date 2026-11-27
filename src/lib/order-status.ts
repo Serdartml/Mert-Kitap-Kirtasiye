@@ -8,8 +8,16 @@ import type { OrderStatus } from "@prisma/client";
 // etiketler ona göre ayrılmalı.
 
 export const PICKUP_PAYMENT = "magazada";
+// Kartla online ödeme (lib/paytr.ts). Sipariş AWAITING_PAYMENT ile açılır, PayTR bildirimiyle PAID olur.
+export const CARD_PAYMENT = "paytr";
+
+export const paymentMethodLabels: Record<string, string> = {
+  [PICKUP_PAYMENT]: "Mağazada ödeme",
+  [CARD_PAYMENT]: "Kartla online ödeme (PayTR)",
+};
 
 export const orderStatusLabels: Record<OrderStatus, string> = {
+  AWAITING_PAYMENT: "Ödeme bekleniyor",
   PENDING: "Sipariş alındı",
   PAID: "Ödendi",
   PREPARING: "Hazırlanıyor",
@@ -21,8 +29,9 @@ export const orderStatusLabels: Record<OrderStatus, string> = {
 
 // Müşteriye durumun ne anlama geldiğini söyleyen kısa açıklama.
 export const orderStatusNotes: Record<OrderStatus, string> = {
+  AWAITING_PAYMENT: "Ödemeniz henüz onaylanmadı. Ödeme tamamlanınca siparişiniz kesinleşir.",
   PENDING: "Siparişiniz bize ulaştı. Hazırlamaya başladığımızda durumu güncelleyeceğiz.",
-  PAID: "Ödemeniz alındı.",
+  PAID: "Ödemeniz alındı, siparişiniz bize ulaştı. Hazırlamaya başladığımızda durumu güncelleyeceğiz.",
   PREPARING: "Ürünleriniz hazırlanıyor.",
   SHIPPED: "Siparişiniz hazır; mağazamızdan teslim alabilirsiniz.",
   DELIVERED: "Siparişiniz teslim edildi. İyi günlerde kullanın.",
@@ -34,7 +43,9 @@ export const orderStatusNotes: Record<OrderStatus, string> = {
 export const closedStatuses: OrderStatus[] = ["CANCELLED", "REFUNDED"];
 
 // Yönetim panelinde bir durumdan geçilebilecek sonraki durumlar (iptal ayrıca sunulur).
+// Ödeme bekleyen siparişi yalnızca PayTR bildirimi ilerletir; yönetim yalnızca iptal edebilir.
 export const nextStatuses: Record<OrderStatus, OrderStatus[]> = {
+  AWAITING_PAYMENT: [],
   PENDING: ["PREPARING", "SHIPPED"],
   PAID: ["PREPARING", "SHIPPED"],
   PREPARING: ["SHIPPED"],
@@ -45,6 +56,7 @@ export const nextStatuses: Record<OrderStatus, OrderStatus[]> = {
 };
 
 export const orderStatusTone: Record<OrderStatus, string> = {
+  AWAITING_PAYMENT: "border border-dashed border-neutral-400 text-neutral-600",
   PENDING: "bg-brand-500 text-ink",
   PAID: "bg-brand-500 text-ink",
   PREPARING: "bg-brand-200 text-fg",

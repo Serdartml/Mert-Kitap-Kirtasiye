@@ -1,7 +1,7 @@
 "use client";
 
-import type { ReactNode } from "react";
-import { Store, Truck } from "lucide-react";
+import { useState, type ReactNode } from "react";
+import { CreditCard, Store, Truck, Wallet } from "lucide-react";
 import { placeOrder } from "@/actions/order";
 import { useServerForm } from "@/components/admin/useServerForm";
 
@@ -10,10 +10,16 @@ interface CheckoutFormProps {
   defaults: { fullName: string; email: string; phone: string };
   pickup: { address: string; hours: string[] };
   totalLabel: string;
+  // PayTR ayarları tamamsa kartla ödeme sunulur (lib/paytr.ts).
+  cardPayment: boolean;
 }
 
-export default function CheckoutForm({ defaults, pickup, totalLabel }: CheckoutFormProps) {
+type PaymentChoice = "kart" | "magazada";
+
+export default function CheckoutForm({ defaults, pickup, totalLabel, cardPayment }: CheckoutFormProps) {
   const { state, pending, onSubmit } = useServerForm(placeOrder);
+  const [payment, setPayment] = useState<PaymentChoice>(cardPayment ? "kart" : "magazada");
+  const byCard = cardPayment && payment === "kart";
 
   return (
     <form onSubmit={onSubmit} className="space-y-8">
@@ -42,7 +48,7 @@ export default function CheckoutForm({ defaults, pickup, totalLabel }: CheckoutF
           <div className="flex gap-3 rounded-xl border-2 border-fg p-4">
             <Store size={22} className="mt-0.5 shrink-0" aria-hidden />
             <div className="min-w-0 text-sm">
-              <p className="font-extrabold">Mağazadan teslim · ödeme mağazada</p>
+              <p className="font-extrabold">Mağazadan teslim</p>
               <p className="mt-1 text-neutral-600">{pickup.address}</p>
               <ul className="mt-1 text-neutral-600">
                 {pickup.hours.map((row) => (
@@ -54,7 +60,7 @@ export default function CheckoutForm({ defaults, pickup, totalLabel }: CheckoutF
           <div className="flex gap-3 rounded-xl border border-dashed border-neutral-300 p-4 text-neutral-500">
             <Truck size={22} className="mt-0.5 shrink-0" aria-hidden />
             <div className="text-sm">
-              <p className="font-extrabold">Adrese kargo · online ödeme</p>
+              <p className="font-extrabold">Adrese teslim</p>
               <p className="mt-1">Çok yakında.</p>
             </div>
           </div>
@@ -62,7 +68,41 @@ export default function CheckoutForm({ defaults, pickup, totalLabel }: CheckoutF
       </section>
 
       <section>
-        <h2 className="text-lg font-extrabold">3. Sipariş notu</h2>
+        <h2 className="text-lg font-extrabold">3. Ödeme</h2>
+        {cardPayment ? (
+          <fieldset className="mt-3 space-y-3">
+            <legend className="sr-only">Ödeme yöntemi</legend>
+            <PaymentOption
+              value="kart"
+              checked={payment === "kart"}
+              onSelect={setPayment}
+              icon={<CreditCard size={22} className="mt-0.5 shrink-0" aria-hidden />}
+              title="Kartla şimdi öde"
+              text="Banka ya da kredi kartı, tek çekim. Ödeme PayTR'nin güvenli sayfasında 3D Secure ile alınır; kart bilgileriniz bize gelmez."
+            />
+            <PaymentOption
+              value="magazada"
+              checked={payment === "magazada"}
+              onSelect={setPayment}
+              icon={<Wallet size={22} className="mt-0.5 shrink-0" aria-hidden />}
+              title="Mağazada öde"
+              text="Ürünleri teslim alırken mağazada nakit ya da kartla ödersiniz."
+            />
+          </fieldset>
+        ) : (
+          <div className="mt-3 flex gap-3 rounded-xl border-2 border-fg p-4">
+            <Wallet size={22} className="mt-0.5 shrink-0" aria-hidden />
+            <div className="min-w-0 text-sm">
+              <p className="font-extrabold">Mağazada öde</p>
+              <p className="mt-1 text-neutral-600">Ürünleri teslim alırken mağazada ödersiniz.</p>
+            </div>
+            <input type="hidden" name="odeme" value="magazada" />
+          </div>
+        )}
+      </section>
+
+      <section>
+        <h2 className="text-lg font-extrabold">4. Sipariş notu</h2>
         <label className="mt-3 block text-sm font-bold">
           <span className="sr-only">Sipariş notu</span>
           <textarea name="note" rows={3} maxLength={500} placeholder="Eklemek istediğiniz bir not varsa yazın (isteğe bağlı)." className="field resize-none font-normal" />
@@ -90,13 +130,42 @@ export default function CheckoutForm({ defaults, pickup, totalLabel }: CheckoutF
           <LegalLink slug="kvkk">KVKK Aydınlatma Metni</LegalLink> kapsamında işlenir.
         </p>
         <button type="submit" disabled={pending} className="btn btn-primary w-full py-3.5 text-base">
-          {pending ? "Siparişiniz oluşturuluyor..." : `Siparişi Onayla · ${totalLabel}`}
+          {pending ? "Siparişiniz oluşturuluyor..." : byCard ? `Siparişi Onayla ve Öde · ${totalLabel}` : `Siparişi Onayla · ${totalLabel}`}
         </button>
         <p className="text-center text-xs text-neutral-500">
-          Siparişi onaylayınca ürünler adınıza ayrılır ve ödeme yükümlülüğü doğar; ödemeyi mağazada teslim alırken yaparsınız.
+          {byCard
+            ? "Sonraki adımda kart bilgilerinizi PayTR'nin güvenli ödeme sayfasına girersiniz. Siparişiniz ödeme onaylanınca kesinleşir."
+            : "Siparişi onaylayınca ürünler adınıza ayrılır ve ödeme yükümlülüğü doğar; ödemeyi mağazada teslim alırken yaparsınız."}
         </p>
       </div>
     </form>
+  );
+}
+
+function PaymentOption({
+  value,
+  checked,
+  onSelect,
+  icon,
+  title,
+  text,
+}: {
+  value: PaymentChoice;
+  checked: boolean;
+  onSelect: (value: PaymentChoice) => void;
+  icon: ReactNode;
+  title: string;
+  text: string;
+}) {
+  return (
+    <label className={`flex cursor-pointer gap-3 rounded-xl p-4 ${checked ? "border-2 border-fg" : "border border-neutral-300 hover:border-fg"}`}>
+      <input type="radio" name="odeme" value={value} checked={checked} onChange={() => onSelect(value)} className="mt-1 size-5 shrink-0 accent-current" />
+      {icon}
+      <span className="min-w-0 text-sm">
+        <span className="block font-extrabold">{title}</span>
+        <span className="mt-1 block text-neutral-600">{text}</span>
+      </span>
+    </label>
   );
 }
 

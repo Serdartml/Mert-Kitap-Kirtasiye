@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
-import { Clock, MapPin, Phone, ShoppingCart } from "lucide-react";
+import { Clock, Gift, MapPin, Phone, ShoppingCart } from "lucide-react";
+import { campaignTexts, WELCOME_CAMPAIGN } from "@/lib/campaign";
 import AccountLink, { GuestAccountLink } from "./AccountLink";
 import IconMotion from "./IconMotion";
 import LogoRoutePlay from "./LogoRoutePlay";
@@ -19,6 +20,23 @@ export default async function Header() {
 
   return (
     <>
+      {/* Kampanya şeridi (lib/campaign.ts): en üstte, sarı; kampanya kapanınca kalkar. */}
+      {WELCOME_CAMPAIGN.active && (
+        <Link
+          href={WELCOME_CAMPAIGN.href}
+          className="theme-fixed pattern-dots block bg-brand-500 text-ink hover:bg-brand-400 focus-visible:bg-brand-400"
+        >
+          <span className="container-page flex min-h-9 items-center justify-center gap-2 py-1.5 text-center text-xs font-extrabold sm:text-sm">
+            <Gift size={16} aria-hidden className="shrink-0" />
+            <span>
+              <span className="sm:hidden">Üye ol, ilk siparişinde {campaignTexts.discount} indirim!</span>
+              <span className="hidden sm:inline">{campaignTexts.short}</span>
+              <span className="ml-1.5 underline underline-offset-2">Detaylar</span>
+            </span>
+          </span>
+        </Link>
+      )}
+
       {/* Üst bilgi şeridi: sayfayla birlikte kayar, yapışmaz. */}
       <div className="theme-fixed bg-ink text-xs text-white">
         <div className="container-page flex h-9 items-center justify-between gap-4">

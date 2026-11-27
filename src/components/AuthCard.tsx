@@ -3,7 +3,9 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import AuthForm from "./AuthForm";
 import CategoryArt from "./CategoryArt";
+import { Gift } from "lucide-react";
 import { getCurrentUser, safeNextPath } from "@/lib/auth";
+import { campaignTexts, WELCOME_CAMPAIGN } from "@/lib/campaign";
 
 interface AuthCardProps {
   mode: "login" | "register";
@@ -50,6 +52,22 @@ export default function AuthCard({ mode, searchParams }: AuthCardProps) {
           <span className="marker">{text.title}</span>
         </h1>
         <p className="mb-6 mt-2 text-sm text-neutral-600">{text.text}</p>
+        {/* Hoş geldin kampanyası (lib/campaign.ts): kayıtta ve girişte hatırlatılır. */}
+        {WELCOME_CAMPAIGN.active && (
+          <Link
+            href={WELCOME_CAMPAIGN.href}
+            className="theme-fixed -mt-2 mb-6 flex items-start gap-2.5 rounded-xl border-2 border-ink bg-brand-500 p-3 text-sm text-ink shadow-[3px_3px_0_0_#111]"
+          >
+            <Gift size={20} aria-hidden className="mt-0.5 shrink-0" />
+            <span>
+              <span className="font-extrabold">
+                {mode === "register" ? "Hoş geldin hediyesi: " : "Henüz sipariş vermediyseniz: "}
+              </span>
+              ilk siparişinizde {campaignTexts.min} ve üzerine {campaignTexts.discount} indirim.{" "}
+              <span className="underline underline-offset-2">Koşullar</span>
+            </span>
+          </Link>
+        )}
         {/* ?sonra= ve oturum çerezi istek anında okunur. */}
         <Suspense fallback={<AuthForm mode={mode} />}>
           <AuthFormWithNext mode={mode} searchParams={searchParams} />

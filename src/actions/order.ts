@@ -6,14 +6,14 @@ import { redirect } from "next/navigation";
 import { after } from "next/server";
 import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth";
+import { welcomeDiscountKurus } from "@/lib/campaign";
 import { getCartId } from "@/lib/cart";
 import { CATALOG_TAG } from "@/lib/catalog";
 import { db } from "@/lib/db";
-import { orderLegalAttachment } from "@/lib/legal-pdf";
-import { adminNotifyAddress, sendMail } from "@/lib/mail";
-import { newOrderAdminMail, orderConfirmationMail } from "@/lib/mail-templates";
-import { PICKUP_PAYMENT } from "@/lib/order-status";
+import { sendOrderPlacedMails } from "@/lib/order-mail";
+import { CARD_PAYMENT, PICKUP_PAYMENT } from "@/lib/order-status";
 import { generateOrderNo, rememberGuestOrder } from "@/lib/orders";
+import { cancelAwaitingOrdersOfCart, cancelExpiredAwaitingOrders, isCardPaymentEnabled } from "@/lib/paytr";
 import { checkLimits, clientIp, LIMITS } from "@/lib/rate-limit";
 import { site } from "@/lib/site";
 
@@ -37,11 +37,13 @@ const checkoutSchema = z.object({
 // İşlemin (transaction) içinden müşteriye gösterilecek bir nedenle çıkmak için.
 class CheckoutError extends Error {}
 
-// Sipariş verir. Şimdilik tek yöntem: mağazadan teslim, ödeme mağazada. Online ödeme bağlandığında
-// burada Order(PENDING) oluşturulup sağlayıcıya yönlendirilecek, stok ödeme onayında kesinleşecek.
+// Sipariş verir. Teslimat şimdilik yalnızca mağazadan; ödeme iki yoldan:
+// - Mağazada ödeme: sipariş PENDING ile açılır, sepet boşalır, e-postalar hemen gider.
+// - Kartla ödeme (PayTR, lib/paytr.ts): sipariş AWAITING_PAYMENT ile açılır, sepet ödeme onaylanana kadar durur, müşteri
+//   ödeme sayfasına gider. E-postalar ödeme bildirimi gelince gider (api/paytr/bildirim).
 //
-// Stok sipariş anında düşülür (ürün müşteri için ayrılır); sipariş iptal edilirse geri verilir
-// (actions/admin.ts, setOrderStatus). Düşüm koşulludur: iki kişi aynı anda son ürünü alamaz.
+// Stok sipariş anında düşülür (ürün müşteri için ayrılır); sipariş iptal edilirse ya da kartla ödeme olmazsa geri verilir
+// (actions/admin.ts, setOrderStatus; lib/paytr.ts). Düşüm koşulludur: iki kişi aynı anda son ürünü alamaz.
 export async function placeOrder(_prev: FormState, formData: FormData): Promise<FormState> {
   const parsed = checkoutSchema.safeParse({
     fullName: text(formData, "fullName"),
@@ -54,6 +56,8 @@ export async function placeOrder(_prev: FormState, formData: FormData): Promise<
   if (formData.get("sozlesme") !== "on") {
     return { error: "Siparişi verebilmek için Ön Bilgilendirme Formu'nu ve Mesafeli Satış Sözleşmesi'ni onaylayın." };
   }
+  const payByCard = formData.get("odeme") === "kart";
+  if (payByCard && !isCardPaymentEnabled()) return { error: "Kartla ödeme şu an kullanılamıyor. Lütfen mağazada ödemeyi seçin." };
 
   const cartId = await getCartId();
   if (!cartId) return { error: "Sepetiniz boş." };
@@ -66,9 +70,15 @@ export async function placeOrder(_prev: FormState, formData: FormData): Promise<
   ]);
   if (blocked) return { error: blocked };
 
+  // Ödeme çerçevesi kapanmış, ödenmemiş siparişlerin stoğu geri döner (sunucu cron'u da günlük yapar).
+  await cancelExpiredAwaitingOrders().catch((error) => console.error("[PayTR] Süresi dolan siparişler iptal edilemedi:", error));
+
   let order: Prisma.OrderGetPayload<{ include: { items: true } }>;
   try {
     order = await db.$transaction(async (tx) => {
+      // Bu sepetten açılıp ödemesi yarım kalan sipariş varsa önce o iptal edilir: stok iki kez ayrılmaz.
+      await cancelAwaitingOrdersOfCart(tx, cartId);
+
       const cart = await tx.cart.findUnique({
         where: { id: cartId },
         include: { items: { include: { product: true } } },
@@ -89,6 +99,12 @@ export async function placeOrder(_prev: FormState, formData: FormData): Promise<
       }
 
       const subtotalKurus = cart.items.reduce((sum, item) => sum + item.product.priceKurus * item.quantity, 0);
+      // Hoş geldin indirimi (lib/campaign.ts): yalnızca üyeye, ilk siparişte; formdaki e-posta ve telefonla da bakılır.
+      const discountKurus = await welcomeDiscountKurus(
+        tx,
+        user ? { userId: user.id, emails: [user.email, email], phones: [user.phone ?? "", phone] } : null,
+        subtotalKurus,
+      );
       const created = await tx.order.create({
         data: {
           orderNo: generateOrderNo(),
@@ -102,8 +118,10 @@ export async function placeOrder(_prev: FormState, formData: FormData): Promise<
           shipLine: `Mağazadan teslim: ${site.address.line}`,
           subtotalKurus,
           shippingKurus: 0,
-          totalKurus: subtotalKurus,
-          paymentProvider: PICKUP_PAYMENT,
+          totalKurus: subtotalKurus - discountKurus,
+          status: payByCard ? "AWAITING_PAYMENT" : "PENDING",
+          paymentProvider: payByCard ? CARD_PAYMENT : PICKUP_PAYMENT,
+          cartId: payByCard ? cartId : null,
           note: note || null,
           items: {
             create: cart.items.map((item) => ({
@@ -118,7 +136,8 @@ export async function placeOrder(_prev: FormState, formData: FormData): Promise<
         include: { items: true },
       });
 
-      await tx.cartItem.deleteMany({ where: { cartId } });
+      // Kartla ödemede sepet, ödeme onaylanınca boşaltılır (lib/paytr.ts, settlePaidOrder).
+      if (!payByCard) await tx.cartItem.deleteMany({ where: { cartId } });
       return created;
     });
   } catch (error) {
@@ -134,17 +153,8 @@ export async function placeOrder(_prev: FormState, formData: FormData): Promise<
   // Stok değişti: katalog önbelleği ve sepet rozeti yenilensin.
   updateTag(CATALOG_TAG);
   revalidatePath("/", "layout");
-  // Müşteriye onay, mağazaya bildirim. Gönderim yanıtı geciktirmez ve hatası siparişi etkilemez.
-  // Onay e-postasına sözleşme metinleri PDF olarak da eklenir; PDF üretilemezse e-posta eksiz gider (metin gövdede de var).
-  after(async () => {
-    const attachment = await orderLegalAttachment(order).catch((error) => {
-      console.error("[sözleşme PDF] Üretilemedi:", error);
-      return null;
-    });
-    await Promise.all([
-      sendMail({ ...orderConfirmationMail(order), ...(attachment ? { attachments: [attachment] } : {}) }),
-      sendMail(newOrderAdminMail(adminNotifyAddress(), order)),
-    ]);
-  });
+  if (payByCard) redirect(`/odeme/kart/${order.orderNo}`);
+  // Müşteriye onay, mağazaya bildirim (lib/order-mail.ts). Gönderim yanıtı geciktirmez ve hatası siparişi etkilemez.
+  after(() => sendOrderPlacedMails(order));
   redirect(`/siparis/${order.orderNo}`);
 }

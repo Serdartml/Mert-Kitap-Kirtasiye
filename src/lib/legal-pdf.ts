@@ -1,6 +1,7 @@
 import "server-only";
 import path from "node:path";
 import PDFDocument from "pdfkit";
+import { ORDER_DISCOUNT_LABEL, orderDiscountKurus } from "./campaign";
 import { formatPrice } from "./format";
 import { getLegalDocument } from "./legal-content";
 import type { MailAttachment } from "./mail";
@@ -44,6 +45,8 @@ export function orderLegalPdf(order: MailOrder): Promise<Buffer> {
     for (const item of order.items) {
       doc.text(`- ${item.name} × ${item.quantity}: ${formatPrice(item.unitPriceKurus * item.quantity)}`, { indent: 8 });
     }
+    const discountKurus = orderDiscountKurus(order);
+    if (discountKurus > 0) doc.text(`${ORDER_DISCOUNT_LABEL}: -${formatPrice(discountKurus)}`, { indent: 8 });
     doc.font("kalin").text(`Toplam: ${formatPrice(order.totalKurus)} (KDV dahil)`);
 
     LEGAL_SLUGS.forEach((slug, index) => {

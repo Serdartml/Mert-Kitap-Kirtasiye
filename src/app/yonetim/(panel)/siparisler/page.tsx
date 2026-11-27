@@ -14,6 +14,8 @@ const filters: { key: string; label: string; statuses?: OrderStatus[] }[] = [
   { key: "acik", label: "Açık", statuses: ["PENDING", "PAID", "PREPARING", "SHIPPED"] },
   { key: "teslim", label: orderStatusLabels.DELIVERED, statuses: ["DELIVERED"] },
   { key: "iptal", label: "İptal / iade", statuses: ["CANCELLED", "REFUNDED"] },
+  // Kartla ödemesi henüz tamamlanmamış siparişler: hazırlanmaz, ödeme gelmezse kendiliğinden iptal olur (lib/paytr.ts).
+  { key: "odeme", label: orderStatusLabels.AWAITING_PAYMENT, statuses: ["AWAITING_PAYMENT"] },
   { key: "hepsi", label: "Hepsi" },
 ];
 
@@ -37,7 +39,7 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams: 
       <h1 className="text-2xl font-extrabold">
         <span className="marker">Siparişler</span>
       </h1>
-      <p className="mt-2 text-sm text-neutral-600">Son 100 sipariş. Şimdilik bütün siparişler mağazadan teslim, ödeme mağazada.</p>
+      <p className="mt-2 text-sm text-neutral-600">Son 100 sipariş. Şimdilik bütün siparişler mağazadan teslim; ödeme mağazada ya da kartla online.</p>
 
       <ul className="mt-5 flex flex-wrap gap-2">
         {filters.map((filter) => (

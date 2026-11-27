@@ -51,7 +51,8 @@ export interface CommerceMode {
   onlinePayment: boolean;
   shipping: boolean;
 }
-export const liveCommerce: CommerceMode = { onlinePayment: false, shipping: false };
+// Kartla ödeme (PayTR) 2026-11-27'de açıldı; adrese teslim henüz kodlanmadı.
+export const liveCommerce: CommerceMode = { onlinePayment: true, shipping: false };
 export const plannedCommerce: CommerceMode = { onlinePayment: true, shipping: true };
 
 // Adrese teslim koşulları (işletme kararı, 2026-11-09). Teslimatı kargo firması değil mağazanın kendi kuryesi yapar.

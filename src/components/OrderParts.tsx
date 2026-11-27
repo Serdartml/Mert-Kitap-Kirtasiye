@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { OrderStatus } from "@prisma/client";
+import { ORDER_DISCOUNT_LABEL, orderDiscountKurus } from "@/lib/campaign";
 import { formatPrice } from "@/lib/format";
 import { orderStatusLabels, orderStatusTone } from "@/lib/order-status";
 import type { OrderData } from "@/lib/orders";
@@ -16,6 +17,7 @@ export function OrderStatusBadge({ status }: { status: OrderStatus }) {
 
 // Kalemler ve toplam. linkProducts: ürün hâlâ yayındaysa adı ürün sayfasına bağlanır.
 export function OrderItems({ order, linkProducts = true }: { order: OrderData; linkProducts?: boolean }) {
+  const discountKurus = orderDiscountKurus(order);
   return (
     <div className="rounded-xl border border-neutral-200">
       <ul className="divide-y divide-neutral-200 text-sm">
@@ -38,17 +40,23 @@ export function OrderItems({ order, linkProducts = true }: { order: OrderData; l
         ))}
       </ul>
       <dl className="space-y-2 border-t border-neutral-200 p-3 text-sm sm:p-4">
+        {(order.shippingKurus > 0 || discountKurus > 0) && (
+          <div className="flex justify-between">
+            <dt className="text-neutral-600">Ara toplam</dt>
+            <dd className="font-bold">{formatPrice(order.subtotalKurus)}</dd>
+          </div>
+        )}
         {order.shippingKurus > 0 && (
-          <>
-            <div className="flex justify-between">
-              <dt className="text-neutral-600">Ara toplam</dt>
-              <dd className="font-bold">{formatPrice(order.subtotalKurus)}</dd>
-            </div>
-            <div className="flex justify-between">
-              <dt className="text-neutral-600">Kargo</dt>
-              <dd className="font-bold">{formatPrice(order.shippingKurus)}</dd>
-            </div>
-          </>
+          <div className="flex justify-between">
+            <dt className="text-neutral-600">Kargo</dt>
+            <dd className="font-bold">{formatPrice(order.shippingKurus)}</dd>
+          </div>
+        )}
+        {discountKurus > 0 && (
+          <div className="flex justify-between gap-3">
+            <dt className="text-neutral-600">{ORDER_DISCOUNT_LABEL}</dt>
+            <dd className="shrink-0 font-bold text-green-700 dark:text-green-400">−{formatPrice(discountKurus)}</dd>
+          </div>
         )}
         <div className="flex justify-between text-base">
           <dt className="font-extrabold">Toplam</dt>

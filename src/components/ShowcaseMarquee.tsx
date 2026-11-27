@@ -3,6 +3,7 @@ import { Award, Clock, Gift, ShieldCheck, ShoppingBag, Sparkles, Store, Truck, t
 import Marquee, { type MarqueeRowData } from "./Marquee";
 import { categoryIcons, fallbackCategoryIcon } from "@/lib/category-icons";
 import type { getNavCategories } from "@/lib/catalog";
+import { campaignTexts, WELCOME_CAMPAIGN } from "@/lib/campaign";
 import { site, stats } from "@/lib/site";
 
 type NavCategories = Awaited<ReturnType<typeof getNavCategories>>;
@@ -18,6 +19,7 @@ const tones = [
 
 // Kategori kartları arasına serpiştirilen kısa mesajlar (satırlara farklı noktalardan başlayarak dağıtılır).
 const messages: { icon: LucideIcon; text: string; href?: string }[] = [
+  ...(WELCOME_CAMPAIGN.active ? [{ icon: Gift, text: `Üye ol, ilk siparişte ${campaignTexts.discount} indirim`, href: WELCOME_CAMPAIGN.href }] : []),
   { icon: Award, text: `${stats[0].value} yıllık tecrübe` },
   { icon: ShieldCheck, text: "Orijinal ürün garantisi" },
   { icon: Store, text: `${site.address.district}'da mağaza · her gün açık` },

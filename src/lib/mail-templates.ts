@@ -1,7 +1,8 @@
 import "server-only";
+import { ORDER_DISCOUNT_LABEL, orderDiscountKurus } from "./campaign";
 import { formatPrice } from "./format";
 import type { MailMessage } from "./mail";
-import { formatOrderDate, orderStatusLabels, orderStatusNotes } from "./order-status";
+import { CARD_PAYMENT, formatOrderDate, orderStatusLabels, orderStatusNotes, paymentMethodLabels } from "./order-status";
 import { getLegalDocument, legalDocumentText } from "./legal-content";
 import { infoPageTitle, site } from "./site";
 import type { OrderStatus } from "@prisma/client";
@@ -36,16 +37,32 @@ export interface MailOrder {
   email: string;
   phone: string;
   note: string | null;
+  subtotalKurus: number;
+  shippingKurus: number;
   totalKurus: number;
   createdAt: Date;
   status: OrderStatus;
+  paymentProvider: string | null;
   items: { name: string; quantity: number; unitPriceKurus: number }[];
 }
 
+// Teslimat ve ödeme cümlesi: kartla ödenmiş siparişte ödeme alınmıştır, diğerinde mağazada yapılır.
+function paymentSentence(order: MailOrder): string {
+  return order.paymentProvider === CARD_PAYMENT
+    ? "Ödemeniz kartla alındı. Siparişiniz mağazamızdan teslim edilir; hazır olduğunda size haber vereceğiz."
+    : "Siparişiniz mağazamızdan teslim edilir, ödeme teslim sırasında mağazada yapılır. Hazır olduğunda size haber vereceğiz.";
+}
+
+// Hoş geldin indirimi varsa kalemlerin altına yazılır (lib/campaign.ts).
+function discountLine(order: MailOrder): string | null {
+  const discount = orderDiscountKurus(order);
+  return discount > 0 ? `${ORDER_DISCOUNT_LABEL}: -${formatPrice(discount)}` : null;
+}
+
 function itemsText(order: MailOrder): string {
-  return order.items
-    .map((item) => `- ${item.name} x ${item.quantity}: ${formatPrice(item.unitPriceKurus * item.quantity)}`)
-    .join("\n");
+  const lines = order.items.map((item) => `- ${item.name} x ${item.quantity}: ${formatPrice(item.unitPriceKurus * item.quantity)}`);
+  const discount = discountLine(order);
+  return [...lines, ...(discount ? [discount] : [])].join("\n");
 }
 
 function itemsHtml(order: MailOrder): string {
@@ -55,7 +72,12 @@ function itemsHtml(order: MailOrder): string {
         `<tr><td style="padding:6px 0;border-bottom:1px solid #e7e5e4">${esc(item.name)} × ${item.quantity}</td><td style="padding:6px 0;border-bottom:1px solid #e7e5e4;text-align:right;white-space:nowrap">${esc(formatPrice(item.unitPriceKurus * item.quantity))}</td></tr>`,
     )
     .join("");
-  return `<table style="width:100%;border-collapse:collapse;font-size:14px">${rows}<tr><td style="padding:10px 0;font-weight:bold">Toplam</td><td style="padding:10px 0;font-weight:bold;text-align:right">${esc(formatPrice(order.totalKurus))}</td></tr></table>`;
+  const discount = orderDiscountKurus(order);
+  const discountRow =
+    discount > 0
+      ? `<tr><td style="padding:6px 0;border-bottom:1px solid #e7e5e4">${esc(ORDER_DISCOUNT_LABEL)}</td><td style="padding:6px 0;border-bottom:1px solid #e7e5e4;text-align:right;white-space:nowrap;color:#15803d">-${esc(formatPrice(discount))}</td></tr>`
+      : "";
+  return `<table style="width:100%;border-collapse:collapse;font-size:14px">${rows}${discountRow}<tr><td style="padding:10px 0;font-weight:bold">Toplam</td><td style="padding:10px 0;font-weight:bold;text-align:right">${esc(formatPrice(order.totalKurus))}</td></tr></table>`;
 }
 
 // Sipariş onayıyla gönderilen yasal metinler: Mesafeli Sözleşmeler Yönetmeliği, sözleşmenin ve ön bilgilendirmenin
@@ -86,24 +108,25 @@ export function orderConfirmationMail(order: MailOrder): MailMessage {
   return {
     to: order.email,
     subject: `Siparişiniz alındı - ${order.orderNo}`,
-    text: `Merhaba ${order.fullName},\n\nSiparişiniz alındı. Sipariş numaranız: ${order.orderNo}\n\n${itemsText(order)}\n\nToplam: ${formatPrice(order.totalKurus)}\n\nSiparişiniz mağazamızdan teslim edilir, ödeme teslim sırasında mağazada yapılır. Hazır olduğunda size haber vereceğiz.\n\nSipariş durumu: ${link}\n\n${site.name}\n${site.address.full}\n${site.phone}\n\n========================================\nSiparişinizle kabul ettiğiniz metinler (bu e-postayı saklamanızı öneririz)\n========================================\n\n${orderLegalText(order)}`,
+    text: `Merhaba ${order.fullName},\n\nSiparişiniz alındı. Sipariş numaranız: ${order.orderNo}\n\n${itemsText(order)}\n\nToplam: ${formatPrice(order.totalKurus)}\n\n${paymentSentence(order)}\n\nSipariş durumu: ${link}\n\n${site.name}\n${site.address.full}\n${site.phone}\n\n========================================\nSiparişinizle kabul ettiğiniz metinler (bu e-postayı saklamanızı öneririz)\n========================================\n\n${orderLegalText(order)}`,
     html: layout(
       "Siparişiniz alındı",
-      `<p>Merhaba ${esc(order.fullName)},</p><p>Sipariş numaranız: <strong>${esc(order.orderNo)}</strong></p>${itemsHtml(order)}<p>Siparişiniz mağazamızdan teslim edilir, ödeme teslim sırasında mağazada yapılır. Hazır olduğunda size haber vereceğiz.</p>${button(link, "Sipariş durumunu gör")}${orderLegalHtml(order)}`,
+      `<p>Merhaba ${esc(order.fullName)},</p><p>Sipariş numaranız: <strong>${esc(order.orderNo)}</strong></p>${itemsHtml(order)}<p>${esc(paymentSentence(order))}</p>${button(link, "Sipariş durumunu gör")}${orderLegalHtml(order)}`,
     ),
   };
 }
 
-// Yönetici bildirimi: yeni sipariş.
-export function newOrderAdminMail(to: string, order: MailOrder): MailMessage {
+// Yönetici bildirimi: yeni sipariş. warning: dikkat gerektiren durum (örn. iptal edilmiş siparişe gelen ödeme).
+export function newOrderAdminMail(to: string, order: MailOrder, warning?: string): MailMessage {
   const link = absolute(`/yonetim/siparisler`);
+  const payment = paymentMethodLabels[order.paymentProvider ?? ""] ?? "Mağazada ödeme";
   return {
     to,
-    subject: `Yeni sipariş ${order.orderNo} - ${formatPrice(order.totalKurus)}`,
-    text: `Yeni sipariş: ${order.orderNo} (${formatOrderDate(order.createdAt)})\n\nMüşteri: ${order.fullName}\nTelefon: ${order.phone}\nE-posta: ${order.email}\n${order.note ? `Not: ${order.note}\n` : ""}\n${itemsText(order)}\n\nToplam: ${formatPrice(order.totalKurus)}\n\nYönetim: ${link}`,
+    subject: `${warning ? "DİKKAT: " : ""}Yeni sipariş ${order.orderNo} - ${formatPrice(order.totalKurus)}`,
+    text: `${warning ? `DİKKAT: ${warning}\n\n` : ""}Yeni sipariş: ${order.orderNo} (${formatOrderDate(order.createdAt)})\nÖdeme: ${payment}\n\nMüşteri: ${order.fullName}\nTelefon: ${order.phone}\nE-posta: ${order.email}\n${order.note ? `Not: ${order.note}\n` : ""}\n${itemsText(order)}\n\nToplam: ${formatPrice(order.totalKurus)}\n\nYönetim: ${link}`,
     html: layout(
       `Yeni sipariş ${order.orderNo}`,
-      `<p><strong>${esc(order.fullName)}</strong><br>${esc(order.phone)}<br>${esc(order.email)}</p>${order.note ? `<p>Not: ${esc(order.note)}</p>` : ""}${itemsHtml(order)}${button(link, "Siparişlere git")}`,
+      `${warning ? `<p style="background:#fef2f2;border:1px solid #fca5a5;color:#991b1b;padding:12px;border-radius:8px"><strong>DİKKAT:</strong> ${esc(warning)}</p>` : ""}<p>Ödeme: <strong>${esc(payment)}</strong></p><p><strong>${esc(order.fullName)}</strong><br>${esc(order.phone)}<br>${esc(order.email)}</p>${order.note ? `<p>Not: ${esc(order.note)}</p>` : ""}${itemsHtml(order)}${button(link, "Siparişlere git")}`,
     ),
   };
 }

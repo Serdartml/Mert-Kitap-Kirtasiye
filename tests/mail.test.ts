@@ -54,13 +54,24 @@ const order = {
   email: "ali@example.com",
   phone: "05321234567",
   note: null,
+  subtotalKurus: 12500,
+  shippingKurus: 0,
   totalKurus: 12500,
   createdAt: new Date("2026-10-07T10:00:00Z"),
   status: "PENDING" as const,
+  paymentProvider: "magazada" as string | null,
   items: [{ name: 'Kalem "Pro" & Silgi', quantity: 2, unitPriceKurus: 6250 }],
 };
 
 describe("e-posta şablonları", () => {
+  it("hoş geldin indirimi varsa satır olarak yazılır, yoksa yazılmaz", () => {
+    const discounted = { ...order, subtotalKurus: 120000, totalKurus: 110000, items: [{ name: "Kalem seti", quantity: 1, unitPriceKurus: 120000 }] };
+    const mail = orderConfirmationMail(discounted);
+    expect(mail.text).toContain("Hoş geldin indirimi (ilk sipariş)");
+    expect(mail.html).toContain("Hoş geldin indirimi (ilk sipariş)");
+    expect(orderConfirmationMail(order).text).not.toContain("Hoş geldin indirimi");
+  });
+
   it("sipariş onayı numarayı, toplamı ve müşteri adresini içerir", () => {
     const mail = orderConfirmationMail(order);
     expect(mail.to).toBe("ali@example.com");
